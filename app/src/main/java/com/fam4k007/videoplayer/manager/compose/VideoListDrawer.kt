@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fam4k007.videoplayer.VideoFileParcelable
 import com.fam4k007.videoplayer.preferences.PreferencesManager
+import com.fam4k007.videoplayer.utils.NaturalOrderComparator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -114,7 +115,7 @@ fun VideoListDrawer(
     val sortedVideoList = remember(videoList, sortBy, sortOrder) {
         val list = videoList.toMutableList()
         when (sortBy) {
-            SortBy.NAME -> list.sortWith(Comparator { a, b -> compareNatural(a.name, b.name) })
+            SortBy.NAME -> list.sortWith(NaturalOrderComparator.comparator { it.name })
             SortBy.SIZE -> list.sortBy { it.size }
             SortBy.DURATION -> list.sortBy { it.duration }
             SortBy.DATE -> list.sortBy { it.dateAdded }
@@ -640,47 +641,4 @@ fun SortMenuItem(
             if (isSelected) Color(0x1A64B5F6) else Color.Transparent
         )
     )
-}
-
-/**
- * 自然排序字符串比较
- * 支持字符串中数字的正确排序，例如：file1.mp4 < file2.mp4 < file10.mp4
- */
-private fun compareNatural(str1: String, str2: String): Int {
-    val s1 = str1.lowercase()
-    val s2 = str2.lowercase()
-    
-    var i1 = 0
-    var i2 = 0
-    
-    while (i1 < s1.length && i2 < s2.length) {
-        val c1 = s1[i1]
-        val c2 = s2[i2]
-        
-        if (c1.isDigit() && c2.isDigit()) {
-            var num1 = 0
-            while (i1 < s1.length && s1[i1].isDigit()) {
-                num1 = num1 * 10 + (s1[i1] - '0')
-                i1++
-            }
-            
-            var num2 = 0
-            while (i2 < s2.length && s2[i2].isDigit()) {
-                num2 = num2 * 10 + (s2[i2] - '0')
-                i2++
-            }
-            
-            if (num1 != num2) {
-                return num1 - num2
-            }
-        } else {
-            if (c1 != c2) {
-                return c1 - c2
-            }
-            i1++
-            i2++
-        }
-    }
-    
-    return s1.length - s2.length
 }
