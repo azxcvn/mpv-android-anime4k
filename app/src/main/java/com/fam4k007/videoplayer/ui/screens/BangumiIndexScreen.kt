@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.fam4k007.videoplayer.bilibili.auth.BiliBiliAuthManager
@@ -127,6 +128,7 @@ fun BangumiIndexScreen(
     // 登录状态检查
     val authManager: BiliBiliAuthManager = koinInject()
     val isLoggedIn = remember { authManager.isLoggedIn() }
+    val context = LocalContext.current
 
     // 监听滚动到底部，加载更多
     LaunchedEffect(gridState) {
@@ -160,7 +162,13 @@ fun BangumiIndexScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showLinkDialog = true }) {
+                    IconButton(onClick = {
+                        if (isLoggedIn) {
+                            showLinkDialog = true
+                        } else {
+                            Toast.makeText(context, "请在首页左上角登录账号后使用", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
                         Icon(
                             imageVector = LinkIcon,
                             contentDescription = "输入番剧链接",
@@ -185,7 +193,7 @@ fun BangumiIndexScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "此功能需要登录后使用，请在首页左上角登录",
+                    text = "此功能需要登录后使用\n请在首页左上角登录",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

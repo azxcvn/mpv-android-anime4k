@@ -53,15 +53,17 @@ import com.fam4k007.videoplayer.utils.FileOperationManager
 import com.fam4k007.videoplayer.ui.components.BatchDeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.CopyDestinationDialog
 import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
+import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.FileOperationMenu
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
+import com.fam4k007.videoplayer.ui.components.SortOption
+import com.fam4k007.videoplayer.utils.FormatUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 import java.io.File
 
 /**
@@ -176,21 +178,21 @@ fun VideoListScreenPaging(
                         }) {
                             Icon(
                                 imageVector = if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                                contentDescription = if (isEditMode) "Exit Edit" else "Edit",
+                                contentDescription = if (isEditMode) "退出编辑" else "编辑",
                                 tint = Color.White
                             )
                         }
                         IconButton(onClick = { showSearch = true }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
+                                contentDescription = "搜索",
                                 tint = Color.White
                             )
                         }
                         IconButton(onClick = { showSortDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort",
+                                contentDescription = "排序",
                                 tint = Color.White
                             )
                         }
@@ -217,9 +219,9 @@ fun VideoListScreenPaging(
             }
             
             if (filteredItems == null || (searchQuery.isNotEmpty() && lazyPagingItems.itemCount == 0)) {
-                EmptyState("Search requires database support, please use sorting instead")
+                EmptyState("搜索功能需要在数据库层面实现，请使用排序功能")
             } else if (lazyPagingItems.itemCount == 0) {
-                EmptyState("No videos in this folder")
+                EmptyState("此文件夹中没有视频")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -541,7 +543,7 @@ fun VideoListScreenPaging(
     if (showCopyDialog && (selectedVideos.isNotEmpty() || selectedVideoForOperation != null)) {
         val fileName = when {
             selectedVideos.size == 1 -> selectedVideos.first().name
-            selectedVideos.size > 1 -> "${selectedVideos.size} files"
+            selectedVideos.size > 1 -> "${selectedVideos.size} 个文件"
             else -> selectedVideoForOperation?.name ?: ""
         }
         
@@ -593,6 +595,10 @@ private fun SearchTopBar(
     onSearchQueryChange: (String) -> Unit,
     onCloseSearch: () -> Unit
 ) {
+    val textStyle = TextStyle(
+        color = Color.White,
+        fontSize = 18.sp
+    )
     TopAppBar(
         title = {
             BasicTextField(
@@ -601,20 +607,18 @@ private fun SearchTopBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 18.sp
-                ),
+                textStyle = textStyle,
                 cursorBrush = SolidColor(Color.White),
                 decorationBox = { innerTextField ->
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            "Search videos...",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 18.sp
-                        )
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                "搜索视频...",
+                                style = textStyle.copy(color = Color.White.copy(alpha = 0.6f))
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 },
                 singleLine = true
             )
@@ -623,7 +627,7 @@ private fun SearchTopBar(
             IconButton(onClick = onCloseSearch) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Close Search",
+                    contentDescription = "关闭搜索",
                     tint = Color.White
                 )
             }
@@ -775,12 +779,12 @@ private fun VideoItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = formatFileSize(video.size),
+                        text = FormatUtils.formatFileSize(video.size),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = formatDuration(video.duration),
+                        text = FormatUtils.formatDuration(video.duration),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -792,7 +796,7 @@ private fun VideoItem(
                 IconButton(onClick = onMoreClick) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More",
+                        contentDescription = "更多",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -801,52 +805,7 @@ private fun VideoItem(
     }
 }
 
-@Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.VideoLibrary,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    return when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
-        bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
-        else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-    }
-}
-
-private fun formatDuration(millis: Long): String {
-    val hours = TimeUnit.MILLISECONDS.toHours(millis)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
-
-    return when {
-        hours > 0 -> String.format("%d:%02d:%02d", hours, minutes, seconds)
-        else -> String.format("%d:%02d", minutes, seconds)
-    }
-}
 
 @Composable
 private fun VideoSortDialog(
@@ -877,12 +836,12 @@ private fun VideoSortDialog(
                     onClick = { onSortSelected("NAME", "DESCENDING") }
                 )
                 SortOption(
-                    text = "Date (Ascending)",
+                    text = "日期 (升序)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "ASCENDING",
                     onClick = { onSortSelected("DATE", "ASCENDING") }
                 )
                 SortOption(
-                    text = "Date (Descending)",
+                    text = "日期 (降序)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "DESCENDING",
                     onClick = { onSortSelected("DATE", "DESCENDING") }
                 )
@@ -890,7 +849,7 @@ private fun VideoSortDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("取消")
             }
         },
         shape = RoundedCornerShape(28.dp),
@@ -898,30 +857,3 @@ private fun VideoSortDialog(
     )
 }
 
-@Composable
-private fun SortOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}

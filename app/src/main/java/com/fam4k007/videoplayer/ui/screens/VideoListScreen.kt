@@ -41,16 +41,18 @@ import com.fam4k007.videoplayer.VideoFileParcelable
 import com.fam4k007.videoplayer.presentation.LibraryViewModel
 import com.fam4k007.videoplayer.utils.ThumbnailCacheManager
 import com.fam4k007.videoplayer.utils.FileOperationManager
+import com.fam4k007.videoplayer.utils.FormatUtils
 import com.fam4k007.videoplayer.ui.components.BatchDeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.CopyDestinationDialog
 import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
+import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
+import com.fam4k007.videoplayer.ui.components.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
-import java.util.concurrent.TimeUnit
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -125,7 +127,7 @@ fun VideoListScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "返回"
                             )
                         }
                     },
@@ -138,19 +140,19 @@ fun VideoListScreen(
                         }) {
                             Icon(
                                 imageVector = if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                                contentDescription = if (isEditMode) "Exit Edit" else "Edit"
+                                contentDescription = if (isEditMode) "退出编辑" else "编辑"
                             )
                         }
                         IconButton(onClick = { showSearch = true }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
-                                contentDescription = "Search"
+                                contentDescription = "搜索"
                             )
                         }
                         IconButton(onClick = { showSortDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort"
+                                contentDescription = "排序"
                             )
                         }
                     },
@@ -168,7 +170,7 @@ fun VideoListScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (videoListState.filteredVideos.isEmpty()) {
-                EmptyState(if (videoListState.searchQuery.isEmpty()) "No videos in this folder" else "No matching videos found")
+                EmptyState(if (videoListState.searchQuery.isEmpty()) "此文件夹中没有视频" else "未找到匹配的视频")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -269,7 +271,7 @@ fun VideoListScreen(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, "刷新")
                     }
                 }
             }
@@ -431,7 +433,7 @@ fun VideoListScreen(
     if (showCopyDialog && (selectedVideos.isNotEmpty() || selectedVideoForOperation != null)) {
         val fileName = when {
             selectedVideos.size == 1 -> selectedVideos.first().name
-            selectedVideos.size > 1 -> "${selectedVideos.size} files"
+            selectedVideos.size > 1 -> "${selectedVideos.size} 个文件"
             else -> selectedVideoForOperation?.name ?: ""
         }
         
@@ -603,12 +605,12 @@ private fun VideoItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = formatDuration(video.duration),
+                        text = FormatUtils.formatDuration(video.duration),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = formatFileSize(video.size),
+                        text = FormatUtils.formatFileSize(video.size),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -623,7 +625,7 @@ private fun VideoItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More Info",
+                        contentDescription = "更多信息",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -639,26 +641,28 @@ private fun SearchTopBar(
     onSearchQueryChange: (String) -> Unit,
     onCloseSearch: () -> Unit
 ) {
+    val textStyle = TextStyle(
+        fontSize = 18.sp,
+        color = MaterialTheme.colorScheme.onSurface
+    )
     TopAppBar(
         title = {
             BasicTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
+                textStyle = textStyle,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            text = "Search videos...",
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "搜索视频...",
+                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 },
                 singleLine = true
             )
@@ -667,7 +671,7 @@ private fun SearchTopBar(
             IconButton(onClick = onCloseSearch) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = "返回"
                 )
             }
         },
@@ -676,7 +680,7 @@ private fun SearchTopBar(
                 IconButton(onClick = { onSearchQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear"
+                        contentDescription = "清除"
                     )
                 }
             }
@@ -698,7 +702,7 @@ private fun VideoSortDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Sort By",
+                text = "排序方式",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -706,22 +710,22 @@ private fun VideoSortDialog(
         text = {
             Column {
                 SortOption(
-                    text = "Name (Ascending)",
+                    text = "名称 (升序)",
                     isSelected = currentSortType == "NAME" && currentSortOrder == "ASCENDING",
                     onClick = { onSortSelected("NAME", "ASCENDING") }
                 )
                 SortOption(
-                    text = "Name (Descending)",
+                    text = "名称 (降序)",
                     isSelected = currentSortType == "NAME" && currentSortOrder == "DESCENDING",
                     onClick = { onSortSelected("NAME", "DESCENDING") }
                 )
                 SortOption(
-                    text = "Date (Ascending)",
+                    text = "日期 (升序)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "ASCENDING",
                     onClick = { onSortSelected("DATE", "ASCENDING") }
                 )
                 SortOption(
-                    text = "Date (Descending)",
+                    text = "日期 (降序)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "DESCENDING",
                     onClick = { onSortSelected("DATE", "DESCENDING") }
                 )
@@ -729,7 +733,7 @@ private fun VideoSortDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("取消")
             }
         },
         shape = RoundedCornerShape(28.dp),
@@ -737,170 +741,3 @@ private fun VideoSortDialog(
     )
 }
 
-@Composable
-private fun SortOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.VideoLibrary,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun sortVideos(
-    videos: List<VideoFileParcelable>,
-    sortType: String,
-    sortOrder: String
-): List<VideoFileParcelable> {
-    return when (sortType) {
-        "NAME" -> {
-            if (sortOrder == "ASCENDING") {
-                videos.sortedWith(naturalComparator { it.name })
-            } else {
-                videos.sortedWith(naturalComparator<VideoFileParcelable> { it.name }.reversed())
-            }
-        }
-        "DATE" -> {
-            if (sortOrder == "ASCENDING") {
-                videos.sortedBy { it.dateAdded }
-            } else {
-                videos.sortedByDescending { it.dateAdded }
-            }
-        }
-        else -> videos
-    }
-}
-
-/**
- * 自然排序比较器 - 支持字符串中数字的正确排序
- * 例如：1, 2, 3, 10, 11, 12 而不是 1, 10, 11, 12, 2, 3
- */
-private fun <T> naturalComparator(selector: (T) -> String): Comparator<T> {
-    return Comparator { a, b ->
-        compareNatural(selector(a), selector(b))
-    }
-}
-
-/**
- * 自然排序字符串比较
- */
-private fun compareNatural(str1: String, str2: String): Int {
-    val s1 = str1.lowercase()
-    val s2 = str2.lowercase()
-    
-    var i1 = 0
-    var i2 = 0
-    
-    while (i1 < s1.length && i2 < s2.length) {
-        val c1 = s1[i1]
-        val c2 = s2[i2]
-        
-        // 如果两个字符都是数字，则提取完整的数字进行比较
-        if (c1.isDigit() && c2.isDigit()) {
-            // 提取第一个数字
-            var num1 = 0
-            while (i1 < s1.length && s1[i1].isDigit()) {
-                num1 = num1 * 10 + (s1[i1] - '0')
-                i1++
-            }
-            
-            // 提取第二个数字
-            var num2 = 0
-            while (i2 < s2.length && s2[i2].isDigit()) {
-                num2 = num2 * 10 + (s2[i2] - '0')
-                i2++
-            }
-            
-            // 比较数字大小
-            if (num1 != num2) {
-                return num1 - num2
-            }
-        } else {
-            // 普通字符比较
-            if (c1 != c2) {
-                return c1 - c2
-            }
-            i1++
-            i2++
-        }
-    }
-    
-    // 如果一个字符串是另一个的前缀，则较短的排在前面
-    return s1.length - s2.length
-}
-
-private fun filterVideos(
-    videos: List<VideoFileParcelable>,
-    query: String
-): List<VideoFileParcelable> {
-    if (query.isEmpty()) return videos
-    val lowerQuery = query.lowercase()
-    return videos.filter { it.name.lowercase().contains(lowerQuery) }
-}
-
-private fun formatDuration(milliseconds: Long): String {
-    val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % 60
-
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    if (bytes < 1024) return "$bytes B"
-    val kb = bytes / 1024.0
-    if (kb < 1024) return String.format("%.1f KB", kb)
-    val mb = kb / 1024.0
-    if (mb < 1024) return String.format("%.1f MB", mb)
-    val gb = mb / 1024.0
-    return String.format("%.2f GB", gb)
-}
