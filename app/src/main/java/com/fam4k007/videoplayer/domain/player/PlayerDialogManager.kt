@@ -1107,6 +1107,7 @@ class PlayerDialogManager(
         
         // 获取当前弹幕文件路径
         val danmakuPath = danmakuManager.getCurrentDanmakuPath()
+        val hasDanmaku = danmakuPath != null
         
         // 从 DanmakuConfig 读取当前值
         val currentSize = com.fam4k007.videoplayer.danmaku.DanmakuConfig.size
@@ -1116,13 +1117,11 @@ class PlayerDialogManager(
         val currentShowScroll = com.fam4k007.videoplayer.danmaku.DanmakuConfig.showScrollDanmaku
         val currentShowTop = com.fam4k007.videoplayer.danmaku.DanmakuConfig.showTopDanmaku
         val currentShowBottom = com.fam4k007.videoplayer.danmaku.DanmakuConfig.showBottomDanmaku
-        val currentMaxScrollLine = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScrollLine
-        val currentMaxTopLine = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxTopLine
-        val currentMaxBottomLine = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxBottomLine
+        val currentDisplayArea = com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent
         val currentMaxScreenNum = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum
         
         composeOverlayManager.showDanmakuSettingsDrawer(
-            danmakuPath = danmakuPath,
+            hasDanmakuLoaded = hasDanmaku,
             currentSize = currentSize,
             currentSpeed = currentSpeed,
             currentAlpha = currentAlpha,
@@ -1130,9 +1129,7 @@ class PlayerDialogManager(
             currentShowScroll = currentShowScroll,
             currentShowTop = currentShowTop,
             currentShowBottom = currentShowBottom,
-            currentMaxScrollLine = currentMaxScrollLine,
-            currentMaxTopLine = currentMaxTopLine,
-            currentMaxBottomLine = currentMaxBottomLine,
+            currentDisplayArea = currentDisplayArea,
             currentMaxScreenNum = currentMaxScreenNum,
             onSizeChange = { size ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setSize(size)
@@ -1162,16 +1159,8 @@ class PlayerDialogManager(
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setShowBottomDanmaku(show)
                 danmakuManager.updateBottomDanmaku()
             },
-            onMaxScrollLineChange = { line ->
-                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setMaxScrollLine(line)
-                danmakuManager.updateMaxLine()
-            },
-            onMaxTopLineChange = { line ->
-                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setMaxTopLine(line)
-                danmakuManager.updateMaxLine()
-            },
-            onMaxBottomLineChange = { line ->
-                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setMaxBottomLine(line)
+            onDisplayAreaChange = { percent ->
+                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setDisplayAreaPercent(percent)
                 danmakuManager.updateMaxLine()
             },
             onMaxScreenNumChange = { num ->

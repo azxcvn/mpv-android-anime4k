@@ -63,6 +63,10 @@ object DanmakuConfig {
     var maxScreenNum: Int = 0
         private set
     
+    // 弹幕显示区域百分比（10/25/50/75/100）
+    var displayAreaPercent: Int = 100
+        private set
+    
     // 使用 Choreographer 更新（高刷新率适配，适配 60/90/120Hz 屏幕）
     var updateInChoreographer: Boolean = true
         private set
@@ -92,6 +96,7 @@ object DanmakuConfig {
         maxTopLine = preferencesManager.getDanmakuMaxTopLine()
         maxBottomLine = preferencesManager.getDanmakuMaxBottomLine()
         maxScreenNum = preferencesManager.getDanmakuMaxScreenNum()
+        displayAreaPercent = preferencesManager.getDanmakuDisplayArea()
         updateInChoreographer = preferencesManager.getDanmakuUseChoreographer()
         isDebug = preferencesManager.getDanmakuDebug()
     }
@@ -184,6 +189,40 @@ object DanmakuConfig {
         maxScreenNum = num.coerceAtLeast(0)
         if (::preferencesManager.isInitialized) {
             preferencesManager.setDanmakuMaxScreenNum(maxScreenNum)
+        }
+    }
+
+    /**
+     * 设置弹幕显示区域百分比并同步更新三类弹幕的行数限制
+     * @param percent 10/25/50/75/100
+     */
+    fun setDisplayAreaPercent(percent: Int) {
+        displayAreaPercent = percent
+        // 按百分比映射行数，100% = 不限制所有弹幕
+        val (scrollLine, topLine, bottomLine) = displayAreaToLines(percent)
+        maxScrollLine = scrollLine
+        maxTopLine = topLine
+        maxBottomLine = bottomLine
+        if (::preferencesManager.isInitialized) {
+            preferencesManager.setDanmakuDisplayArea(displayAreaPercent)
+            preferencesManager.setDanmakuMaxScrollLine(maxScrollLine)
+            preferencesManager.setDanmakuMaxTopLine(maxTopLine)
+            preferencesManager.setDanmakuMaxBottomLine(maxBottomLine)
+        }
+    }
+
+    /**
+     * 显示区域百分比 → (滚动弹幕行数, 顶部弹幕行数, 底部弹幕行数)
+     * 100% = 不限制 (0)
+     */
+    private fun displayAreaToLines(percent: Int): Triple<Int, Int, Int> {
+        return when (percent) {
+            10 -> Triple(1, 0, 0)
+            25 -> Triple(4, 1, 1)
+            50 -> Triple(7, 2, 2)
+            75 -> Triple(9, 3, 3)
+            100 -> Triple(0, 0, 0)  // 不限制
+            else -> Triple(6, 2, 2)
         }
     }
     

@@ -809,6 +809,14 @@ class PreferencesManager private constructor(context: Context) {
     fun setDanmakuMaxBottomLine(line: Int) {
         sharedPreferences.edit().putInt("danmaku_max_bottom_line", line).apply()
     }
+
+    fun getDanmakuDisplayArea(): Int {
+        return sharedPreferences.getInt("danmaku_display_area", 100)
+    }
+
+    fun setDanmakuDisplayArea(percent: Int) {
+        sharedPreferences.edit().putInt("danmaku_display_area", percent).apply()
+    }
     
     fun getDanmakuMaxScreenNum(): Int {
         return sharedPreferences.getInt("danmaku_max_screen_num", 0)
