@@ -132,7 +132,7 @@ private suspend fun loadCustomFontEntries(context: android.content.Context): Lis
 fun SubtitleSettingsDrawer(
     currentDelay: Double,
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     currentBorderSize: Int,
     currentTextColor: String,
     currentBorderColor: String,
@@ -140,7 +140,7 @@ fun SubtitleSettingsDrawer(
     currentBorderStyle: String,
     onDelayChange: (Double) -> Unit,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit,
+    onPositionChange: (Float) -> Unit,
     onBorderSizeChange: (Int) -> Unit,
     onTextColorChange: (String) -> Unit,
     onBorderColorChange: (String) -> Unit,
@@ -656,8 +656,8 @@ fun SubtitleStyleContent(
                 text = "内嵌ASS字幕需开启样式覆盖才能应用自定义样式",
                 fontSize = 11.sp,
                 color = Color(0xFFCCCCCC),
-                maxLines = 1,
-                softWrap = false
+                maxLines = 2,
+                softWrap = true
             )
         }
         
@@ -1283,12 +1283,12 @@ fun BorderStyleOption(
 @Composable
 fun SubtitleMiscContent(
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit
+    onPositionChange: (Float) -> Unit
 ) {
     var scale by remember { mutableStateOf(currentScale) }
-    var position by remember { mutableStateOf(currentPosition.toFloat()) }
+    var position by remember { mutableStateOf(currentPosition) }
     
     // 使用LaunchedEffect监听外部状态变化
     LaunchedEffect(currentScale) {
@@ -1296,7 +1296,7 @@ fun SubtitleMiscContent(
     }
     
     LaunchedEffect(currentPosition) {
-        position = currentPosition.toFloat()
+        position = currentPosition
     }
     
     // 添加动画 - 优化性能
@@ -1333,7 +1333,6 @@ fun SubtitleMiscContent(
                 onScaleChange(it)
             },
             valueRange = 0.5f..3.0f,
-            steps = 24,
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFF64B5F6),
                 activeTrackColor = Color(0xFF64B5F6),
@@ -1345,14 +1344,14 @@ fun SubtitleMiscContent(
 
         // 字幕垂直位置
         Text(
-            text = "字幕垂直位置：${position.toInt()}",
+            text = "字幕垂直位置：${position.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
         )
         
         Text(
-            text = "范围: 0 (顶部) ~ 100 (底部)",
+            text = "范围: 0% (顶部) ~ 100% (底部)",
             fontSize = 11.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 2.dp)
@@ -1364,10 +1363,9 @@ fun SubtitleMiscContent(
             value = position,
             onValueChange = {
                 position = it
-                onPositionChange(it.toInt())
+                onPositionChange(it)
             },
             valueRange = 0f..100f,
-            steps = 99,
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFF64B5F6),
                 activeTrackColor = Color(0xFF64B5F6),
@@ -1382,7 +1380,7 @@ fun SubtitleMiscContent(
                 scale = 1.0f
                 position = 100f
                 onScaleChange(1.0f)
-                onPositionChange(100)
+                onPositionChange(100f)
             },
             colors = ButtonDefaults.textButtonColors(
                 contentColor = Color(0xFF64B5F6)
@@ -1721,9 +1719,9 @@ fun SubtitleDelayDialog(
 @Composable
 fun SubtitleMiscDialog(
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit,
+    onPositionChange: (Float) -> Unit,
     onDismiss: () -> Unit
 ) {
     // 已废弃

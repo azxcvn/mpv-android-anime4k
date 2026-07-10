@@ -479,20 +479,20 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * 获取视频的字幕位置（优先 per-video，回退 global）
      */
-    fun getSubtitlePosition(videoUri: String): Int {
+    fun getSubtitlePosition(videoUri: String): Float {
         if (sharedPreferences.contains("${videoUri}_sub_pos")) {
-            return sharedPreferences.getInt("${videoUri}_sub_pos", 100)
+            return sharedPreferences.getFloat("${videoUri}_sub_pos", 100f)
         }
-        return sharedPreferences.getInt("global_sub_pos", 100)
+        return sharedPreferences.getFloat("global_sub_pos", 100f)
     }
     
     /**
      * 保存视频的字幕位置（同时保存 per-video 和 global）
      */
-    fun setSubtitlePosition(videoUri: String, position: Int) {
+    fun setSubtitlePosition(videoUri: String, position: Float) {
         sharedPreferences.edit()
-            .putInt("${videoUri}_sub_pos", position)
-            .putInt("global_sub_pos", position)
+            .putFloat("${videoUri}_sub_pos", position)
+            .putFloat("global_sub_pos", position)
             .apply()
     }
     
@@ -1496,12 +1496,12 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * 获取字幕位置（全局设置）
      */
-    fun getSubtitlePosition(): Int {
-        return sharedPreferences.getInt("subtitle_position", 100)
+    fun getSubtitlePosition(): Float {
+        return sharedPreferences.getFloat("subtitle_position", 100f)
     }
     
-    fun setSubtitlePosition(position: Int) {
-        sharedPreferences.edit().putInt("subtitle_position", position).apply()
+    fun setSubtitlePosition(position: Float) {
+        sharedPreferences.edit().putFloat("subtitle_position", position).apply()
     }
     
     /**
