@@ -333,23 +333,15 @@ class ComposeOverlayManager(
     fun showSkipSettingsDrawer(
         currentSkipIntro: Int,
         currentSkipOutro: Int,
-        currentAutoSkipChapter: Boolean,
-        currentSkipToChapterIndex: Int,
         onSkipIntroChange: (Int) -> Unit,
-        onSkipOutroChange: (Int) -> Unit,
-        onAutoSkipChapterChange: (Boolean) -> Unit,
-        onSkipToChapterIndexChange: (Int) -> Unit
+        onSkipOutroChange: (Int) -> Unit
     ) {
         setContent {
             SkipSettingsDrawer(
                 currentSkipIntro = currentSkipIntro,
                 currentSkipOutro = currentSkipOutro,
-                currentAutoSkipChapter = currentAutoSkipChapter,
-                currentSkipToChapterIndex = currentSkipToChapterIndex,
                 onSkipIntroChange = onSkipIntroChange,
                 onSkipOutroChange = onSkipOutroChange,
-                onAutoSkipChapterChange = onAutoSkipChapterChange,
-                onSkipToChapterIndexChange = onSkipToChapterIndexChange,
                 onDismiss = { clearContent() }
             )
         }

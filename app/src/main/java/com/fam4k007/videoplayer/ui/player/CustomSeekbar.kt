@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
  * @param isDragging 是否正在拖动中（由外部控制）
  * @param chapters 章节时间点列表（秒），用于在进度条上标记小圆点
  * @param onChapterClick 点击章节标记时的回调，参数为章节索引
+ * @param skipSegments OP/ED 跳过片段列表，用于进度条着色
  * @param modifier Modifier
  */
 @Composable
@@ -61,46 +62,30 @@ fun CustomSeekbar(
     isDragging: Boolean = false,
     chapters: List<Float> = emptyList(),
     onChapterClick: ((Int) -> Unit)? = null,
+    skipSegments: List<com.fam4k007.videoplayer.player.SkipSegment> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     when (seekbarStyle) {
         SeekbarStyle.Standard -> StandardOrThickSeekbar(
-            progress = progress,
-            duration = duration,
-            isThick = false,
-            primaryColor = accentColor,
-            paused = paused,
-            isScrubbing = isDragging,
-            onSeek = onSeek,
-            onSeekFinished = onSeekFinished,
-            chapters = chapters,
-            onChapterClick = onChapterClick,
-            modifier = modifier,
+            progress = progress, duration = duration, isThick = false,
+            primaryColor = accentColor, paused = paused, isScrubbing = isDragging,
+            onSeek = onSeek, onSeekFinished = onSeekFinished,
+            chapters = chapters, onChapterClick = onChapterClick,
+            skipSegments = skipSegments, modifier = modifier,
         )
         SeekbarStyle.Thick -> StandardOrThickSeekbar(
-            progress = progress,
-            duration = duration,
-            isThick = true,
-            primaryColor = accentColor,
-            paused = paused,
-            isScrubbing = isDragging,
-            onSeek = onSeek,
-            onSeekFinished = onSeekFinished,
-            chapters = chapters,
-            onChapterClick = onChapterClick,
-            modifier = modifier,
+            progress = progress, duration = duration, isThick = true,
+            primaryColor = accentColor, paused = paused, isScrubbing = isDragging,
+            onSeek = onSeek, onSeekFinished = onSeekFinished,
+            chapters = chapters, onChapterClick = onChapterClick,
+            skipSegments = skipSegments, modifier = modifier,
         )
         SeekbarStyle.Wavy -> WavySeekbar(
-            progress = progress,
-            duration = duration,
-            primaryColor = accentColor,
-            paused = paused,
-            isScrubbing = isDragging,
-            onSeek = onSeek,
-            onSeekFinished = onSeekFinished,
-            chapters = chapters,
-            onChapterClick = onChapterClick,
-            modifier = modifier,
+            progress = progress, duration = duration,
+            primaryColor = accentColor, paused = paused, isScrubbing = isDragging,
+            onSeek = onSeek, onSeekFinished = onSeekFinished,
+            chapters = chapters, onChapterClick = onChapterClick,
+            skipSegments = skipSegments, modifier = modifier,
         )
     }
 }
@@ -124,6 +109,7 @@ private fun StandardOrThickSeekbar(
     onSeekFinished: () -> Unit,
     chapters: List<Float> = emptyList(),
     onChapterClick: ((Int) -> Unit)? = null,
+    skipSegments: List<com.fam4k007.videoplayer.player.SkipSegment> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     var heightFraction by remember { mutableFloatStateOf(1f) }
@@ -274,6 +260,29 @@ private fun StandardOrThickSeekbar(
                     )
                 }
             }
+
+            // OP/ED 跳过片段着色（高度为轨道 55%，居中不突兀）
+            if (skipSegments.isNotEmpty() && duration > 0f) {
+                val segH = trackH * 0.55f; val segY = (trackH - segH) / 2f
+                skipSegments.forEach { seg ->
+                    if (!seg.isValid) return@forEach
+                    val startFrac = (seg.startSeconds.toFloat() / duration).coerceIn(0f, 1f)
+                    val endFrac = (seg.endSeconds.toFloat() / duration).coerceIn(0f, 1f)
+                    val segW = (endFrac - startFrac) * size.width
+                    if (segW <= 0f) return@forEach
+                    val segColor = seg.type.accentColor
+                    drawRect(
+                        color = Color(red = segColor.red * 0.6f, green = segColor.green * 0.6f,
+                            blue = segColor.blue * 0.6f, alpha = 0.45f),
+                        topLeft = Offset(startFrac * size.width, segY),
+                        size = androidx.compose.ui.geometry.Size(segW, segH),
+                    )
+                    val edgeX = startFrac * size.width
+                    drawLine(segColor.copy(alpha = 0.8f), Offset(edgeX, segY), Offset(edgeX, segY + segH), strokeWidth = 2.dp.toPx())
+                    val edgeX2 = endFrac * size.width
+                    drawLine(segColor.copy(alpha = 0.8f), Offset(edgeX2, segY), Offset(edgeX2, segY + segH), strokeWidth = 2.dp.toPx())
+                }
+            }
         }
     }
 }
@@ -293,6 +302,7 @@ private fun WavySeekbar(
     onSeekFinished: () -> Unit,
     chapters: List<Float> = emptyList(),
     onChapterClick: ((Int) -> Unit)? = null,
+    skipSegments: List<com.fam4k007.videoplayer.player.SkipSegment> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     var phaseOffset by remember { mutableFloatStateOf(0f) }
@@ -437,6 +447,29 @@ private fun WavySeekbar(
                         center = Offset(dotX, centerY),
                         style = Stroke(width = 1.dp.toPx())
                     )
+                }
+            }
+
+            // OP/ED 跳过片段着色（高度为轨道 55%，居中）
+            if (skipSegments.isNotEmpty() && duration > 0f) {
+                val trackH = size.height; val segH = trackH * 0.55f; val segY = (trackH - segH) / 2f
+                skipSegments.forEach { seg ->
+                    if (!seg.isValid) return@forEach
+                    val startFrac = (seg.startSeconds.toFloat() / duration).coerceIn(0f, 1f)
+                    val endFrac = (seg.endSeconds.toFloat() / duration).coerceIn(0f, 1f)
+                    val segW = (endFrac - startFrac) * size.width
+                    if (segW <= 0f) return@forEach
+                    val segColor = seg.type.accentColor
+                    drawRect(
+                        color = Color(red = segColor.red * 0.6f, green = segColor.green * 0.6f,
+                            blue = segColor.blue * 0.6f, alpha = 0.45f),
+                        topLeft = Offset(startFrac * size.width, segY),
+                        size = androidx.compose.ui.geometry.Size(segW, segH),
+                    )
+                    val edgeX = startFrac * size.width
+                    drawLine(segColor.copy(alpha = 0.8f), Offset(edgeX, segY), Offset(edgeX, segY + segH), strokeWidth = 2.dp.toPx())
+                    val edgeX2 = endFrac * size.width
+                    drawLine(segColor.copy(alpha = 0.8f), Offset(edgeX2, segY), Offset(edgeX2, segY + segH), strokeWidth = 2.dp.toPx())
                 }
             }
         }

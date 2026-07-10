@@ -573,6 +573,7 @@ class PlayerViewModel(
     fun updateChapters(chapters: List<Pair<String, Double>>) {
         _chapters.value = chapters.map { (title, time) -> Chapter(title, time) }
         _currentChapterIndex.value = -1
+        refreshChapterDerivedSegments()
     }
 
     /**
@@ -604,6 +605,162 @@ class PlayerViewModel(
         if (index in chapters.indices) {
             seekTo(chapters[index].timeSeconds.toInt())
         }
+    }
+
+    // ==================== OP/ED 片段检测 ====================
+
+    /** 内置关键词（多语言，借鉴 mpvRx） */
+    private val introKeywords = listOf(
+        "intro", "opening", "op", "op1", "op2", "op3",
+        "オープニング", "主題歌", "主题曲", "片头",
+        "开幕", "片头曲", "序章", "prologue", "avance",
+        "a partire", "开场", "头曲",
+    )
+    private val outroKeywords = listOf(
+        "outro", "ending", "ed", "ed1", "ed2", "ed3",
+        "エンディング", "片尾", "结尾", "片尾曲", "尾曲",
+        "闭幕", "epilogue", "finale", "credits", "closing",
+        "fin", "fine",
+    )
+    private val recapKeywords = listOf(
+        "recap", "summary", "振り返り", "前回", "回顾",
+        "复习", "总集", "résumé", "riepilogo", "resumen",
+        "前情提要", "上集回顾", "前回まで", "これまで",
+    )
+    private val creditsKeywords = listOf(
+        "credits", "end credits", "staff", "cast",
+        "制作", "スタッフ", "出演", "声の出演",
+        "creditless", "クレジット",
+    )
+    private val previewKeywords = listOf(
+        "preview", "next episode", "次回予告", "予告",
+        "预告", "下集", "次回", "次巻", "avant", "preview",
+        "次回预告", "先行", "trailer",
+    )
+
+    /** 检测到的跳过片段列表 */
+    private val _skipSegments = MutableStateFlow<List<com.fam4k007.videoplayer.player.SkipSegment>>(emptyList())
+    val skipSegments: StateFlow<List<com.fam4k007.videoplayer.player.SkipSegment>> = _skipSegments.asStateFlow()
+
+    /** 当前播放位置所在的可跳过片段 */
+    private val _currentSkippableSegment = MutableStateFlow<com.fam4k007.videoplayer.player.SkipSegment?>(null)
+    val currentSkippableSegment: StateFlow<com.fam4k007.videoplayer.player.SkipSegment?> = _currentSkippableSegment.asStateFlow()
+
+    /** 是否自动显示 skip 按钮 */
+    private val _showSkipChip = MutableStateFlow(false)
+    val showSkipChip: StateFlow<Boolean> = _showSkipChip.asStateFlow()
+
+    /** 已跳过的片段类型（防止重复跳过） */
+    private val skippedSegmentTypes = mutableSetOf<com.fam4k007.videoplayer.player.SkipSegmentType>()
+
+    /** 章节 OP/ED 检测开关 */
+    private val _chapterSkipDetectionEnabled = MutableStateFlow(true)
+    val chapterSkipDetectionEnabled: StateFlow<Boolean> = _chapterSkipDetectionEnabled.asStateFlow()
+
+    fun toggleChapterSkipDetection() {
+        _chapterSkipDetectionEnabled.value = !_chapterSkipDetectionEnabled.value
+        if (!_chapterSkipDetectionEnabled.value) {
+            _skipSegments.value = emptyList()
+            _currentSkippableSegment.value = null
+            _showSkipChip.value = false
+            skippedSegmentTypes.clear()
+        } else {
+            refreshChapterDerivedSegments()
+        }
+    }
+
+    /** 当章节列表更新后重新检测 OP/ED */
+    fun refreshChapterDerivedSegments() {
+        if (!_chapterSkipDetectionEnabled.value) return
+        val chapterList = _chapters.value
+        val dur = _duration.value.toDouble()
+        if (dur <= 0.0 || chapterList.isEmpty()) {
+            _skipSegments.value = emptyList()
+            return
+        }
+        val derived = chapterList.mapIndexedNotNull { index, chapter ->
+            val type = chapterTitleToType(chapter.title) ?: return@mapIndexedNotNull null
+            val start = chapter.timeSeconds
+            val end = chapterList.getOrNull(index + 1)?.timeSeconds ?: dur
+            val normalizedEnd = end.coerceAtMost(dur)
+            if (normalizedEnd - start < 5.0) return@mapIndexedNotNull null
+            val fraction = start / dur
+            when (type) {
+                com.fam4k007.videoplayer.player.SkipSegmentType.INTRO ->
+                    if (fraction > 0.5) return@mapIndexedNotNull null
+                com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO ->
+                    if (fraction < 0.4) return@mapIndexedNotNull null
+                else -> {}
+            }
+            com.fam4k007.videoplayer.player.SkipSegment(type, start, normalizedEnd, "chapter")
+        }
+        _skipSegments.value = derived.distinctBy { Triple(it.type, it.startSeconds.toInt(), it.endSeconds.toInt()) }
+        skippedSegmentTypes.clear()
+    }
+
+    /** 关键词匹配章节标题 → 片段类型 */
+    private fun chapterTitleToType(title: String): com.fam4k007.videoplayer.player.SkipSegmentType? {
+        val lowered = title.trim().lowercase()
+        if (lowered.isBlank()) return null
+        val normalizedLatin = lowered.replace(Regex("""[^a-z0-9]+"""), " ").trim()
+        val compactLatin = normalizedLatin.replace(" ", "")
+        val compactRaw = lowered.replace(Regex("""[\s\p{Punct}・_]+"""), "")
+
+        fun hasKeyword(keywords: List<String>): Boolean = keywords.any { kw ->
+            val k = kw.lowercase()
+            when {
+                k.matches(Regex("""[a-z0-9]+""")) ->
+                    normalizedLatin.contains(Regex("""(?:^|\s)${Regex.escape(k)}(?:\s|$)""")) ||
+                        (k.length >= 4 && compactLatin.contains(k))
+                else -> compactRaw.contains(k.replace(" ", ""))
+            }
+        }
+
+        val introOk = hasKeyword(introKeywords)
+        val outroOk = hasKeyword(outroKeywords)
+
+        return when {
+            hasKeyword(recapKeywords) -> com.fam4k007.videoplayer.player.SkipSegmentType.RECAP
+            hasKeyword(creditsKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.CREDITS
+            hasKeyword(previewKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.PREVIEW
+            outroOk && !introOk -> com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO
+            introOk -> com.fam4k007.videoplayer.player.SkipSegmentType.INTRO
+            else -> null
+        }
+    }
+
+    /** 跳过当前所在片段 */
+    fun skipActiveSegment() {
+        val segment = _currentSkippableSegment.value ?: return
+        skippedSegmentTypes.add(segment.type)
+        seekTo(segment.endSeconds.toInt())
+        _currentSkippableSegment.value = null
+        _showSkipChip.value = false
+        Logger.d(TAG, "跳过${segment.type.label} @ ${segment.startSeconds}-${segment.endSeconds}s")
+    }
+
+    /** 轮询中检查是否需要显示 skip 按钮 */
+    private fun updateSkipChipState(positionSeconds: Double) {
+        val segments = _skipSegments.value
+        if (segments.isEmpty()) { _currentSkippableSegment.value = null; _showSkipChip.value = false; return }
+
+        // 如果用户回拖到已跳过片段之前，清除标记允许重新跳过
+        skippedSegmentTypes.toList().forEach { type ->
+            val seg = segments.firstOrNull { it.type == type } ?: return@forEach
+            if (positionSeconds < seg.startSeconds) {
+                skippedSegmentTypes.remove(type)
+            }
+        }
+
+        val active = segments.firstOrNull { pos ->
+            pos.isValid && pos.type !in skippedSegmentTypes &&
+                positionSeconds in pos.startSeconds..pos.endSeconds &&
+                (pos.endSeconds - positionSeconds) >= 1.0
+        }
+        _currentSkippableSegment.value = active
+        _showSkipChip.value = active != null  // 只要在片段内就持续显示
     }
 
     // 保存的播放位置（用于恢复播放）
@@ -696,6 +853,8 @@ class PlayerViewModel(
         _chapterBarEnabled.value = playerRepository.isChapterBarEnabled()
         // 加载缩略图预览开关
         _seekbarThumbnailEnabled.value = playerRepository.isSeekbarThumbnailEnabled()
+        // 加载章节 OP/ED 检测开关
+        _chapterSkipDetectionEnabled.value = playerRepository.isChapterSkipDetectionEnabled()
         // 加载 GPU Next 状态
         _gpuNext.value = playerRepository.getGpuNext()
     }
@@ -721,6 +880,7 @@ class PlayerViewModel(
                     MPVLib.getPropertyDouble("time-pos")?.let {
                         _precisePosition.value = it
                         updateCurrentChapter(it)
+                        updateSkipChipState(it)
                     }
                 } catch (e: Exception) {
                     // 忽略错误，可能MPV还未初始化

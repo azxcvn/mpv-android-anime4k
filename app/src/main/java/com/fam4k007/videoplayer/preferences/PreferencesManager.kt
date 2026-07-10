@@ -1647,12 +1647,25 @@ class PreferencesManager private constructor(context: Context) {
     fun isSeekbarThumbnailEnabled(): Boolean {
         return sharedPreferences.getBoolean(
             AppConstants.Preferences.SEEKBAR_THUMBNAIL_ENABLED,
-            false  // 默认关闭
+            true  // 默认开启
         )
     }
 
     fun setSeekbarThumbnailEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.SEEKBAR_THUMBNAIL_ENABLED, enabled).apply()
+    }
+
+    // ==================== 章节 OP/ED 检测 ====================
+
+    fun isChapterSkipDetectionEnabled(): Boolean {
+        return sharedPreferences.getBoolean(
+            AppConstants.Preferences.CHAPTER_SKIP_DETECTION_ENABLED,
+            true  // 默认开启
+        )
+    }
+
+    fun setChapterSkipDetectionEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.CHAPTER_SKIP_DETECTION_ENABLED, enabled).apply()
     }
 
     // ==================== MPV 解码器预设 ====================

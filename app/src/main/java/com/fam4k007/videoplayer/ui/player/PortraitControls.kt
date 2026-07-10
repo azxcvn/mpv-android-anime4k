@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -329,6 +330,9 @@ fun PortraitBottomControls(
     val hasChapters by viewModel.hasChapters.collectAsState()
     val chapterBarEnabled by viewModel.chapterBarEnabled.collectAsState()
     val gpuNext by viewModel.gpuNext.collectAsState()
+    val skipSegments by viewModel.skipSegments.collectAsState()
+    val currentSkippableSegment by viewModel.currentSkippableSegment.collectAsState()
+    val showSkipChip by viewModel.showSkipChip.collectAsState()
 
     // 拖动进度状态
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
@@ -562,7 +566,7 @@ fun PortraitBottomControls(
             }
         }
 
-        // ── 缩略图预览浮层（零高度，浮在进度条正上方）──
+        // ── 缩略图预览浮层 + Skip 按钮（零高度，浮在进度条正上方）──
         Box(
             Modifier.fillMaxWidth().height(0.dp)
                 .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
@@ -577,7 +581,33 @@ fun PortraitBottomControls(
                 show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
                 isLoading = thumbnailLoading && isDragging,
                 chapterTitle = thumbnailChapterTitle,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
+
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方）
+            val skipChipSegment = currentSkippableSegment
+            val skipChipVisible = showSkipChip && skipChipSegment != null
+            androidx.compose.animation.AnimatedVisibility(
+                visible = skipChipVisible,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+                modifier = Modifier.align(Alignment.TopEnd),
+            ) {
+                val seg = skipChipSegment ?: return@AnimatedVisibility
+                androidx.compose.material3.Surface(
+                    onClick = { viewModel.skipActiveSegment() },
+                    shape = RoundedCornerShape(999.dp),
+                    color = seg.type.accentColor.copy(alpha = 0.92f),
+                ) {
+                    Text(
+                        text = seg.type.label,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    )
+                }
+            }
         }
 
         // ── Row 2: 进度条 + 时间 ──
@@ -614,6 +644,7 @@ fun PortraitBottomControls(
                         viewModel.seekToChapter(index)
                         viewModel.resetAutoHideTimer()
                     },
+                    skipSegments = skipSegments,
                     onSeek = { newValue ->
                         if (!isDragging) {
                             isDragging = true
