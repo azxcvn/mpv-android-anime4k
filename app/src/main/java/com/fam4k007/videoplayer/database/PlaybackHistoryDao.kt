@@ -78,4 +78,17 @@ interface PlaybackHistoryDao {
      */
     @Query("UPDATE playback_history SET thumbnailPath = :thumbnailPath WHERE uri = :uri")
     fun updateThumbnail(uri: String, thumbnailPath: String?)
+    
+    /**
+     * 获取所有播放状态的精简列表（仅返回 URI、position、duration、hasBeenWatched）
+     * 用于视频列表快速查询进度，避免加载全部字段
+     */
+    @Query("SELECT uri, position, duration, hasBeenWatched FROM playback_history")
+    fun getAllPlaybackStates(): List<PlaybackState>
+    
+    /**
+     * 更新已观看标记
+     */
+    @Query("UPDATE playback_history SET hasBeenWatched = :watched WHERE uri = :uri")
+    fun updateWatchedStatus(uri: String, watched: Boolean)
 }

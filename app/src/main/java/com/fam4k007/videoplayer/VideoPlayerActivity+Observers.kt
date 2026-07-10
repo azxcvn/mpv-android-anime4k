@@ -227,6 +227,7 @@ internal fun VideoPlayerActivity.setupViewModelObservers() {
     lifecycleScope.launch {
         viewModel.switchVideoEvent.collect { uri ->
             Logger.d(TAG, "【ViewModel】Switching to video: $uri")
+            savePlaybackState()
             playVideo(uri)
         }
     }

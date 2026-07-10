@@ -83,7 +83,11 @@ class PlaybackSettingsViewModel(
                     // MPV 解码器预设
                     mpvProfile = playerRepository.getMpvProfile(),
                     gpuNext = playerRepository.getGpuNext(),
-                    useVulkan = playerRepository.getUseVulkan()
+                    useVulkan = playerRepository.getUseVulkan(),
+
+                    // 观看进度
+                    watchedThreshold = playerRepository.getWatchedThreshold(),
+                    showVideoProgressBar = playerRepository.isShowVideoProgressBarEnabled()
                 )
                 _playbackSettings.value = settings
                 Logger.d(TAG, "Loaded playback settings")
@@ -420,6 +424,36 @@ class PlaybackSettingsViewModel(
             }
         }
     }
+
+    /**
+     * 设置已观看阈值
+     */
+    fun setWatchedThreshold(threshold: Int) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setWatchedThreshold(threshold)
+                _playbackSettings.value = _playbackSettings.value.copy(watchedThreshold = threshold)
+                Logger.d(TAG, "Set watched threshold: $threshold")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set watched threshold", e)
+            }
+        }
+    }
+
+    /**
+     * 设置是否显示视频列表进度条
+     */
+    fun setShowVideoProgressBar(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setShowVideoProgressBarEnabled(enabled)
+                _playbackSettings.value = _playbackSettings.value.copy(showVideoProgressBar = enabled)
+                Logger.d(TAG, "Set show video progress bar: $enabled")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set show video progress bar", e)
+            }
+        }
+    }
 }
 
 /**
@@ -463,5 +497,9 @@ data class PlaybackSettings(
     // MPV 解码器预设
     val mpvProfile: String = "fast",
     val gpuNext: Boolean = false,
-    val useVulkan: Boolean = false
+    val useVulkan: Boolean = false,
+
+    // 观看进度
+    val watchedThreshold: Int = 95,
+    val showVideoProgressBar: Boolean = true
 )

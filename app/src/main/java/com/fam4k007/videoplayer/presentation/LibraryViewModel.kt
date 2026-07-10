@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fam4k007.videoplayer.VideoFileParcelable
 import com.fam4k007.videoplayer.VideoFolder
+import com.fam4k007.videoplayer.database.PlaybackState
+import com.fam4k007.videoplayer.database.VideoDatabase
 import com.fam4k007.videoplayer.domain.media.FolderBrowserManager
 import com.fam4k007.videoplayer.domain.media.MediaScanManager
 import com.fam4k007.videoplayer.domain.media.TreeNavigationManager
@@ -66,7 +68,8 @@ class LibraryViewModel(
         val error: String? = null,
         val sortType: Int = 0,
         val sortOrder: Int = 0,
-        val searchQuery: String = ""
+        val searchQuery: String = "",
+        val playbackStates: Map<String, PlaybackState> = emptyMap()
     )
 
     private val _videoListState = MutableStateFlow(VideoListState())

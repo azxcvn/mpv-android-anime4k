@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 @Database(
     entities = [VideoCacheEntity::class, PlaybackHistoryEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class VideoDatabase : RoomDatabase() {
@@ -96,6 +96,16 @@ abstract class VideoDatabase : RoomDatabase() {
             }
         }
         
+        /**
+         * 数据库版本4到5的迁移
+         * 为playback_history表添加hasBeenWatched字段
+         */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE playback_history ADD COLUMN hasBeenWatched INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+        
         fun getDatabase(context: Context): VideoDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -103,7 +113,7 @@ abstract class VideoDatabase : RoomDatabase() {
                     VideoDatabase::class.java,
                     "video_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
                 INSTANCE = instance
                 instance
