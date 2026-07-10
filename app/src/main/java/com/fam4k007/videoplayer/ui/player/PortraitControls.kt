@@ -59,6 +59,7 @@ fun PortraitTopBar(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onVideoTitleClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -255,14 +256,26 @@ fun PortraitTopBar(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        // 锁定按钮
+        // 音频按钮
+        var audioBounds by remember { mutableStateOf(android.graphics.Rect()) }
         IconButton(
-            onClick = { viewModel.toggleLock() },
-            modifier = Modifier.size(32.dp),
+            onClick = {
+                audioBounds.let { b -> onAudioClick(b.left, b.top, b.width(), b.height()) }
+                viewModel.resetAutoHideTimer()
+            },
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .onGloballyPositioned { coords ->
+                        val r = coords.boundsInWindow()
+                        val x = r.left.toInt().coerceAtMost(screenWidthPx - r.width.toInt())
+                        audioBounds =
+                            android.graphics.Rect(x, r.top.toInt(), x + r.width.toInt(), r.top.toInt() + r.height.toInt())
+                    },
         ) {
             Icon(
-                painter = painterResource(R.drawable.lock_closed_48_filled),
-                contentDescription = "锁定",
+                painter = painterResource(R.drawable.ic_music_note_1_20_filled),
+                contentDescription = "音频",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -380,6 +393,9 @@ fun PortraitBottomControls(
                 .padding(horizontal = 12.dp, vertical = 6.dp)
                 .navigationBarsPadding(),
         ) {
+            // 进度条整体下移
+            Spacer(modifier = Modifier.height(12.dp))
+
             // ── Row 1: 精简辅控（置于进度条上方，贴近进度条）──
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -584,14 +600,14 @@ fun PortraitBottomControls(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
 
-            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方）
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方，左移16dp避开右侧控件）
             val skipChipSegment = currentSkippableSegment
             val skipChipVisible = showSkipChip && skipChipSegment != null
             androidx.compose.animation.AnimatedVisibility(
                 visible = skipChipVisible,
                 enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
                 exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
-                modifier = Modifier.align(Alignment.TopEnd),
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 18.dp, top = 88.dp),
             ) {
                 val seg = skipChipSegment ?: return@AnimatedVisibility
                 androidx.compose.material3.Surface(
@@ -682,7 +698,7 @@ fun PortraitBottomControls(
             )
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(0.dp))
 
         // ── Row 3: 主播放控制（均匀分布）──
         Row(

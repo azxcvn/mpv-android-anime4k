@@ -129,6 +129,16 @@ class VideoThumbnailManager {
 
     fun isThumbnailSupported(): Boolean = currentSource != null && videoDurationSec > 0f
 
+    /** 切换视频时重置状态，不清除 scope/preloadJob */
+    fun resetForNewVideo() {
+        ongoingOperations.clear()
+        thumbnailCache.evictAll()
+        currentSource = null
+        videoDurationSec = 0f
+        isInitialized.set(false)
+        Logger.d(TAG, "已重置（新视频）")
+    }
+
     fun release() {
         preloadJob?.cancel()
         scope.cancel()

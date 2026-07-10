@@ -358,6 +358,36 @@ class PlayerDialogManager(
     }
 
     /**
+     * 显示音频选项对话框（音频轨道 / 添加音频）
+     * 点击顶部音频按钮时触发
+     */
+    fun showAudioOptionsDialog() {
+        val activity = activityRef.get() ?: return
+
+        val items = listOf("音频轨道", "添加音频")
+
+        val configuration = activity.resources.configuration
+        val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+        val horizontalAlignment = if (isPortrait) PopupHorizontalAlignment.END else PopupHorizontalAlignment.CENTER
+
+        showPopupDialogAtLastAnchor(
+            items,
+            selectedPosition = -1,
+            title = "音频",
+            showAbove = false,
+            useFixedHeight = false,
+            showScrollHint = false,
+            horizontalAlignment = horizontalAlignment,
+            clampToScreen = false
+        ) { position ->
+            when (position) {
+                0 -> showAudioTrackDialog()  // 音频轨道选择
+                1 -> (activity as? AudioOptionsCallback)?.onAddAudioTrack()  // 添加外部音频
+            }
+        }
+    }
+
+    /**
      * 显示音频轨道选择对话框
      * 使用ViewModel的audioTracks StateFlow数据
      */
@@ -911,7 +941,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("章节")
         }
-        items.addAll(listOf("截图", "音轨", "解码", "听视频", "片头片尾", "音频均衡器", autoRotateText))
+        items.addAll(listOf("解码", "听视频", "片头片尾", "音频均衡器", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration
@@ -930,21 +960,21 @@ class PlayerDialogManager(
             clampToScreen = false
         ) { position ->
             // 根据是否有章节项调整索引映射
+            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=均衡器, 5=自动旋转
+            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=均衡器, 4=自动旋转
             val actualAction = if (hasChapters) {
-                position  // 有章节时：0=章节, 1=截图, 2=音轨, 3=解码, 4=听视频, 5=片头片尾, 6=均衡器, 7=自动旋转
+                position
             } else {
-                position + 1  // 无章节时：0=截图->1, 1=音轨->2, ...
+                position + 1  // 跳过章节索引
             }
             
             when (actualAction) {
                 0 -> showChapterDialog()
-                1 -> (activity as? MoreOptionsCallback)?.onScreenshot()
-                2 -> showAudioTrackDialog()  // 音轨选择
-                3 -> showDecoderDialog()  // 解码方式
-                4 -> (activity as? MoreOptionsCallback)?.onBackgroundPlayback()  // 听视频
-                5 -> (activity as? MoreOptionsCallback)?.onShowSkipSettings()  // 片头片尾设置
-                6 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
-                7 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
+                1 -> showDecoderDialog()  // 解码方式
+                2 -> (activity as? MoreOptionsCallback)?.onBackgroundPlayback()  // 听视频
+                3 -> (activity as? MoreOptionsCallback)?.onShowSkipSettings()  // 片头片尾设置
+                4 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
+                5 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
             }
         }
     }
@@ -1267,6 +1297,10 @@ interface MoreOptionsCallback {
     fun onToggleAutoRotate()
     fun isAutoRotateEnabled(): Boolean
     fun onBackgroundPlayback()
+}
+
+interface AudioOptionsCallback {
+    fun onAddAudioTrack()
 }
 
 interface VideoAspectCallback {

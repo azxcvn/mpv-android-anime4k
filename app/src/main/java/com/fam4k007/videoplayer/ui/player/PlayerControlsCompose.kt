@@ -50,6 +50,8 @@ fun PlayerControls(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onScreenshotClick: () -> Unit = {},
     onVideoTitleClick: () -> Unit = {},
     onRestartFromBeginning: () -> Unit = {},
     onRotateClick: () -> Unit = {},
@@ -113,6 +115,7 @@ fun PlayerControls(
                     onDanmakuClick = onDanmakuClick,
                     onAspectRatioClick = onAspectRatioClick,
                     onMoreClick = onMoreClick,
+                    onAudioClick = onAudioClick,
                     onVideoTitleClick = onVideoTitleClick
                 )
             }
@@ -149,6 +152,7 @@ fun PlayerControls(
                     onDanmakuClick = onDanmakuClick,
                     onAspectRatioClick = onAspectRatioClick,
                     onMoreClick = onMoreClick,
+                    onAudioClick = onAudioClick,
                     onVideoTitleClick = onVideoTitleClick
                 )
             }
@@ -174,6 +178,12 @@ fun PlayerControls(
 
         // 锁定时：左右解锁按钮
         UnlockButtons(viewModel = viewModel)
+
+        // 右侧叠加控件：截图 + 锁定（控制栏显示或锁定时可见）
+        RightSideControls(
+            viewModel = viewModel,
+            onScreenshotClick = onScreenshotClick
+        )
 
         // 手势指示器（亮度/音量）
         GestureIndicators(
@@ -303,8 +313,11 @@ fun BottomControlPanel(
                         )
                     )
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 0.dp)
     ) {
+        // 进度条整体下移
+        Spacer(modifier = Modifier.height(12.dp))
+
         // 章节名称行（仅在有章节信息且启用章节控制时显示）
         if (hasChapters && chapterBarEnabled) {
             var chapterBounds by remember { mutableStateOf(android.graphics.Rect()) }
@@ -366,14 +379,14 @@ fun BottomControlPanel(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
 
-            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方）
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方，左移避开右侧控件）
             val skipChipSegment = currentSkippableSegment
             val skipChipVisible = showSkipChip && skipChipSegment != null
             androidx.compose.animation.AnimatedVisibility(
                 visible = skipChipVisible,
                 enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
                 exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
-                modifier = Modifier.align(Alignment.TopEnd).padding(end = 0.dp),
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, bottom = 28.dp),
             ) {
                 val seg = skipChipSegment ?: return@AnimatedVisibility
                 androidx.compose.material3.Surface(
@@ -467,7 +480,7 @@ fun BottomControlPanel(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(0.dp))
 
         // 控制按钮行
         Row(
@@ -805,6 +818,7 @@ fun TopControlPanel(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onVideoTitleClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -1004,14 +1018,27 @@ fun TopControlPanel(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 锁定按钮
+        // 音频按钮
+        var audioBounds by remember { mutableStateOf(android.graphics.Rect()) }
         IconButton(
-            onClick = { viewModel.toggleLock() },
-            modifier = Modifier.size(38.dp)
+            onClick = {
+                audioBounds.let { b -> onAudioClick(b.left, b.top, b.width(), b.height()) }
+                viewModel.resetAutoHideTimer()
+            },
+            modifier = Modifier
+                .size(38.dp)
+                .onGloballyPositioned { coords ->
+                    val r = coords.boundsInWindow()
+                    val x = r.left.toInt().coerceAtMost(screenWidthPx - r.width.toInt())
+                    val y = r.top.toInt()
+                    audioBounds = android.graphics.Rect(
+                        x, y, x + r.width.toInt(), y + r.height.toInt()
+                    )
+                }
         ) {
             Icon(
-                painter = painterResource(R.drawable.lock_closed_48_filled),
-                contentDescription = "锁定",
+                painter = painterResource(R.drawable.ic_music_note_1_20_filled),
+                contentDescription = "音频",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1069,7 +1096,7 @@ fun UnlockButtons(
     if (!areControlsLocked) return
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 左侧解锁按钮
+        // 仅保留左侧解锁按钮（右侧锁已由 RightSideControls 接管）
         androidx.compose.animation.AnimatedVisibility(
             visible = unlockButtonsVisible,
             enter = androidx.compose.animation.fadeIn(),
@@ -1080,39 +1107,100 @@ fun UnlockButtons(
         ) {
             IconButton(
                 onClick = { viewModel.toggleLock() },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.35f), shape = CircleShape)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.lock_open_48_filled),
                     contentDescription = "解锁",
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
+    }
+}
 
+// =====================================================================
+// 右侧叠加控件（截图 + 锁定）
+// =====================================================================
+
+/**
+ * 播放界面右侧叠加控件：截图按钮 + 锁定按钮
+ *
+ * - 控制栏未锁定时：截图和锁定按钮始终可见（跟随控制栏显示/隐藏）
+ * - 控制栏锁定时：仅显示锁图标（跟随 UnlockButtons 的可见性）
+ * - 截图按钮在上方，锁定按钮在下方
+ */
+@Composable
+fun RightSideControls(
+    viewModel: PlayerViewModel,
+    onScreenshotClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val controlsShown by viewModel.controlsShown.collectAsState()
+    val areControlsLocked by viewModel.areControlsLocked.collectAsState()
+    val unlockButtonsVisible by viewModel.unlockButtonsVisible.collectAsState()
+
+    // 控制栏未锁定且显示时，或锁定时解锁按钮可见时，显示右侧控件
+    val showRightControls = (!areControlsLocked && controlsShown) || (areControlsLocked && unlockButtonsVisible)
+
+    Box(modifier = modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedVisibility(
-            visible = unlockButtonsVisible,
+            visible = showRightControls,
             enter = androidx.compose.animation.fadeIn(),
             exit = androidx.compose.animation.fadeOut(),
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 56.dp)
+                .padding(end = 32.dp)
         ) {
-            IconButton(
-                onClick = { viewModel.toggleLock() },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.35f), shape = CircleShape)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.lock_open_48_filled),
-                    contentDescription = "解锁",
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
+            // 锁定时只显示解锁按钮，与左侧解锁按钮同一水平线（居中）
+            if (areControlsLocked) {
+                IconButton(
+                    onClick = { viewModel.toggleLock() },
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.lock_open_48_filled),
+                        contentDescription = "解锁",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            } else {
+                // 未锁定时显示截图 + 锁定
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 截图按钮
+                    IconButton(
+                        onClick = {
+                            onScreenshotClick()
+                            viewModel.resetAutoHideTimer()
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_screen_cut_20_regular),
+                            contentDescription = "截图",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    // 锁定按钮
+                    IconButton(
+                        onClick = { viewModel.toggleLock() },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.lock_closed_48_filled),
+                            contentDescription = "锁定",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -1340,10 +1428,10 @@ fun PauseIndicator(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_player_pause1),
+                painter = painterResource(R.drawable.ic_pause_circle_12_regular),
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.size(90.dp)
+                modifier = Modifier.size(80.dp)
             )
         }
     }
