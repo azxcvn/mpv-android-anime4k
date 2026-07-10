@@ -263,6 +263,8 @@ fun BottomControlPanel(
     // 缩略图预览状态
     val thumbnailBitmap by viewModel.thumbnailBitmap.collectAsState()
     val thumbnailTimeSec by viewModel.thumbnailTimeSec.collectAsState()
+    val thumbnailFraction by viewModel.thumbnailFraction.collectAsState()
+    val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
 
     // 计算当前显示的进度（拖动时显示临时位置，否则显示实际位置）
     val displayPosition = if (isDragging) {
@@ -343,7 +345,16 @@ fun BottomControlPanel(
             }
         }
 
-        // 进度条行（含缩略图预览）
+        // 缩略图预览浮层（在进度条行上方，不影响进度条布局）
+        SeekbarThumbnailPreview(
+            bitmap = thumbnailBitmap,
+            timeSec = thumbnailTimeSec,
+            fraction = thumbnailFraction,
+            show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+            isLoading = thumbnailLoading && isDragging,
+        )
+
+        // 进度条行
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -356,7 +367,7 @@ fun BottomControlPanel(
                 modifier = Modifier.padding(end = 8.dp)
             )
 
-            // 进度滑块 + 缩略图浮层
+            // 进度滑块
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -399,13 +410,6 @@ fun BottomControlPanel(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
-            // 缩略图预览弹窗
-            SeekbarThumbnailPreview(
-                bitmap = thumbnailBitmap,
-                timeSec = thumbnailTimeSec,
-                show = isDragging && thumbnailBitmap != null
-            )
 
             // 总时长/剩余时间（点击切换）
             val durationText = if (showRemainingTime) {

@@ -243,6 +243,7 @@ internal fun VideoPlayerActivity.initializeManagers() {
                 )
 
                 // 缩略图管理器初始化（duration 可用时触发，仅初始化一次）
+                // 注意：VideoThumbnailManager 不再需要 Context 参数
                 if (duration > 0) {
                     videoUri?.let { uri ->
                         val isWebDav = intent.getBooleanExtra("is_webdav", false)
@@ -256,6 +257,9 @@ internal fun VideoPlayerActivity.initializeManagers() {
 
                 // 重置切换标志，允许后续的 END_FILE 事件正常处理
                 isSwitchingVideo = false
+
+                // 预热当前位置缩略图，让拖动预览更快响应
+                viewModel.warmSeekThumbnailer()
 
                 // 不在这里隐藏加载动画，让 onBufferingStateChanged 来控制
                 // 因为文件加载后可能还在缓冲
@@ -586,8 +590,8 @@ internal fun VideoPlayerActivity.initializeManagers() {
         composeOverlayManager
     )
 
-    // 初始化缩略图管理器
-    thumbnailManager = com.fam4k007.videoplayer.manager.VideoThumbnailManager(this)
+    // 初始化缩略图管理器（使用 MPV 原生抓帧，无需 Context）
+    thumbnailManager = com.fam4k007.videoplayer.manager.VideoThumbnailManager()
     viewModel.setThumbnailManager(thumbnailManager!!)
 
     bindViewsToManagers()

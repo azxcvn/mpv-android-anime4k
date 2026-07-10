@@ -150,7 +150,7 @@ object UpdateManager {
     fun getAppVersionName(context: Context): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName
+            packageInfo.versionName ?: "未知"
         } catch (e: Exception) {
             "未知"
         }
