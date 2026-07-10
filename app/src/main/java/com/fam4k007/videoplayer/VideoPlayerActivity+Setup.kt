@@ -149,6 +149,13 @@ internal fun VideoPlayerActivity.setupComposeTestLayer() {
                             dialogManager.setLastAnchor(anchorX, anchorY, anchorW, anchorH)
                             dialogManager.showMoreOptionsDialog()
                         },
+                        onAudioClick = { anchorX, anchorY, anchorW, anchorH ->
+                            dialogManager.setLastAnchor(anchorX, anchorY, anchorW, anchorH)
+                            dialogManager.showAudioOptionsDialog()
+                        },
+                        onScreenshotClick = {
+                            screenshotManager.takeScreenshot()
+                        },
                         onVideoTitleClick = {
                             showVideoListDrawer()
                         },

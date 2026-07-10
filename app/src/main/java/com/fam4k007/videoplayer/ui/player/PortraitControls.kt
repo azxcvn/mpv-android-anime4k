@@ -59,6 +59,7 @@ fun PortraitTopBar(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onVideoTitleClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -123,7 +124,7 @@ fun PortraitTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.arrow_left_48_regular),
-                contentDescription = "Back",
+                contentDescription = "返回",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp),
             )
@@ -195,7 +196,7 @@ fun PortraitTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.subtitles_24_filled),
-                contentDescription = "Subtitles",
+                contentDescription = "字幕",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -221,7 +222,7 @@ fun PortraitTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.comment_note_24_filled),
-                contentDescription = "Danmaku",
+                contentDescription = "弹幕",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -247,7 +248,7 @@ fun PortraitTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ratio_one_to_one_24_filled),
-                contentDescription = "Aspect Ratio",
+                contentDescription = "画面比例",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -255,14 +256,26 @@ fun PortraitTopBar(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        // 锁定按钮
+        // 音频按钮
+        var audioBounds by remember { mutableStateOf(android.graphics.Rect()) }
         IconButton(
-            onClick = { viewModel.toggleLock() },
-            modifier = Modifier.size(32.dp),
+            onClick = {
+                audioBounds.let { b -> onAudioClick(b.left, b.top, b.width(), b.height()) }
+                viewModel.resetAutoHideTimer()
+            },
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .onGloballyPositioned { coords ->
+                        val r = coords.boundsInWindow()
+                        val x = r.left.toInt().coerceAtMost(screenWidthPx - r.width.toInt())
+                        audioBounds =
+                            android.graphics.Rect(x, r.top.toInt(), x + r.width.toInt(), r.top.toInt() + r.height.toInt())
+                    },
         ) {
             Icon(
-                painter = painterResource(R.drawable.lock_closed_48_filled),
-                contentDescription = "Lock",
+                painter = painterResource(R.drawable.ic_music_note_1_20_filled),
+                contentDescription = "音频",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -288,7 +301,7 @@ fun PortraitTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vertical_48_regular),
-                contentDescription = "More",
+                contentDescription = "更多",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -349,7 +362,7 @@ fun PortraitBottomControls(
     // Anime4K 标签
     val anime4KLabel =
         when (anime4KMode) {
-            com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF -> "Off"
+            com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF -> "关"
             com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.A -> "A"
             com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.B -> "B"
             com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.C -> "C"
@@ -380,6 +393,9 @@ fun PortraitBottomControls(
                 .padding(horizontal = 12.dp, vertical = 6.dp)
                 .navigationBarsPadding(),
         ) {
+            // 进度条整体下移
+            Spacer(modifier = Modifier.height(12.dp))
+
             // ── Row 1: 精简辅控（置于进度条上方，贴近进度条）──
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -427,7 +443,7 @@ fun PortraitBottomControls(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Upscale: $anime4KLabel",
+                    text = "超分辨率：$anime4KLabel",
                     color =
                         if (anime4KActive) Color.Yellow
                         else if (gpuNext) Color.Gray.copy(alpha = 0.5f)
@@ -465,7 +481,7 @@ fun PortraitBottomControls(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         painter = painterResource(R.drawable.top_speed_24_regular),
-                        contentDescription = "Speed",
+                        contentDescription = "倍速",
                         tint = if (speed != 1.0f) Color.Yellow else Color.White,
                         modifier = Modifier.size(24.dp),
                     )
@@ -496,7 +512,7 @@ fun PortraitBottomControls(
                             if (danmakuVisible) R.drawable.ic_danmaku_visible
                             else R.drawable.ic_danmaku_hidden,
                         ),
-                    contentDescription = if (danmakuVisible) "Hide Danmaku" else "Show Danmaku",
+                    contentDescription = if (danmakuVisible) "隐藏弹幕" else "显示弹幕",
                     tint = if (danmakuVisible) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp),
                 )
@@ -514,7 +530,7 @@ fun PortraitBottomControls(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.crop_arrow_rotate_24_filled),
-                    contentDescription = "Rotate",
+                    contentDescription = "旋转",
                     tint = Color.White,
                     modifier = Modifier.size(22.dp),
                 )
@@ -584,14 +600,14 @@ fun PortraitBottomControls(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
 
-            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方）
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方，左移16dp避开右侧控件）
             val skipChipSegment = currentSkippableSegment
             val skipChipVisible = showSkipChip && skipChipSegment != null
             androidx.compose.animation.AnimatedVisibility(
                 visible = skipChipVisible,
                 enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
                 exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
-                modifier = Modifier.align(Alignment.TopEnd),
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 18.dp, top = 88.dp),
             ) {
                 val seg = skipChipSegment ?: return@AnimatedVisibility
                 androidx.compose.material3.Surface(
@@ -682,7 +698,7 @@ fun PortraitBottomControls(
             )
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(0.dp))
 
         // ── Row 3: 主播放控制（均匀分布）──
         Row(
@@ -701,7 +717,7 @@ fun PortraitBottomControls(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_player_previous1),
-                    contentDescription = "Previous",
+                    contentDescription = "上一集",
                     tint = if (hasPrevious) Color.White else Color.White.copy(alpha = 0.3f),
                     modifier = Modifier.size(26.dp),
                 )
@@ -717,7 +733,7 @@ fun PortraitBottomControls(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.rewind_28_filled),
-                    contentDescription = "Rewind ${seekTimeSeconds}s",
+                    contentDescription = "快退${seekTimeSeconds}秒",
                     tint = Color.White,
                     modifier = Modifier.size(26.dp),
                 )
@@ -737,7 +753,7 @@ fun PortraitBottomControls(
                             if (paused == true) R.drawable.ic_player_play1
                             else R.drawable.ic_player_pause1,
                         ),
-                    contentDescription = if (paused == true) "Play" else "Pause",
+                    contentDescription = if (paused == true) "播放" else "暂停",
                     tint = Color.White,
                     modifier = Modifier.size(48.dp),
                 )
@@ -753,7 +769,7 @@ fun PortraitBottomControls(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.fast_forward_28_filled),
-                    contentDescription = "Forward ${seekTimeSeconds}s",
+                    contentDescription = "快进${seekTimeSeconds}秒",
                     tint = Color.White,
                     modifier = Modifier.size(26.dp),
                 )
@@ -770,7 +786,7 @@ fun PortraitBottomControls(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_player_next1),
-                    contentDescription = "Next",
+                    contentDescription = "下一集",
                     tint = if (hasNext) Color.White else Color.White.copy(alpha = 0.3f),
                     modifier = Modifier.size(26.dp),
                 )

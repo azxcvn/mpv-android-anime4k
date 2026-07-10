@@ -51,6 +51,7 @@ import com.fam4k007.videoplayer.domain.player.FilePickerManager
 import com.fam4k007.videoplayer.domain.player.SubtitleDialogCallback
 import com.fam4k007.videoplayer.domain.player.DanmakuDialogCallback
 import com.fam4k007.videoplayer.domain.player.MoreOptionsCallback
+import com.fam4k007.videoplayer.domain.player.AudioOptionsCallback
 import com.fam4k007.videoplayer.domain.player.VideoAspectCallback
 import com.fam4k007.videoplayer.service.BackgroundPlaybackService
 import com.fam4k007.videoplayer.domain.player.VideoUriProvider
@@ -86,6 +87,7 @@ class VideoPlayerActivity : AppCompatActivity(),
     SubtitleDialogCallback,
     DanmakuDialogCallback,
     MoreOptionsCallback,
+    AudioOptionsCallback,
     VideoAspectCallback,
     VideoUriProvider {
 
@@ -211,6 +213,8 @@ class VideoPlayerActivity : AppCompatActivity(),
     
     internal lateinit var danmakuPickerLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>
     
+    internal lateinit var audioPickerLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>
+    
     internal var wasPlayingBeforeSubtitlePicker = false
     
     internal var wasPlayingBeforeDanmakuPicker = false
@@ -248,6 +252,15 @@ class VideoPlayerActivity : AppCompatActivity(),
         
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         com.fam4k007.videoplayer.utils.Logger.d(TAG, "Screen keep-on enabled")
+        
+        // 注册外部音频文件选择器
+        audioPickerLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri != null) {
+                handleAddAudioTrack(uri)
+            }
+        }
         
         loadUserSettings()
         remotePlaybackRequest = intent.getParcelableExtra(RemotePlaybackLauncher.EXTRA_REMOTE_REQUEST)
@@ -823,6 +836,86 @@ class VideoPlayerActivity : AppCompatActivity(),
 
     override fun onScreenshot() {
         screenshotManager.takeScreenshot()
+    }
+    
+    // ==================== AudioOptionsCallback ====================
+    
+    override fun onAddAudioTrack() {
+        Logger.d(TAG, "onAddAudioTrack: launching audio picker")
+        try {
+            audioPickerLauncher.launch(arrayOf("audio/*", "*/*"))
+            Logger.d(TAG, "onAddAudioTrack: picker launched")
+        } catch (e: Exception) {
+            Logger.e(TAG, "onAddAudioTrack: failed to launch picker", e)
+            DialogUtils.showToastShort(this, "无法打开文件选择器")
+        }
+    }
+    
+    /**
+     * 处理外部音频文件添加
+     * 参考 mpvRx-CN-main: MPVLib.command("audio-add", path, "cached")
+     */
+    private fun handleAddAudioTrack(uri: Uri) {
+        Logger.d(TAG, "handleAddAudioTrack: uri=$uri, scheme=${uri.scheme}")
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // content:// URI：resolveUri 可能返回已关闭FD的 /proc 路径，直接拷贝到临时文件
+                val finalPath: String? = if (uri.scheme == "content") {
+                    val tempFile = java.io.File(cacheDir, "audio_import_${System.currentTimeMillis()}.tmp")
+                    try {
+                        this@VideoPlayerActivity.contentResolver.openInputStream(uri)?.use { input ->
+                            java.io.FileOutputStream(tempFile).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        Logger.d(TAG, "handleAddAudioTrack: copied content URI to ${tempFile.absolutePath}, size=${tempFile.length()}")
+                        tempFile.absolutePath
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "handleAddAudioTrack: copy failed", e)
+                        null
+                    }
+                } else {
+                    uri.resolveUri(this@VideoPlayerActivity)
+                }
+                
+                if (finalPath == null) {
+                    withContext(Dispatchers.Main) {
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "无法处理音频文件")
+                    }
+                    return@launch
+                }
+                
+                val file = java.io.File(finalPath)
+                Logger.d(TAG, "handleAddAudioTrack: finalPath=$finalPath, exists=${file.exists()}, size=${file.length()}")
+                
+                withContext(Dispatchers.Main) {
+                    try {
+                        Logger.d(TAG, "handleAddAudioTrack: calling MPVLib.command(audio-add, $finalPath, cached)")
+                        MPVLib.command("audio-add", finalPath, "cached")
+                        Logger.d(TAG, "handleAddAudioTrack: MPVLib.command returned OK")
+                        
+                        val trackCount = MPVLib.getPropertyInt("track-list/count") ?: 0
+                        Logger.d(TAG, "handleAddAudioTrack: track-list/count=$trackCount")
+                        for (i in 0 until trackCount) {
+                            Logger.d(TAG, "handleAddAudioTrack: track[$i] type=${MPVLib.getPropertyString("track-list/$i/type")}, id=${MPVLib.getPropertyInt("track-list/$i/id")}, title=${MPVLib.getPropertyString("track-list/$i/title")}")
+                        }
+                        
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            viewModel.refreshTrackList()
+                        }, 500)
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "音频轨道已添加")
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "handleAddAudioTrack: MPVLib.command failed", e)
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "添加音频轨道失败: ${e.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Logger.e(TAG, "handleAddAudioTrack: error", e)
+                withContext(Dispatchers.Main) {
+                    DialogUtils.showToastShort(this@VideoPlayerActivity, "添加音频失败: ${e.message}")
+                }
+            }
+        }
     }
     
     override fun onShowSkipSettings() {

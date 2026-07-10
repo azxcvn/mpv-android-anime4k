@@ -440,6 +440,7 @@ class PlayerViewModel(
 
     fun resetThumbnailState() {
         thumbnailInitialized = false
+        _thumbnailManager?.resetForNewVideo()
         thumbnailRequestId++
         lastQueuedThumbnailKey = null
         warmedThumbnailSource = null
@@ -1107,6 +1108,60 @@ class PlayerViewModel(
             Logger.d(TAG, "Parsed track-list: ${subtitles.size} subtitle tracks, ${audios.size} audio tracks")
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to parse track-list", e)
+        }
+    }
+    
+    /**
+     * 手动刷新音频/字幕轨道列表
+     * 用于外部添加音轨后立即更新UI
+     */
+    fun refreshTrackList() {
+        try {
+            val trackCount = MPVLib.getPropertyInt("track-list/count") ?: 0
+            val currentAudioId = MPVLib.getPropertyInt("aid") ?: -1
+            val currentSubId = MPVLib.getPropertyInt("sid") ?: -1
+            
+            val subtitles = mutableListOf<SubtitleTrack>()
+            val audios = mutableListOf<AudioTrack>()
+            
+            for (i in 0 until trackCount) {
+                val type = MPVLib.getPropertyString("track-list/$i/type") ?: continue
+                val id = MPVLib.getPropertyInt("track-list/$i/id") ?: continue
+                val lang = MPVLib.getPropertyString("track-list/$i/lang")
+                val title = MPVLib.getPropertyString("track-list/$i/title")
+                val codec = MPVLib.getPropertyString("track-list/$i/codec")
+                val external = MPVLib.getPropertyString("track-list/$i/external")?.toBooleanStrictOrNull() ?: false
+                
+                when (type) {
+                    "sub" -> {
+                        subtitles.add(SubtitleTrack(
+                            id = id,
+                            lang = lang,
+                            title = title,
+                            type = type,
+                            selected = id == currentSubId,
+                            external = external
+                        ))
+                    }
+                    "audio" -> {
+                        audios.add(AudioTrack(
+                            id = id,
+                            lang = lang,
+                            title = title,
+                            type = type,
+                            selected = id == currentAudioId,
+                            codec = codec
+                        ))
+                    }
+                }
+            }
+            
+            _subtitleTracks.value = subtitles
+            _audioTracks.value = audios
+            
+            Logger.d(TAG, "Refreshed track-list: ${subtitles.size} subtitle tracks, ${audios.size} audio tracks")
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to refresh track-list", e)
         }
     }
     
