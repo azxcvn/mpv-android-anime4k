@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -338,7 +340,7 @@ fun PortraitBottomControls(
     val thumbnailFraction by viewModel.thumbnailFraction.collectAsState()
     val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
     val displayPosition =
-        if (isDragging) sliderPosition ?: precisePosition.toFloat() else precisePosition.toFloat()
+        (if (isDragging) sliderPosition ?: precisePosition.toFloat() else precisePosition.toFloat()).coerceAtLeast(0f)
 
     // Anime4K 标签
     val anime4KLabel =
@@ -560,14 +562,23 @@ fun PortraitBottomControls(
             }
         }
 
-        // ── 缩略图预览浮层（在进度条行上方，不影响进度条布局）──
-        SeekbarThumbnailPreview(
-            bitmap = thumbnailBitmap,
-            timeSec = thumbnailTimeSec,
-            fraction = thumbnailFraction,
-            show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
-            isLoading = thumbnailLoading && isDragging,
-        )
+        // ── 缩略图预览浮层（零高度，浮在进度条正上方）──
+        Box(
+            Modifier.fillMaxWidth().height(0.dp)
+                .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
+        ) {
+            val thumbnailChapterTitle = remember(chapters, thumbnailTimeSec) {
+                chapters.lastOrNull { it.timeSeconds <= thumbnailTimeSec }?.title
+            }
+            SeekbarThumbnailPreview(
+                bitmap = thumbnailBitmap,
+                timeSec = thumbnailTimeSec,
+                fraction = thumbnailFraction,
+                show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+                isLoading = thumbnailLoading && isDragging,
+                chapterTitle = thumbnailChapterTitle,
+            )
+        }
 
         // ── Row 2: 进度条 + 时间 ──
         Row(
@@ -736,6 +747,7 @@ fun PortraitBottomControls(
         }
     }
 }
+
 }
 
 // ================== 工具函数 ==================
