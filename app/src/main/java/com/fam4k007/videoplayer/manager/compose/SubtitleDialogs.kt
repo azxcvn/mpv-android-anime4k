@@ -132,7 +132,7 @@ private suspend fun loadCustomFontEntries(context: android.content.Context): Lis
 fun SubtitleSettingsDrawer(
     currentDelay: Double,
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     currentBorderSize: Int,
     currentTextColor: String,
     currentBorderColor: String,
@@ -140,7 +140,7 @@ fun SubtitleSettingsDrawer(
     currentBorderStyle: String,
     onDelayChange: (Double) -> Unit,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit,
+    onPositionChange: (Float) -> Unit,
     onBorderSizeChange: (Int) -> Unit,
     onTextColorChange: (String) -> Unit,
     onBorderColorChange: (String) -> Unit,
@@ -258,7 +258,7 @@ fun SubtitleSettingsDrawer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "More Settings",
+                            text = "更多设置",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -300,7 +300,7 @@ fun SubtitleSettingsDrawer(
                         // 字幕延迟设置
                         item {
                             ExpandableSection(
-                                title = "Subtitle Delay",
+                                title = "字幕延迟设置",
                                 isExpanded = expandedSection == "delay",
                                 onToggle = { expandedSection = if (expandedSection == "delay") null else "delay" }
                             ) {
@@ -314,7 +314,7 @@ fun SubtitleSettingsDrawer(
                         // 字幕样式设置
                         item {
                             ExpandableSection(
-                                title = "Subtitle Style",
+                                title = "字幕样式设置",
                                 isExpanded = expandedSection == "style",
                                 onToggle = { expandedSection = if (expandedSection == "style") null else "style" }
                             ) {
@@ -336,7 +336,7 @@ fun SubtitleSettingsDrawer(
                         // 字幕杂项设置
                         item {
                             ExpandableSection(
-                                title = "Subtitle Misc",
+                                title = "字幕杂项设置",
                                 isExpanded = expandedSection == "misc",
                                 onToggle = { expandedSection = if (expandedSection == "misc") null else "misc" }
                             ) {
@@ -352,7 +352,7 @@ fun SubtitleSettingsDrawer(
                         // 字幕字体设置
                         item {
                             ExpandableSection(
-                                title = "Subtitle Font",
+                                title = "字幕字体设置",
                                 isExpanded = expandedSection == "font",
                                 onToggle = { expandedSection = if (expandedSection == "font") null else "font" }
                             ) {
@@ -486,7 +486,7 @@ fun SubtitleDelayContent(
         )
         
         Text(
-            text = "Range: -60.0 ~ +60.0 s",
+            text = "范围: -60.0 ~ +60.0 秒",
             fontSize = 11.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 4.dp)
@@ -552,7 +552,7 @@ fun SubtitleDelayContent(
                 contentColor = Color(0xFF64B5F6)
             )
         ) {
-            Text("Reset to 0")
+            Text("重置为 0")
         }
     }
 }
@@ -656,14 +656,14 @@ fun SubtitleStyleContent(
                 text = "内嵌ASS字幕需开启样式覆盖才能应用自定义样式",
                 fontSize = 11.sp,
                 color = Color(0xFFCCCCCC),
-                maxLines = 1,
-                softWrap = false
+                maxLines = 2,
+                softWrap = true
             )
         }
         
         // 字幕颜色
         ColorPickerSection(
-            title = "Text Color",
+            title = "字幕颜色",
             currentColor = currentTextColor,
             isExpanded = expandedColorSection == "text",
             onToggle = { expandedColorSection = if (expandedColorSection == "text") null else "text" },
@@ -680,7 +680,7 @@ fun SubtitleStyleContent(
         
         // 字幕背景颜色
         ColorPickerSection(
-            title = "Background Color",
+            title = "背景颜色",
             currentColor = currentBackColor,
             isExpanded = expandedColorSection == "background",
             onToggle = { expandedColorSection = if (expandedColorSection == "background") null else "background" },
@@ -697,7 +697,7 @@ fun SubtitleStyleContent(
         
         // 描边颜色
         ColorPickerSection(
-            title = "Border Color",
+            title = "描边颜色",
             currentColor = currentBorderColor,
             isExpanded = expandedColorSection == "border",
             onToggle = { expandedColorSection = if (expandedColorSection == "border") null else "border" },
@@ -744,7 +744,7 @@ fun SubtitleStyleContent(
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Reset All to Default")
+            Text("重置所有样式为默认值")
         }
     }
 }
@@ -1149,7 +1149,7 @@ fun BorderStyleSection(
             .padding(12.dp)
     ) {
         Text(
-            text = "Border Style",
+            text = "描边模式",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
@@ -1159,8 +1159,8 @@ fun BorderStyleSection(
 
         // 三种模式的单选按钮（添加切换动画）
         BorderStyleOption(
-            title = "Mode A",
-            description = "Modified via Border Color",
+            title = "模式A",
+            description = "通过描边颜色项修改",
             isSelected = selectedStyle == "outline-and-shadow",
             onClick = {
                 selectedStyle = "outline-and-shadow"
@@ -1171,8 +1171,8 @@ fun BorderStyleSection(
         Spacer(modifier = Modifier.height(8.dp))
 
         BorderStyleOption(
-            title = "Mode B",
-            description = "Modified via Border Color",
+            title = "模式B",
+            description = "通过描边颜色项修改",
             isSelected = selectedStyle == "opaque-box",
             onClick = {
                 selectedStyle = "opaque-box"
@@ -1183,8 +1183,8 @@ fun BorderStyleSection(
         Spacer(modifier = Modifier.height(8.dp))
 
         BorderStyleOption(
-            title = "Mode C",
-            description = "Modified via Background Color",
+            title = "模式C",
+            description = "通过背景颜色项修改",
             isSelected = selectedStyle == "background-box",
             onClick = {
                 selectedStyle = "background-box"
@@ -1283,12 +1283,12 @@ fun BorderStyleOption(
 @Composable
 fun SubtitleMiscContent(
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit
+    onPositionChange: (Float) -> Unit
 ) {
     var scale by remember { mutableStateOf(currentScale) }
-    var position by remember { mutableStateOf(currentPosition.toFloat()) }
+    var position by remember { mutableStateOf(currentPosition) }
     
     // 使用LaunchedEffect监听外部状态变化
     LaunchedEffect(currentScale) {
@@ -1296,7 +1296,7 @@ fun SubtitleMiscContent(
     }
     
     LaunchedEffect(currentPosition) {
-        position = currentPosition.toFloat()
+        position = currentPosition
     }
     
     // 添加动画 - 优化性能
@@ -1311,14 +1311,14 @@ fun SubtitleMiscContent(
     Column {
         // 字幕大小
         Text(
-            text = "Subtitle Size: ${(animatedScale * 100).toInt()}%",
+            text = "字幕大小：${(animatedScale * 100).toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
         )
         
         Text(
-            text = "Range: 50% ~ 300%",
+            text = "范围: 50% ~ 300%",
             fontSize = 11.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 2.dp)
@@ -1333,7 +1333,6 @@ fun SubtitleMiscContent(
                 onScaleChange(it)
             },
             valueRange = 0.5f..3.0f,
-            steps = 24,
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFF64B5F6),
                 activeTrackColor = Color(0xFF64B5F6),
@@ -1345,14 +1344,14 @@ fun SubtitleMiscContent(
 
         // 字幕垂直位置
         Text(
-            text = "Vertical Position: ${position.toInt()}",
+            text = "字幕垂直位置：${position.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
         )
         
         Text(
-            text = "Range: 0 (Top) ~ 100 (Bottom)",
+            text = "范围: 0% (顶部) ~ 100% (底部)",
             fontSize = 11.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 2.dp)
@@ -1364,10 +1363,9 @@ fun SubtitleMiscContent(
             value = position,
             onValueChange = {
                 position = it
-                onPositionChange(it.toInt())
+                onPositionChange(it)
             },
             valueRange = 0f..100f,
-            steps = 99,
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFF64B5F6),
                 activeTrackColor = Color(0xFF64B5F6),
@@ -1382,13 +1380,13 @@ fun SubtitleMiscContent(
                 scale = 1.0f
                 position = 100f
                 onScaleChange(1.0f)
-                onPositionChange(100)
+                onPositionChange(100f)
             },
             colors = ButtonDefaults.textButtonColors(
                 contentColor = Color(0xFF64B5F6)
             )
         ) {
-            Text("Reset to Default (100%, Position 100)")
+            Text("重置默认值 (100%, 位置100)")
         }
     }
 }
@@ -1721,9 +1719,9 @@ fun SubtitleDelayDialog(
 @Composable
 fun SubtitleMiscDialog(
     currentScale: Float,
-    currentPosition: Int,
+    currentPosition: Float,
     onScaleChange: (Float) -> Unit,
-    onPositionChange: (Int) -> Unit,
+    onPositionChange: (Float) -> Unit,
     onDismiss: () -> Unit
 ) {
     // 已废弃

@@ -462,14 +462,14 @@ class PlayerRepository(
     /**
      * 获取字幕位置
      */
-    fun getSubtitlePosition(): Int {
+    fun getSubtitlePosition(): Float {
         return preferencesManager.getSubtitlePosition()
     }
     
     /**
      * 设置字幕位置
      */
-    fun setSubtitlePosition(position: Int) {
+    fun setSubtitlePosition(position: Float) {
         preferencesManager.setSubtitlePosition(position)
     }
     

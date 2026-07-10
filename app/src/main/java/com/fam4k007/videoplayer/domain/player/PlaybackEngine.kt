@@ -598,7 +598,7 @@ class PlaybackEngine(
     /**
      * 设置字幕位置（垂直方向）
      */
-    fun setSubtitlePosition(position: Int) {
+    fun setSubtitlePosition(position: Float) {
         setSubtitleVerticalPosition(position)
     }
 
@@ -1001,9 +1001,9 @@ class PlaybackEngine(
      * 设置字幕垂直位置
      * @param position 0-100，0=顶部，100=底部（默认100）
      */
-    fun setSubtitleVerticalPosition(position: Int) {
+    fun setSubtitleVerticalPosition(position: Float) {
         try {
-            MPVLib.setPropertyInt("sub-pos", position)
+            MPVLib.setPropertyDouble("sub-pos", position.toDouble())
             Log.d(TAG, "Subtitle vertical position set to: $position")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to set subtitle vertical position", e)

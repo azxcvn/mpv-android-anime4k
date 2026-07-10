@@ -152,7 +152,7 @@ internal fun VideoPlayerActivity.restoreSubtitlePreferences(videoUri: android.ne
             }
 
             val savedPosition = preferencesManager.getSubtitlePosition(uriString)
-            if (savedPosition != 100) {
+            if (savedPosition != 100f) {
                 engine.setSubtitleVerticalPosition(savedPosition)
                 Logger.d(TAG, "Restored subtitle position: $savedPosition")
             }

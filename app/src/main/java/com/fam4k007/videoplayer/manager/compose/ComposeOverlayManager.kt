@@ -85,7 +85,7 @@ class ComposeOverlayManager(
     fun showSubtitleSettingsDrawer(
         currentDelay: Double,
         currentScale: Float,
-        currentPosition: Int,
+        currentPosition: Float,
         currentBorderSize: Int,
         currentTextColor: String,
         currentBorderColor: String,
@@ -93,7 +93,7 @@ class ComposeOverlayManager(
         currentBorderStyle: String,
         onDelayChange: (Double) -> Unit,
         onScaleChange: (Float) -> Unit,
-        onPositionChange: (Int) -> Unit,
+        onPositionChange: (Float) -> Unit,
         onBorderSizeChange: (Int) -> Unit,
         onTextColorChange: (String) -> Unit,
         onBorderColorChange: (String) -> Unit,
@@ -353,9 +353,9 @@ class ComposeOverlayManager(
     @Deprecated("使用 showSubtitleSettingsDrawer 替代")
     fun showSubtitleMiscDialog(
         currentScale: Float,
-        currentPosition: Int,
+        currentPosition: Float,
         onScaleChange: (Float) -> Unit,
-        onPositionChange: (Int) -> Unit
+        onPositionChange: (Float) -> Unit
     ) {
         setContent {
             SubtitleMiscDialog(
