@@ -120,7 +120,7 @@
 - **[mpv-android/mpv-android](https://github.com/mpv-android/mpv-android)**  
   Android 平台移植参考
 
-- **[abdallahmehiz/mpv-android](https://github.com/abdallahmehiz/mpv-android/releases)**  
+- **[Riteshp2001/mpvlibAndroid](https://github.com/Riteshp2001/mpvlibAndroid)**  
   提供现成可用的 libmpv 预编译库文件
 
 - **[bilibili/DanmakuFlameMaster](https://github.com/bilibili/DanmakuFlameMaster)**  
@@ -129,6 +129,9 @@
 ### 算法与功能实现
 
 以下项目为本应用的功能实现提供了重要参考：
+
+- **[Riteshp2001/mpvRx](https://github.com/Riteshp2001/mpvRx)**  
+  参考了缩略图预览算法（FastThumbnails）、HDR 色彩配置以及其他诸多优秀设计
 
 - **[bloc97/Anime4K](https://github.com/bloc97/Anime4K)**  
   实时超分辨率算法，提供 GLSL 着色器文件
@@ -237,4 +240,4 @@
 
 ---
 
-**Last Updated:** 2026-05-22
+**Last Updated:** 2026-07-10

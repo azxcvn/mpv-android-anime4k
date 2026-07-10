@@ -267,11 +267,11 @@ fun BottomControlPanel(
     val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
 
     // 计算当前显示的进度（拖动时显示临时位置，否则显示实际位置）
-    val displayPosition = if (isDragging) {
+    val displayPosition = (if (isDragging) {
         sliderPosition ?: precisePosition.toFloat()
     } else {
         precisePosition.toFloat()
-    }
+    }).coerceAtLeast(0f)
 
     // Anime4K 模式缩写文字
     val anime4KLabel = when (anime4KMode) {
@@ -345,14 +345,23 @@ fun BottomControlPanel(
             }
         }
 
-        // 缩略图预览浮层（在进度条行上方，不影响进度条布局）
-        SeekbarThumbnailPreview(
-            bitmap = thumbnailBitmap,
-            timeSec = thumbnailTimeSec,
-            fraction = thumbnailFraction,
-            show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
-            isLoading = thumbnailLoading && isDragging,
-        )
+        // 缩略图预览浮层（零高度，浮在进度条正上方）
+        Box(
+            Modifier.fillMaxWidth().height(0.dp)
+                .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
+        ) {
+            val thumbnailChapterTitle = remember(chapters, thumbnailTimeSec) {
+                chapters.lastOrNull { it.timeSeconds <= thumbnailTimeSec }?.title
+            }
+            SeekbarThumbnailPreview(
+                bitmap = thumbnailBitmap,
+                timeSec = thumbnailTimeSec,
+                fraction = thumbnailFraction,
+                show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+                isLoading = thumbnailLoading && isDragging,
+                chapterTitle = thumbnailChapterTitle,
+            )
+        }
 
         // 进度条行
         Row(

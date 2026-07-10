@@ -435,8 +435,6 @@ class PlayerViewModel(
         lastQueuedThumbnailKey = null
         synchronized(thumbnailRequestLock) { pendingThumbnailPosition = null; pendingThumbnailDuration = null }
         _thumbnailBitmap.value = null
-        _thumbnailTimeSec.value = -1L
-        _thumbnailFraction.value = 0f
         _thumbnailLoading.value = false
     }
 
