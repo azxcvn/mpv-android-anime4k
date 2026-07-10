@@ -1,4 +1,4 @@
-package com.fam4k007.videoplayer.ui.components
+﻿package com.fam4k007.videoplayer.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +75,7 @@ fun SwitchItem(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                     },
-                    modifier = Modifier.padding(top = 2.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -145,7 +145,7 @@ fun TextItem(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                     },
-                    modifier = Modifier.padding(top = 2.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -201,7 +201,7 @@ fun ClickableItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = if (enabled) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -231,7 +231,7 @@ fun ClickableItem(
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                         },
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }

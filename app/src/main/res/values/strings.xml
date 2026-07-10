@@ -17,8 +17,9 @@
     <string name="video_thumbnail">Video Thumbnail</string>
     
     <!-- 主题 -->
-    <string name="theme_default">默认</string>
-    <string name="theme_dynamic">动态颜色</string>
+    <string name="theme_default">动态主题</string>
+    <string name="theme_dynamic">动态主题</string>
+    <string name="theme_lilac">丁香紫</string>
     <string name="theme_cloudflare">云耀</string>
     <string name="theme_cotton_candy">棉花糖</string>
     <string name="theme_doom">毁灭</string>

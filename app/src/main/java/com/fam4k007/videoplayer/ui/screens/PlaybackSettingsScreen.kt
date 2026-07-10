@@ -1,4 +1,4 @@
-package com.fam4k007.videoplayer.ui.screens
+﻿package com.fam4k007.videoplayer.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -463,7 +463,8 @@ private fun DoubleTapModeCard(
                 Text(
                     "Double-tap anywhere to pause or play",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -500,7 +501,8 @@ private fun DoubleTapModeCard(
                 Text(
                     "Double-tap left to rewind, right to fast-forward",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -884,7 +886,8 @@ private fun MpvProfileCard(
                     Text(
                         option.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
@@ -948,7 +951,8 @@ private fun SeekbarStyleCard(
                             SeekbarStyle.Thick -> "Wide track, easy to touch, bold and clear"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
@@ -1034,7 +1038,8 @@ private fun QualityOption(
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
