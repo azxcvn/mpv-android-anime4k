@@ -839,7 +839,7 @@ class PlaybackEngine(
         }
     }
 
-    override fun event(eventId: Int) {
+    override fun event(eventId: Int, data: MPVNode) {
         Log.d(TAG, "Event: $eventId")
         when (eventId) {
             6 -> { // MPV_EVENT_FILE_LOADED

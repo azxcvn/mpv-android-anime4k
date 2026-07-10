@@ -57,24 +57,21 @@ class CustomMPVView(context: Context, attrs: AttributeSet) : BaseMPVView(context
         MPVLib.setOptionString("target-colorspace-hint", "yes")
         MPVLib.setOptionString("target-prim", "auto")
         MPVLib.setOptionString("target-trc", "auto")
-        
+
+        // 启用逆色调映射，正确处理 HDR RPU/DM 元数据（避免过曝）
+        MPVLib.setOptionString("inverse-tone-mapping", "yes")
+
         // HDR tone-mapping 算法：mobius 是最平衡的算法，适合大多数内容
-        // 可选: hable(电影感), reinhard(柔和), bt.2390(标准), mobius(平衡)
         MPVLib.setOptionString("tone-mapping", "mobius")
-        
+
         // 动态计算 HDR 峰值亮度，提升杜比视界/HDR10 显示效果
         MPVLib.setOptionString("hdr-compute-peak", "yes")
-        
-        // HDR 峰值亮度检测：基于整个视频场景分析
-        MPVLib.setOptionString("hdr-peak-percentile", "99.995")
-        
-        // tone-mapping 参数调整（mobius 算法的过渡点）
-        MPVLib.setOptionString("tone-mapping-param", "0.3")
-        
-        // 色彩管理：启用 ICC 配置文件自动检测（Android 8.0+ 支持）
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            MPVLib.setOptionString("icc-profile-auto", "yes")
-        }
+
+        // HDR 参考白点（203 nits，符合 BT.2408 标准 SDR 参考白）
+        MPVLib.setOptionString("hdr-reference-white", "203")
+
+        // 注意：不启用 icc-profile-auto，Android 上 ICC 与 mpv 自动检测
+        // 可能产生双重色调映射导致过曝
         
         Log.d(TAG, "HDR/Dolby Vision color processing configured")
         

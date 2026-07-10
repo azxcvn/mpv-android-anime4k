@@ -335,6 +335,8 @@ fun PortraitBottomControls(
     // 缩略图预览状态
     val thumbnailBitmap by viewModel.thumbnailBitmap.collectAsState()
     val thumbnailTimeSec by viewModel.thumbnailTimeSec.collectAsState()
+    val thumbnailFraction by viewModel.thumbnailFraction.collectAsState()
+    val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
     val displayPosition =
         if (isDragging) sliderPosition ?: precisePosition.toFloat() else precisePosition.toFloat()
 
@@ -558,6 +560,15 @@ fun PortraitBottomControls(
             }
         }
 
+        // ── 缩略图预览浮层（在进度条行上方，不影响进度条布局）──
+        SeekbarThumbnailPreview(
+            bitmap = thumbnailBitmap,
+            timeSec = thumbnailTimeSec,
+            fraction = thumbnailFraction,
+            show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+            isLoading = thumbnailLoading && isDragging,
+        )
+
         // ── Row 2: 进度条 + 时间 ──
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -570,7 +581,7 @@ fun PortraitBottomControls(
                 modifier = Modifier.padding(end = 6.dp),
             )
 
-            // 进度条
+            // 进度滑块
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -611,13 +622,6 @@ fun PortraitBottomControls(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
-            // 缩略图预览弹窗
-            SeekbarThumbnailPreview(
-                bitmap = thumbnailBitmap,
-                timeSec = thumbnailTimeSec,
-                show = isDragging && thumbnailBitmap != null
-            )
 
             // 总时长/剩余时间（点击切换）
             val durationText = if (showRemainingTime) {
