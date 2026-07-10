@@ -525,6 +525,34 @@ class PreferencesManager private constructor(context: Context) {
     }
     
     /**
+     * 获取已观看阈值（百分比，默认95）
+     */
+    fun getWatchedThreshold(): Int {
+        return sharedPreferences.getInt("watched_threshold", AppConstants.Defaults.DEFAULT_WATCHED_THRESHOLD)
+    }
+    
+    /**
+     * 设置已观看阈值
+     */
+    fun setWatchedThreshold(threshold: Int) {
+        sharedPreferences.edit().putInt("watched_threshold", threshold).apply()
+    }
+    
+    /**
+     * 获取是否显示视频列表进度条
+     */
+    fun isShowVideoProgressBarEnabled(): Boolean {
+        return sharedPreferences.getBoolean("show_video_progress_bar", true)
+    }
+    
+    /**
+     * 设置是否显示视频列表进度条
+     */
+    fun setShowVideoProgressBarEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("show_video_progress_bar", enabled).apply()
+    }
+    
+    /**
      * 获取视频的字幕轨道ID
      */
     fun getSubtitleTrackId(videoUri: String): Int {

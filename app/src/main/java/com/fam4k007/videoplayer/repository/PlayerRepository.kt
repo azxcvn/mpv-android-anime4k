@@ -48,6 +48,12 @@ class PlayerRepository(
         thumbnailPath: String? = null
     ) = withContext(Dispatchers.IO) {
         try {
+            // 计算是否已观看：保留旧标记，或当前进度 >= 阈值
+            val threshold = preferencesManager.getWatchedThreshold()
+            val oldState = historyDao.getHistoryByUri(uri.toString())
+            val isWatched = oldState?.hasBeenWatched == true ||
+                    (duration > 0 && (position.toFloat() / duration * 100) >= threshold)
+            
             val entity = PlaybackHistoryEntity(
                 uri = uri.toString(),
                 fileName = fileName,
@@ -58,7 +64,8 @@ class PlayerRepository(
                 danmuPath = danmuPath,
                 danmuVisible = danmuVisible,
                 danmuOffsetTime = danmuOffsetTime,
-                thumbnailPath = thumbnailPath
+                thumbnailPath = thumbnailPath,
+                hasBeenWatched = isWatched
             )
             
             historyDao.insertOrUpdate(entity)
@@ -173,6 +180,48 @@ class PlayerRepository(
             Logger.d(TAG, "Thumbnail updated for: $uri")
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to update thumbnail: ${e.message}", e)
+        }
+    }
+    
+    // ==================== 观看进度 ====================
+    
+    /**
+     * 获取已观看阈值
+     */
+    fun getWatchedThreshold(): Int {
+        return preferencesManager.getWatchedThreshold()
+    }
+    
+    /**
+     * 设置已观看阈值
+     */
+    fun setWatchedThreshold(threshold: Int) {
+        preferencesManager.setWatchedThreshold(threshold)
+    }
+    
+    /**
+     * 获取是否显示视频列表进度条
+     */
+    fun isShowVideoProgressBarEnabled(): Boolean {
+        return preferencesManager.isShowVideoProgressBarEnabled()
+    }
+    
+    /**
+     * 设置是否显示视频列表进度条
+     */
+    fun setShowVideoProgressBarEnabled(enabled: Boolean) {
+        preferencesManager.setShowVideoProgressBarEnabled(enabled)
+    }
+    
+    /**
+     * 获取所有播放状态（用于视频列表快速查询进度）
+     */
+    suspend fun getAllPlaybackStates(): Map<String, com.fam4k007.videoplayer.database.PlaybackState> = withContext(Dispatchers.IO) {
+        try {
+            historyDao.getAllPlaybackStates().associateBy { it.uri }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to get all playback states: ${e.message}", e)
+            emptyMap()
         }
     }
     

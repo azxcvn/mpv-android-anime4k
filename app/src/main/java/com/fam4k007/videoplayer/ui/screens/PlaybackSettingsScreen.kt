@@ -28,6 +28,7 @@ import com.fam4k007.videoplayer.ui.components.TextItem
 import com.fam4k007.videoplayer.ui.player.SeekbarStyle
 import com.fam4k007.videoplayer.ui.theme.spacing
 import com.fam4k007.videoplayer.domain.player.Anime4KManager
+import kotlin.math.roundToInt
 
 /**
  * Compose 版本的播放设置页面
@@ -269,6 +270,31 @@ fun PlaybackSettingsScreen(
                         subtitle = if (settings.seekbarThumbnailEnabled) "拖动进度条时显示视频画面预览" else "拖动进度条时不显示缩略图",
                         checked = settings.seekbarThumbnailEnabled,
                         onCheckedChange = { viewModel.setSeekbarThumbnailEnabled(it) }
+                    )
+                }
+            }
+
+            // 观看进度
+            item {
+                PreferenceSectionHeader("观看进度")
+            }
+
+            item {
+                PreferenceCard {
+                    SwitchItem(
+                        title = "显示播放进度条",
+                        subtitle = if (settings.showVideoProgressBar) "视频列表缩略图上显示观看进度" else "隐藏进度条，仅通过标签显示状态",
+                        checked = settings.showVideoProgressBar,
+                        onCheckedChange = { viewModel.setShowVideoProgressBar(it) }
+                    )
+                    SliderItem(
+                        title = "已观看阈值",
+                        value = settings.watchedThreshold.toFloat(),
+                        valueRange = 50f..100f,
+                        steps = 9,
+                        onValueChange = { viewModel.setWatchedThreshold(it.roundToInt()) },
+                        valueFormatter = { "${it.roundToInt()}%" },
+                        subtitle = "播放进度超过此值即标记为已观看"
                     )
                 }
             }

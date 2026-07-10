@@ -107,7 +107,8 @@ internal fun VideoPlayerActivity.showVideoListDrawer() {
             videoList = videoList,
             currentVideoUri = uri,
             onVideoSelected = { video, index ->
-                // 切换到选中的视频
+                // 先保存当前视频的播放进度，再切换到新视频
+                savePlaybackState()
                 val selectedUri = android.net.Uri.parse(video.uri)
                 Logger.d(TAG, "Video selected from list: ${video.name}, index: $index")
                 playVideo(selectedUri)

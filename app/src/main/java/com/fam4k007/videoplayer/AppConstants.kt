@@ -133,6 +133,11 @@ object AppConstants {
         
         // 视频显示模式
         const val DEFAULT_VIDEO_DISPLAY_MODE = "folder"
+        
+        // 已观看阈值（百分比，默认95%）
+        const val DEFAULT_WATCHED_THRESHOLD = 95
+        const val MIN_WATCHED_THRESHOLD = 50
+        const val MAX_WATCHED_THRESHOLD = 100
     }
 
     /**
