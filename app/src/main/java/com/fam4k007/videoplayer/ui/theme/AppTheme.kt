@@ -25,22 +25,7 @@ enum class AppTheme(
     val isDynamic: Boolean = false,
 ) {
     /**
-     * 默认主题 - 蓝紫色系
-     */
-    Default(
-        titleRes = R.string.theme_default,
-        primaryLight = Color(0xFF794F81),
-        primaryDark = Color(0xFFE8B5EF),
-        secondaryLight = Color(0xFF6A596C),
-        secondaryDark = Color(0xFFD6C0D6),
-        tertiaryLight = Color(0xFF82524D),
-        tertiaryDark = Color(0xFFF5B7B0),
-        backgroundLight = Color(0xFFFFF7FB),
-        backgroundDark = Color(0xFF161217),
-    ),
-
-    /**
-     * 动态主题 - 基于系统壁纸（Android 12+）
+     * 动态主题 - 基于系统壁纸（Android 12+）【默认】
      */
     Dynamic(
         titleRes = R.string.theme_dynamic,
@@ -53,6 +38,21 @@ enum class AppTheme(
         backgroundLight = Color(0xFFFFFBFF),
         backgroundDark = Color(0xFF1C1B1F),
         isDynamic = true,
+    ),
+
+    /**
+     * 丁香紫 - 柔和紫色系（原默认主题）
+     */
+    Lilac(
+        titleRes = R.string.theme_lilac,
+        primaryLight = Color(0xFF794F81),
+        primaryDark = Color(0xFFE8B5EF),
+        secondaryLight = Color(0xFF6A596C),
+        secondaryDark = Color(0xFFD6C0D6),
+        tertiaryLight = Color(0xFF82524D),
+        tertiaryDark = Color(0xFFF5B7B0),
+        backgroundLight = Color(0xFFFFF7FB),
+        backgroundDark = Color(0xFF161217),
     ),
 
     /**
@@ -536,14 +536,16 @@ enum class AppTheme(
          * 从名称获取主题
          */
         fun fromName(name: String): AppTheme {
-            return entries.find { it.name == name } ?: Default
+            // 兼容旧设置：旧版 "Default" 映射到新名称 "Lilac"
+            val resolved = if (name == "Default") "Lilac" else name
+            return entries.find { it.name == resolved } ?: Dynamic
         }
 
         /**
          * 从资源 ID 获取主题
          */
         fun fromTitleRes(@StringRes titleRes: Int): AppTheme {
-            return entries.find { it.titleRes == titleRes } ?: Default
+            return entries.find { it.titleRes == titleRes } ?: Dynamic
         }
     }
 }

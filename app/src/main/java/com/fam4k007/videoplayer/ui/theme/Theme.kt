@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
  */
 @Composable
 fun VideoPlayerTheme(
-    appTheme: AppTheme = AppTheme.Default,
+    appTheme: AppTheme = AppTheme.Lilac,
     darkMode: DarkMode = DarkMode.System,
     amoledMode: Boolean = false,
     content: @Composable () -> Unit

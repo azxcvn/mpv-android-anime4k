@@ -668,8 +668,8 @@ class PreferencesManager private constructor(context: Context) {
     fun getAppTheme(): String {
         return sharedPreferences.getString(
             "app_theme",
-            "Default"  // 默认主题
-        ) ?: "Default"
+            "Dynamic"  // 默认使用动态颜色主题
+        ) ?: "Dynamic"
     }
     
     /**
