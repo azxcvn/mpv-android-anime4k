@@ -251,6 +251,9 @@ fun BottomControlPanel(
     val hasChapters by viewModel.hasChapters.collectAsState()
     val chapterBarEnabled by viewModel.chapterBarEnabled.collectAsState()
     val gpuNext by viewModel.gpuNext.collectAsState()
+    val skipSegments by viewModel.skipSegments.collectAsState()
+    val currentSkippableSegment by viewModel.currentSkippableSegment.collectAsState()
+    val showSkipChip by viewModel.showSkipChip.collectAsState()
 
     // 检测屏幕方向
     val configuration = LocalContext.current.resources.configuration
@@ -345,7 +348,7 @@ fun BottomControlPanel(
             }
         }
 
-        // 缩略图预览浮层（零高度，浮在进度条正上方）
+        // 缩略图预览浮层 + Skip 按钮（零高度，浮在进度条正上方）
         Box(
             Modifier.fillMaxWidth().height(0.dp)
                 .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
@@ -360,7 +363,33 @@ fun BottomControlPanel(
                 show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
                 isLoading = thumbnailLoading && isDragging,
                 chapterTitle = thumbnailChapterTitle,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
+
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方）
+            val skipChipSegment = currentSkippableSegment
+            val skipChipVisible = showSkipChip && skipChipSegment != null
+            androidx.compose.animation.AnimatedVisibility(
+                visible = skipChipVisible,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 0.dp),
+            ) {
+                val seg = skipChipSegment ?: return@AnimatedVisibility
+                androidx.compose.material3.Surface(
+                    onClick = { viewModel.skipActiveSegment() },
+                    shape = RoundedCornerShape(999.dp),
+                    color = seg.type.accentColor.copy(alpha = 0.92f),
+                ) {
+                    Text(
+                        text = seg.type.label,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp),
+                    )
+                }
+            }
         }
 
         // 进度条行
@@ -398,6 +427,7 @@ fun BottomControlPanel(
                         viewModel.seekToChapter(index)
                         viewModel.resetAutoHideTimer()
                     },
+                    skipSegments = skipSegments,
                     onSeek = { newValue ->
                         if (!isDragging) {
                             isDragging = true

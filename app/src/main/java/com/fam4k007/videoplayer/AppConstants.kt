@@ -56,6 +56,9 @@ object AppConstants {
         // 进度条缩略图预览 Key
         const val SEEKBAR_THUMBNAIL_ENABLED = "seekbar_thumbnail_enabled"
 
+        // 章节 OP/ED 检测开关
+        const val CHAPTER_SKIP_DETECTION_ENABLED = "chapter_skip_detection_enabled"
+
         // MPV 解码器预设
         const val MPV_PROFILE = "mpv_profile"
         const val GPU_NEXT = "gpu_next"

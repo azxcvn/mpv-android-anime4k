@@ -416,6 +416,14 @@ class PlayerRepository(
         preferencesManager.setSeekbarThumbnailEnabled(enabled)
     }
 
+    fun isChapterSkipDetectionEnabled(): Boolean {
+        return preferencesManager.isChapterSkipDetectionEnabled()
+    }
+
+    fun setChapterSkipDetectionEnabled(enabled: Boolean) {
+        preferencesManager.setChapterSkipDetectionEnabled(enabled)
+    }
+
     /**
      * 获取是否显示剩余时间
      */
