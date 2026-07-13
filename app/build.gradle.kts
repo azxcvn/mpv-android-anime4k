@@ -37,8 +37,8 @@ android {
         applicationId = "com.fam4k007.videoplayer"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 29
-        versionName = "1.2.9"
+        versionCode = 30
+        versionName = "1.3.0"
 
         buildConfigField(
             "String",
