@@ -1007,10 +1007,24 @@ class PlayerViewModel(
         }
     }
     
+    fun cleanup() {
+        positionPollingJob?.cancel()
+        durationPollingJob?.cancel()
+        positionPollingJob = null
+        durationPollingJob = null
+        mpvInitialized = false
+        mpvObserverRegistered = false
+    }
+
+    fun resetPlaybackState() {
+        _position.value = 0
+        _duration.value = 0
+        _paused.value = false
+    }
+
     // ==================== MPVLib.EventObserver 实现 ====================
-    
+
     override fun eventProperty(property: String) {
-        // MPV属性变化事件（新版API）
         Logger.v(TAG, "MPV property changed: $property")
     }
     
@@ -1652,6 +1666,15 @@ class PlayerViewModel(
             } else {
                 Logger.d(TAG, "Already at first video")
             }
+        }
+    }
+
+    fun playVideoAtIndex(index: Int) {
+        val uris = _playlistUris.value
+        if (index in uris.indices) {
+            _currentIndex.value = index
+            _currentVideoUri.value = uris[index]
+            viewModelScope.launch { _switchVideoEvent.emit(uris[index]) }
         }
     }
 

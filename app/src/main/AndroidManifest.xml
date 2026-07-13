@@ -78,6 +78,11 @@
             android:name=".mediainfo.MediaInfoActivity"
             android:exported="false"
             android:theme="@style/Theme.VideoPlayer" />
+        <activity
+            android:name=".AudioPlayerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.VideoPlayer" />
         <activity 
             android:name=".VideoPlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"

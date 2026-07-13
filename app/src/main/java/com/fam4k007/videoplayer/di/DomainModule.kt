@@ -10,6 +10,7 @@ import com.fam4k007.videoplayer.domain.webdav.WebDavClient
 import com.fam4k007.videoplayer.domain.webdav.WebDavConfig
 import com.fam4k007.videoplayer.preferences.PreferencesManager
 import com.fam4k007.videoplayer.manager.ThemeManager
+import com.fam4k007.videoplayer.presentation.PlayerStateHolder
 import com.fam4k007.videoplayer.utils.ThumbnailCacheManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -71,4 +72,7 @@ val domainModule = module {
     factory {
         MediaScanManager(videoRepository = get())
     }
+
+    // PlayerStateHolder — 播放状态共享容器（VPA 写入、AudioPlayer 读取）
+    single { PlayerStateHolder() }
 }

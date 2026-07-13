@@ -61,6 +61,7 @@ import com.fam4k007.videoplayer.utils.UriUtils.getFolderName
 import com.fam4k007.videoplayer.utils.DialogUtils
 import com.fam4k007.videoplayer.utils.Logger
 import com.fam4k007.videoplayer.presentation.PlayerViewModel
+import com.fam4k007.videoplayer.presentation.PlayerStateHolder
 import `is`.xyz.mpv.MPVLib
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
@@ -126,7 +127,7 @@ class VideoPlayerActivity : AppCompatActivity(),
     internal var themeRevision by mutableIntStateOf(0)
     internal val preferencesManager: PreferencesManager by inject()
     internal val historyManager: PlaybackHistoryManager by inject()
-    internal val viewModel: PlayerViewModel by viewModel()
+    internal val viewModel: PlayerViewModel by inject()
     internal val subtitleManager = SubtitleManager()
     
     @Deprecated("Use viewModel.savedPosition instead", ReplaceWith("viewModel.savedPosition.value"))
@@ -321,7 +322,8 @@ class VideoPlayerActivity : AppCompatActivity(),
                 }
             }
             
-            // 同步到ViewModel
+            // 同步到ViewModel + 重置上次残留的播放状态
+            viewModel.resetPlaybackState()
             viewModel.setCurrentVideoUri(videoUri)
             
         } catch (e: Exception) {
@@ -655,8 +657,8 @@ class VideoPlayerActivity : AppCompatActivity(),
         
         // 正常销毁流程
         endBackgroundPlayback()
-        
-        // 清除自动旋转设置，避免影响下次播放
+
+        // 清除自动旋转设置
         intent.removeExtra(EXTRA_AUTO_ROTATE)
         intent.removeExtra(EXTRA_PORTRAIT_UI)
         
@@ -679,7 +681,10 @@ class VideoPlayerActivity : AppCompatActivity(),
             dialogManager.cleanup()
         }
         
-        // 销毁播放引擎（会自动移除MPVLib观察者）
+        // 先停止 ViewModel 协程（防止 mpv 销毁后协程调用 mpv）
+        viewModel.cleanup()
+
+        // 销毁播放引擎
         playbackEngine?.destroy()
         controlsManager?.cleanup()
         gestureHandler?.cleanup()
@@ -1008,15 +1013,11 @@ class VideoPlayerActivity : AppCompatActivity(),
             danmakuManager.pause()
         }
         
-        // 启动前台 Service（通知栏）
+        // 同步状态到共享容器 + 启动前台 Service + 听视频界面
+        val stateHolder: PlayerStateHolder by inject()
+        stateHolder.syncFromViewModel(viewModel)
         startBackgroundPlayback()
-        
-        // 发送到后台（模拟 Home 键）
-        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        startActivity(homeIntent)
+        startActivity(Intent(this, AudioPlayerActivity::class.java))
     }
 
     // ==================== 后台播放管理 ====================
