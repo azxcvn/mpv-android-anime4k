@@ -74,14 +74,14 @@ fun GestureIndicators(
                         Icon(
                             imageVector = icon,
                             contentDescription = "音量",
-                            tint = Color.Black,
-                            modifier = Modifier.size(28.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 },
                 progress = currentVolume / maxVol,
                 text = "$currentVolume%",
-                modifier = Modifier.padding(start = 48.dp),
+                modifier = Modifier.padding(start = 40.dp),
                 fillColor = Color(0xFF4FC3F7)  // 蓝色
             )
         }
@@ -102,14 +102,14 @@ fun GestureIndicators(
                         Icon(
                             imageVector = icon,
                             contentDescription = "亮度",
-                            tint = Color.Black,
-                            modifier = Modifier.size(28.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 },
                 progress = currentBrightness,
                 text = "${(currentBrightness * 100).toInt()}%",
-                modifier = Modifier.padding(end = 48.dp),
+                modifier = Modifier.padding(end = 40.dp),
                 fillColor = Color(0xFFFFB74D)  // 橙色
             )
         }
@@ -118,7 +118,7 @@ fun GestureIndicators(
 
 /**
  * 现代化垂直手势指示器
- * 风格：圆角半透明白色背景 + 垂直胶囊进度条
+ * 风格：圆角半透明深色背景 + 垂直胶囊进度条
  */
 @Composable
 private fun ModernGestureIndicator(
@@ -128,23 +128,23 @@ private fun ModernGestureIndicator(
     modifier: Modifier = Modifier,
     fillColor: Color = Color.White
 ) {
-    val barWidth = 5.dp
-    val barHeight = 110.dp
-    val trackColor = Color.White.copy(alpha = 0.25f)
+    val barWidth = 8.dp
+    val barHeight = 90.dp
+    val trackColor = Color.White.copy(alpha = 0.2f)
     
     Column(
         modifier = modifier
-            .widthIn(min = 64.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color.White.copy(alpha = 0.65f))
-            .padding(horizontal = 14.dp, vertical = 18.dp),
+            .widthIn(min = 56.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.Black.copy(alpha = 0.55f))
+            .padding(horizontal = 12.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         // 图标
         icon()
         
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         
         // 垂直进度条容器
         Box(
@@ -165,13 +165,13 @@ private fun ModernGestureIndicator(
             )
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         
         // 百分比文字
         Text(
             text = text,
-            color = Color.Black,
-            fontSize = 15.sp,
+            color = Color.White,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = (-0.5).sp
         )
