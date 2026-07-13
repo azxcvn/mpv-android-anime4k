@@ -214,7 +214,7 @@ fun DanmakuFilePickerDialog(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(380.dp)
+                    .width(320.dp)
             ) {
                 // 半透明背景层
                 Box(

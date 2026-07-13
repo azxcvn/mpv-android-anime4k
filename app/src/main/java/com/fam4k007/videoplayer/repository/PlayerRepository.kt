@@ -212,7 +212,23 @@ class PlayerRepository(
     fun setShowVideoProgressBarEnabled(enabled: Boolean) {
         preferencesManager.setShowVideoProgressBarEnabled(enabled)
     }
-    
+
+    fun isControlsAnimationEnabled(): Boolean {
+        return preferencesManager.isControlsAnimationEnabled()
+    }
+
+    fun setControlsAnimationEnabled(enabled: Boolean) {
+        preferencesManager.setControlsAnimationEnabled(enabled)
+    }
+
+    fun isDrawerAnimationEnabled(): Boolean {
+        return preferencesManager.isDrawerAnimationEnabled()
+    }
+
+    fun setDrawerAnimationEnabled(enabled: Boolean) {
+        preferencesManager.setDrawerAnimationEnabled(enabled)
+    }
+
     /**
      * 获取所有播放状态（用于视频列表快速查询进度）
      */

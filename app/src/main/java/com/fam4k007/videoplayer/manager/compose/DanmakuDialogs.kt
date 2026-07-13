@@ -137,64 +137,66 @@ fun DanmakuSettingsDrawer(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                    // 标题栏
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "弹幕设置",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        
-                        // 关闭按钮
-                        IconButton(
-                            onClick = {
-                                isVisible = false
-                                coroutineScope.launch {
-                                    delay(300)
-                                    onDismiss()
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
+                        // 标题栏（冻结）
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "✕",
-                                fontSize = 20.sp,
-                                color = Color(0xFFBBBBBB)
+                                text = "弹幕设置",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
 
-                    if (!hasDanmakuLoaded) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "未加载弹幕文件",
-                            fontSize = 14.sp,
-                            color = Color(0xFFFF9800),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "请在弹幕页面加载弹幕后再进行设置",
-                            fontSize = 12.sp,
-                            color = Color(0x99FFFFFF),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            textAlign = TextAlign.Center
-                        )
-                    } else {
-                    // 可滚动内容区域
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                            // 关闭按钮
+                            IconButton(
+                                onClick = {
+                                    isVisible = false
+                                    coroutineScope.launch {
+                                        delay(300)
+                                        onDismiss()
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Text(
+                                    text = "✕",
+                                    fontSize = 20.sp,
+                                    color = Color(0xFFBBBBBB)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Divider(color = Color(0x33FFFFFF), thickness = 1.dp)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (!hasDanmakuLoaded) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                text = "未加载弹幕文件",
+                                fontSize = 14.sp,
+                                color = Color(0xFFFF9800),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "请在弹幕页面加载弹幕后再进行设置",
+                                fontSize = 12.sp,
+                                color = Color(0x99FFFFFF),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            // 可滚动内容区域
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                         // 弹幕样式设置
                         item {
                             ExpandableSection(

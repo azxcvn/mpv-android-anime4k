@@ -72,8 +72,9 @@ fun PlayerControls(
         }
     }
 
-    // 超分启用时取消动画（避免 GPU 负载过高导致掉帧）
-    val hasAnimation = anime4KMode == com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF
+    // 播放界面动画开关（从设置读取，默认关闭）
+    val controlsAnimationEnabled by viewModel.controlsAnimationEnabled.collectAsState()
+    val hasAnimation = controlsAnimationEnabled
     val animEnter = if (hasAnimation)
         androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically(initialOffsetY = { -it })
     else androidx.compose.animation.EnterTransition.None
@@ -182,7 +183,8 @@ fun PlayerControls(
         // 右侧叠加控件：截图 + 锁定（控制栏显示或锁定时可见）
         RightSideControls(
             viewModel = viewModel,
-            onScreenshotClick = onScreenshotClick
+            onScreenshotClick = onScreenshotClick,
+            hasAnimation = hasAnimation
         )
 
         // 手势指示器（亮度/音量）
@@ -1135,6 +1137,7 @@ fun UnlockButtons(
 fun RightSideControls(
     viewModel: PlayerViewModel,
     onScreenshotClick: () -> Unit = {},
+    hasAnimation: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val controlsShown by viewModel.controlsShown.collectAsState()
@@ -1144,11 +1147,14 @@ fun RightSideControls(
     // 控制栏未锁定且显示时，或锁定时解锁按钮可见时，显示右侧控件
     val showRightControls = (!areControlsLocked && controlsShown) || (areControlsLocked && unlockButtonsVisible)
 
+    val animEnter = if (hasAnimation) androidx.compose.animation.fadeIn() else androidx.compose.animation.EnterTransition.None
+    val animExit = if (hasAnimation) androidx.compose.animation.fadeOut() else androidx.compose.animation.ExitTransition.None
+
     Box(modifier = modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedVisibility(
             visible = showRightControls,
-            enter = androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.fadeOut(),
+            enter = animEnter,
+            exit = animExit,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 32.dp)
