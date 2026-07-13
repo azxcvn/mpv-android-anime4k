@@ -551,7 +551,23 @@ class PreferencesManager private constructor(context: Context) {
     fun setShowVideoProgressBarEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("show_video_progress_bar", enabled).apply()
     }
-    
+
+    fun isControlsAnimationEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.CONTROLS_ANIMATION_ENABLED, false)
+    }
+
+    fun setControlsAnimationEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.CONTROLS_ANIMATION_ENABLED, enabled).apply()
+    }
+
+    fun isDrawerAnimationEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, false)
+    }
+
+    fun setDrawerAnimationEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, enabled).apply()
+    }
+
     /**
      * 获取视频的字幕轨道ID
      */

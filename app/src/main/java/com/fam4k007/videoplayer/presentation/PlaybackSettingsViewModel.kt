@@ -87,7 +87,13 @@ class PlaybackSettingsViewModel(
 
                     // 观看进度
                     watchedThreshold = playerRepository.getWatchedThreshold(),
-                    showVideoProgressBar = playerRepository.isShowVideoProgressBarEnabled()
+                    showVideoProgressBar = playerRepository.isShowVideoProgressBarEnabled(),
+
+                    // 播放界面动画
+                    controlsAnimationEnabled = playerRepository.isControlsAnimationEnabled(),
+
+                    // 抽屉界面动画
+                    drawerAnimationEnabled = playerRepository.isDrawerAnimationEnabled()
                 )
                 _playbackSettings.value = settings
                 Logger.d(TAG, "Loaded playback settings")
@@ -454,6 +460,30 @@ class PlaybackSettingsViewModel(
             }
         }
     }
+
+    fun setControlsAnimationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setControlsAnimationEnabled(enabled)
+                _playbackSettings.value = _playbackSettings.value.copy(controlsAnimationEnabled = enabled)
+                Logger.d(TAG, "Set controls animation: $enabled")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set controls animation", e)
+            }
+        }
+    }
+
+    fun setDrawerAnimationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setDrawerAnimationEnabled(enabled)
+                _playbackSettings.value = _playbackSettings.value.copy(drawerAnimationEnabled = enabled)
+                Logger.d(TAG, "Set drawer animation: $enabled")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set drawer animation", e)
+            }
+        }
+    }
 }
 
 /**
@@ -501,5 +531,11 @@ data class PlaybackSettings(
 
     // 观看进度
     val watchedThreshold: Int = 95,
-    val showVideoProgressBar: Boolean = true
+    val showVideoProgressBar: Boolean = true,
+
+    // 播放界面动画
+    val controlsAnimationEnabled: Boolean = false,
+
+    // 抽屉界面动画
+    val drawerAnimationEnabled: Boolean = false
 )

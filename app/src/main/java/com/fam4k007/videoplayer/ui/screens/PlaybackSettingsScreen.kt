@@ -319,6 +319,28 @@ fun PlaybackSettingsScreen(
                 }
             }
 
+            // 播放界面
+            item {
+                PreferenceSectionHeader("播放界面")
+            }
+
+            item {
+                PreferenceCard {
+                    SwitchItem(
+                        title = "启用播放界面动画",
+                        subtitle = if (settings.controlsAnimationEnabled) "控制栏显示/隐藏时带有滑动动画" else "控制栏直接显示/隐藏，无动画",
+                        checked = settings.controlsAnimationEnabled,
+                        onCheckedChange = { viewModel.setControlsAnimationEnabled(it) }
+                    )
+                    SwitchItem(
+                        title = "启用抽屉界面动画",
+                        subtitle = if (settings.drawerAnimationEnabled) "右侧抽屉式面板带有过渡动画" else "抽屉面板直接显示/隐藏，无动画",
+                        checked = settings.drawerAnimationEnabled,
+                        onCheckedChange = { viewModel.setDrawerAnimationEnabled(it) }
+                    )
+                }
+            }
+
             item { Spacer(Modifier.height(MaterialTheme.spacing.medium)) }
         }
     }

@@ -187,7 +187,7 @@ fun VideoListDrawer(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(380.dp)  // 视频列表需要更宽一点
+                    .width(320.dp)
             ) {
                 // 半透明背景层（高对比度，与字幕设置一致）
                 Box(

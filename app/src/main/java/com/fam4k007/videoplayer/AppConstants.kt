@@ -59,6 +59,12 @@ object AppConstants {
         // 章节 OP/ED 检测开关
         const val CHAPTER_SKIP_DETECTION_ENABLED = "chapter_skip_detection_enabled"
 
+        // 播放界面动画开关
+        const val CONTROLS_ANIMATION_ENABLED = "controls_animation_enabled"
+
+        // 抽屉界面动画开关
+        const val DRAWER_ANIMATION_ENABLED = "drawer_animation_enabled"
+
         // MPV 解码器预设
         const val MPV_PROFILE = "mpv_profile"
         const val GPU_NEXT = "gpu_next"

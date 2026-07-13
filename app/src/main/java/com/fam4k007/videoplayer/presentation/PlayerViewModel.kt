@@ -537,6 +537,12 @@ class PlayerViewModel(
     private val _gpuNext = MutableStateFlow(false)
     val gpuNext: StateFlow<Boolean> = _gpuNext.asStateFlow()
 
+    private val _controlsAnimationEnabled = MutableStateFlow(false)
+    val controlsAnimationEnabled: StateFlow<Boolean> = _controlsAnimationEnabled.asStateFlow()
+
+    private val _drawerAnimationEnabled = MutableStateFlow(false)
+    val drawerAnimationEnabled: StateFlow<Boolean> = _drawerAnimationEnabled.asStateFlow()
+
     private val _chapterBarEnabled = MutableStateFlow(true)
     val chapterBarEnabled: StateFlow<Boolean> = _chapterBarEnabled.asStateFlow()
 
@@ -858,6 +864,10 @@ class PlayerViewModel(
         _chapterSkipDetectionEnabled.value = playerRepository.isChapterSkipDetectionEnabled()
         // 加载 GPU Next 状态
         _gpuNext.value = playerRepository.getGpuNext()
+        // 加载播放界面动画开关
+        _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
+        // 加载抽屉界面动画开关
+        _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
     }
     
     // 轮询协程的Job
@@ -1472,10 +1482,16 @@ class PlayerViewModel(
         _anime4KEnabled.value = enabled
         _anime4KMode.value = mode
         _anime4KQuality.value = quality
-        // 超分开启时全局禁用动画，消除 GPU 额外负载
-        com.fam4k007.videoplayer.manager.compose.ComposeOverlayManager.globalDisableAnimations =
-            enabled && mode != Anime4KManager.Mode.OFF
+        // 超分开启或抽屉动画关闭时全局禁用动画
+        updateGlobalAnimationFlag()
         Logger.d(TAG, "Anime4K: enabled=$enabled, mode=$mode, quality=$quality")
+    }
+
+    private fun updateGlobalAnimationFlag() {
+        val anime4KActive = _anime4KEnabled.value && _anime4KMode.value != Anime4KManager.Mode.OFF
+        val drawerAnimEnabled = _drawerAnimationEnabled.value
+        com.fam4k007.videoplayer.manager.compose.ComposeOverlayManager.globalDisableAnimations =
+            anime4KActive || !drawerAnimEnabled
     }
     
     /**
