@@ -1,7 +1,7 @@
 # FAM4K007 项目架构与技术栈文档
 
-> 最后更新: 2026-06-15  
-> 版本: 1.2.8
+> 最后更新: 2026-07-13  
+> 版本: 1.2.9
 
 ---
 
@@ -16,17 +16,15 @@
    - [4.3 Domain 层](#43-domain-层)
    - [4.4 Repository 层](#44-repository-层)
    - [4.5 Data 层](#45-data-层)
-   - [4.6 DI 层](#46-di-层)
+   - [4.6 Service 层](#46-service-层)
+   - [4.7 DI 层](#47-di-层)
 5. [导航系统](#5-导航系统)
 6. [状态管理](#6-状态管理)
 7. [Manager 模式详解](#7-manager-模式详解)
 8. [双 UI 体系](#8-双-ui-体系)
 9. [内存管理策略](#9-内存管理策略)
-10. [功能模块详解](#10-功能模块详解)
-    - [10.1 TV Box 模块](#101-tv-box-模块)
-    - [10.2 Bilibili 番剧索引模块](#102-bilibili-番剧索引模块)
-11. [构建与配置](#11-构建与配置)
-12. [包结构总览](#12-包结构总览)
+10. [构建与配置](#10-构建与配置)
+11. [包结构总览](#11-包结构总览)
 
 ---
 
@@ -42,8 +40,8 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
 - **B 站生态**：Bilibili API 集成（番剧索引、信息获取、播放地址解析、弹幕下载、二维码登录）
 - **下载功能**：Bilibili 视频下载管理器
 - **后台播放**：支持一键切到后台只听音频，通过前台 Service 保持进程存活
-- **TV Box 支持**：支持 TV Box 数据源（多源对接、JAR 加解密、HTTP 代理、点播详情）
 - **番剧索引**：B 站番剧检索（筛选条件、分页加载、链接输入直达、选集播放）
+- **TV 模式**：TV 浏览器，适合大屏设备浏览视频
 
 ---
 
@@ -57,7 +55,7 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
  │   ┌──────────────────────┬────────────────────┐   │
  │   │  传统 View (XML)      │   Compose Screens   │   │
  │   │  VideoPlayerActivity   │  25 个 Screen      │   │
- │   │  CustomMPVView         │  + TV Box 3 页面   │   │
+ │   │  CustomMPVView         │                        │   │
  │   │  CustomMPVView         │  ui/screens/       │   │
  │   │  DanmakuPlayerView     │  ui/components/    │   │
  │   │  7 个扩展文件          │  ui/player/        │   │
@@ -66,14 +64,14 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
  │            Manager 层 (Compose 覆盖层)            │
  │   ┌──────────────────────────────────────────┐   │
  │   │  ComposeOverlayManager — 覆盖层管理      │   │
- │   │  11 个抽屉/弹窗组件 (manager/compose/)    │   │
+ │   │  9 个抽屉/弹窗组件 (manager/compose/)      │   │
  │   │  ChapterDrawer  SpeedDrawer  Equalizer   │   │
  │   │  DanmakuDialogs SubtitleDialogs          │   │
  │   │  SkipSettings   VideoList   FilePickers  │   │
  │   │  DolbyVisionHintDialog                   │   │
  │   ├──────────────────────────────────────────┤   │
  │   │  ScreenshotManager  SkipIntroOutroManager│   │
- │   │  ThemeManager                             │   │
+ │   │  ThemeManager  VideoThumbnailManager     │   │
  │   └──────────────────────────────────────────┘   │
  ├──────────────────────────────────────────────────┤
  │              Presentation 层                      │
@@ -88,13 +86,15 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
  ├──────────────────────────────────────────────────┤
  │               Domain 层                           │
  │   ┌──────────────────────────────────────────┐   │
- │   │  8 个 Manager/Engine                      │   │
+ │   │  11 个 Manager/Engine                     │   │
  │   │  PlaybackEngine      PlayerControlsManager│   │
  │   │  DanmakuManager      GestureHandler       │   │
  │   │  Anime4KManager      SeriesManager        │   │
  │   │  FilePickerManager   PlayerDialogManager  │   │
+ │   │  SkipIntroOutroMgr   ScreenshotManager    │   │
  │   ├──────────────────────────────────────────┤   │
  │   │  辅助 Domain: sniffer/ subtitle/ webdav/  │   │
+ │   │  media/ (FolderBrowser/TreeNavigation)    │   │
  │   └──────────────────────────────────────────┘   │
  ├──────────────────────────────────────────────────┤
  │              Service 层                           │
@@ -105,19 +105,19 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
  ├──────────────────────────────────────────────────┤
  │              Repository 层                        │
  │   ┌──────────────────────────────────────────┐   │
- │   │  8 个 Repository                          │   │
+ │   │  6 个 Repository                          │   │
  │   │  PlayerRepository   VideoRepository       │   │
- │   │  BilibiliRepository BangumiRepository     │   │
- │   │  TvBoxRepository    WebDavRepository      │   │
- │   │  SubtitleRepository MediaInfoRepository   │   │
+ │   │  BilibiliRepository                       │   │
+ │   │  WebDavRepository   SubtitleRepository    │   │
+ │   │  MediaInfoRepository                      │   │
  │   └──────────────────────────────────────────┘   │
  ├──────────────────────────────────────────────────┤
  │                Data 层                            │
  │   ┌──────────┬──────────┬──────────┬──────────┐  │
  │   │  Room DB │ SharedPref│ 网络 API │ 本地 AAR │  │
- │   │  2 表     │ Preferences│ B站/弹幕 │ mpv      │  │
- │   │          │ Manager   │ TV Box  │ Danmaku   │  │
- │   │          │           │ WebDAV  │           │  │
+ │   │  3 表     │ Preferences│ B站/弹幕 │ mpv      │  │
+ │   │          │ Manager   │ WebDAV  │ Danmaku   │  │
+ │   │          │           │         │ MediaInfo │  │
  │   └──────────┴──────────┴──────────┴──────────┘  │
  ├──────────────────────────────────────────────────┤
  │            DI 层 (Koin)                           │
@@ -149,10 +149,10 @@ FAM4K007 是一款基于 **mpv** 播放引擎的 Android 视频播放器，专�
 
 | 工具 | 版本 |
 |------|------|
-| Kotlin | 2.0.20 |
-| AGP | 8.5.2 |
-| KSP | 2.0.20-1.0.25 |
-| compileSdk | 34 |
+| Kotlin | 2.3.21 |
+| AGP | 8.7.3 |
+| KSP | 2.3.7 |
+| compileSdk | 36 |
 | minSdk | 26 |
 | targetSdk | 34 |
 | NDK | 25.2.9519653 |
@@ -218,13 +218,13 @@ UI 层分为两个子系统：
 
 | 目录 | 职责 |
 |------|------|
-| `ui/screens/` | 26 个全屏页面（Home、Settings、Library、DanmakuServer 等），含 `dialogs/` 子目录 |
-| `ui/components/` | 11 个可复用 Compose 组件（弹窗、卡片、TopAppBar、SliderItem 等） |
-| `ui/player/` | 播放器控制面板 Compose（PlayerControls） |
+| `ui/screens/` | 27 个全屏页面（Home、Settings、Library、DanmakuServer 等），含 `dialogs/` 子目录 |
+| `ui/components/` | 12 个可复用 Compose 组件（弹窗、卡片、TopAppBar、SliderItem、SortOption 等） |
+| `ui/player/` | 8 个播放器控制面板 Compose（PlayerControls、PortraitControls、GestureIndicators 等） |
 | `ui/theme/` | 主题（亮/暗/跟随系统）、颜色、排版 |
 | `ui/webdav/` | WebDAV 相关页面 |
-| `ui/viewmodels/` | UI 层 ViewModel（Compose 页面专用） |
-| `manager/compose/` | 11 个 Compose 弹窗抽屉（弹幕设置、字幕设置、视频列表、章节、倍速、均衡器、片头片尾、杜比视界提示等） |
+| `ui/viewmodels/` | UI 层 ViewModel（BiliBiliDanmakuViewModel） |
+| `manager/compose/` | 9 个 Compose 抽屉/弹窗（弹幕设置、字幕设置、视频列表、章节、倍速、均衡器、片头片尾、杜比视界提示、文件选择器） |
 
 ### 4.2 Presentation 层
 
@@ -283,16 +283,14 @@ ViewModel
 | `VideoSelector` | 串流协议视频选择 | 无状态 |
 | `SkipIntroOutroManager` | 片头片尾自动跳过 | Activity 绑定 |
 
-**Manager 模式说明**:
-
-```kotlin
-// PlaybackEngine 封装了 mpv 的所有操作
-class PlaybackEngine(
-    private val mpvView: CustomMPVView,      // 依赖具体 View
-    private val contextRef: WeakReference<Context>, // WeakReference 防泄漏
-    private val eventCallback: PlaybackEventCallback // 回调
-) : MPVLib.EventObserver { ... }
-```
+辅助 Domain：
+| Manager | 职责 |
+|---------|------|
+| `FolderBrowserManager` | 文件夹浏览器（过滤、排序） |
+| `MediaScanManager` | 媒体文件扫描 |
+| `TreeNavigationManager` | 目录树导航 |
+| `VideoBrowserManager` | 视频浏览器 |
+| `WebDavClient` | WebDAV 协议客户端 |
 
 ### 4.4 Repository 层
 
@@ -307,13 +305,7 @@ class PlaybackEngine(
 | `SubtitleRepository` | 字幕在线搜索（对接多个源） |
 | `MediaInfoRepository` | 媒体文件元信息 |
 
-数据流向：
-
-```
-ViewModel → Repository → DAO / Network / Preferences
-                 ↓
-            Domain Model (Entity / Data Class)
-```
+注：番剧模块的 Repository 位于 `bilibili/repository/BangumiRepository.kt`。
 
 ### 4.5 Data 层
 
@@ -329,27 +321,44 @@ VideoDatabase (v4)
   │   ├── nameSortKey (自然排序)
   │   └── 索引: folderName, (folderPath, name), lastScanned
   │
-  └── playback_history      — 播放历史
-      ├── uri, fileName, position, duration
-      ├── lastPlayed, folderName
-      ├── danmuPath, danmuVisible, danmuOffsetTime
-      └── 索引: lastPlayed DESC
+  ├── playback_history      — 播放历史
+  │   ├── uri, fileName, position, duration
+  │   ├── lastPlayed, folderName
+  │   ├── danmuPath, danmuVisible, danmuOffsetTime
+  │   └── 索引: lastPlayed DESC
+  │
+  └── playback_state       — 播放状态（快速查询进度）
+      ├── uri, position, duration
+      └── 索引: uri UNIQUE
 ```
 
 #### SharedPreferences
 
-`PreferencesManager` 统一管理所有设置项：
-- 播放设置（快进时长、倍速、解码方式）
-- UI 设置（主题模式、显示模式）
+`PreferencesManager` 统一管理所有设置项（50+ 配置项）：
+- 播放设置（快进时长、倍速、解码方式、章节控制、进度条样式、缩略图、OP/ED 跳过）
+- 播放界面动画（控制栏动画、抽屉动画，默认关闭）
+- UI 设置（主题模式、显示模式、视频列表进度条）
 - 弹幕设置（大小、速度、透明度、行数限制、多服务器列表）
 - 字幕设置（延迟、缩放、颜色、描边）
-- 黑名单、更新设置、手势配置等
+- 黑名单、更新设置、手势配置、灵敏度等
 - 功能引导标记（如长按动态调速已使用）
+
+#### 本地库 (libs/)
+
+| 文件 | 用途 |
+|------|------|
+| `mpv-android-lib-v0.1.10.aar` | mpv 播放器 Android 封装 |
+| `mpvlib.aar` | mpv 核心库 |
+| `DanmakuFlameMaster.aar` | 弹幕渲染引擎 |
+| `mediainfoAndroid-v1.0.0-fix.aar` | 媒体元信息解析 |
+| `seeker-2.0.1.aar` | 文件搜索/流探测 |
+| `sardine-1.0.2.jar` | WebDAV 客户端 |
+| `simple-xml-2.7.1.jar` | XML 序列化 |
 
 #### 网络 API
 
 - **Bilibili API**: 番剧信息、视频流解析、二维码登录
-- **DanDanPlay API**: 弹幕搜索与下载
+- **DanDanPlay API**: 弹幕搜索与下载（支持自定义服务器）
 - **WebDAV**: 远程文件管理
 
 ### 4.6 Service 层
@@ -358,7 +367,7 @@ VideoDatabase (v4)
 
 | 组件 | 职责 |
 |------|------|
-| `BackgroundPlaybackService` | 前台 Service，在"听视频"模式下维持进程存活。使用 `Notification.Builder` 构建通知，`START_STICKY` 重启策略。Activity 生命周期跳过暂停/销毁逻辑由 `isManualBackgroundPlayback` 标记控制。 |
+| `BackgroundPlaybackService` | 前台 Service，在"听视频"模式下维持进程存活。使用 `Notification.Builder` 构建通知，`START_STICKY` 重启策略。 |
 
 ### 4.7 DI 层
 
@@ -394,7 +403,7 @@ sealed interface AppScreen {
     @Serializable data class Player(val videoUri: String) : AppScreen
     @Serializable data class BangumiDetail(val seasonId: Int, val isEpId: Boolean = false) : AppScreen
     @Serializable data object BangumiIndex : AppScreen
-    @Serializable data object TVBoxSearch : AppScreen
+    @Serializable data object TVBrowser : AppScreen
     // ...
 }
 ```
@@ -561,150 +570,7 @@ class PlaybackEngine(
 
 ---
 
-## 10. 功能模块详解
-
-### 10.1 TV Box 模块
-
-**位置**: `tvbox/`
-
-支持 TV Box 数据源协议，实现多源视频资源的搜索和播放。
-
-#### 模块结构
-
-```
-tvbox/
-├── config/
-│   ├── ConfigParser.kt          — 配置解析（JSON 格式数据源配置）
-│   └── TvBoxConfigManager.kt    — 配置管理器（加载、缓存、多源管理）
-├── crawler/
-│   └── JarLoader.java           — JAR 爬虫加载器（Java 实现，支持加解密）
-├── model/
-│   ├── ParseBean.kt             — 解析结果 Bean
-│   ├── SourceBean.kt            — 数据源配置 Bean
-│   └── VodInfo.kt               — 点播/剧集信息 Bean
-├── repository/
-│   └── TvBoxRepository.kt       — 数据仓库
-├── server/
-│   └── TvBoxProxyServer.kt      — HTTP 代理服务器（本地代理转发）
-├── ui/
-│   ├── TvBoxSearchContainerScreen.kt — 搜索容器（含搜索入口和结果展示）
-│   ├── TvBoxSearchScreen.kt     — 搜索页面
-│   └── VodDetailDialog.kt       — 点播详情对话框
-└── viewmodel/
-    └── TvBoxSearchViewModel.kt  — ViewModel
-```
-
-#### 数据流
-
-```
-用户搜索 → TvBoxSearchScreen
-    ↓
-TvBoxSearchViewModel
-    ↓
-TvBoxRepository → ConfigParser → HTTP/JAR 爬虫
-    ↓                                    ↓
-VodDetailDialog                  TvBoxProxyServer (本地代理)
-    ↓                                    ↓
-选择剧集 → RemotePlaybackLauncher → mpv 播放器
-```
-
-#### 关键实现
-
-- **多源支持**：通过 `TvBoxConfigManager` 管理多个数据源
-- **JAR 解密**：`JarLoader.java` 处理加密封装的数据源爬虫
-- **HTTP 代理**：`TvBoxProxyServer` 作为本地代理服务器，转发和处理请求
-- **播放对接**：解析后的视频 URL 通过 `RemotePlaybackLauncher` 启动 mpv 播放
-
----
-
-### 10.2 Bilibili 番剧索引模块
-
-**位置**: `bilibili/` + `presentation/` + `ui/screens/`
-
-通过 B 站 PGC Web API 实现番剧检索、详情查看和选集播放的完整功能。
-
-#### 页面流程
-
-```
-首页 → "Bilibili" 按钮
-    ↓
-番剧索引页 (BangumiIndexScreen)
-  ├── 筛选条件（10 行：排序/地区/风格/类型/付费/配音/版权/状态/年份/季度）
-  ├── 番剧网格（3 列卡片流，无限滚动分页）
-  ├── 链接输入（右上角 🔗，支持 ss/ep 链接）
-  └── 点击卡片 → 番剧详情页 (BangumiDetailScreen)
-                    ├── 封面 + 信息 + 简介
-                    ├── 选集网格（4 列）
-                    └── 点击剧集 → mpv 播放器
-```
-
-#### API 接口
-
-| 接口 | 端点 | 说明 |
-|------|------|------|
-| 筛选条件 | `/pgc/season/index/condition` | 获取排序/地区/风格等筛选条件 |
-| 索引结果 | `/pgc/season/index/result` | 分页获取番剧列表 |
-| 番剧详情 | `/pgc/view/web/season` | 获取剧集信息和各集数据 |
-| 播放地址 | `/pgc/player/web/playurl` | 获取 FLV 格式播放地址 |
-
-#### 数据层
-
-```kotlin
-// BiliBangumiApi — 封装所有 B 站 PGC API 调用
-class BiliBangumiApi(authManager: BiliBiliAuthManager) {
-    suspend fun getIndexCondition(seasonType): Result<PgcIndexConditionData>
-    suspend fun getIndexResult(params, page): Result<PgcIndexResultData>
-    suspend fun getSeasonInfo(id, isEpId): Result<PgcInfoResult>
-    suspend fun getPlayUrl(avid, bvid, cid, epId, ...): Result<PlayUrlResult>
-}
-
-// BangumiRepository — 数据仓库
-class BangumiRepository(bangumiApi: BiliBangumiApi) {
-    // 筛选条件、索引结果、详情、播放地址、视频URL提取
-}
-
-// BangumiIndexViewModel — 索引页状态管理
-class BangumiIndexViewModel :
-    filterState (10 个筛选条件的选中状态)
-    indexItems  (分页加载的番剧列表)
-    hasNextPage / isLoadingMore
-
-// BangumiDetailViewModel — 详情页状态管理
-class BangumiDetailViewModel :
-    seasonInfo  (番剧详情数据)
-    episodes    (剧集列表)
-    playEpisode() → RemotePlaybackLauncher
-```
-
-#### 筛选设计
-
-- **5 行收起 / 10 行展开**：默认显示前 5 行筛选条件
-- **每行独立横向滚动**：每行筛选项在该行内横向滑动
-- **默认全选**：每行第一个选项（如"全部地区"）默认选中
-- **圆形药丸样式**：选中项使用 `primaryContainer` 背景 + 16dp 圆角
-
-#### 卡片样式
-
-```
-┌─────────────┐
-│ [会员]       │ ← 左上角角标
-│   封面图     │
-│ [全12话]     │ ← 左下角副标题
-├─────────────┤
-│ 番剧名称    │ ← 加粗主标题
-└─────────────┘
-```
-
-#### 播放对接
-
-- 使用 `fnval=0`（FLV 格式，音视频合并）
-- 播放请求携带 `Cookie` + `Referer` 请求头
-- 通过 `RemotePlaybackLauncher` 启动 mpv 播放器
-- 支持 ss 链接（`season_id`）和 ep 链接（`ep_id`）
-
----
-
-## 11. 构建与配置
+## 10. 构建与配置
 
 ### 版本号方案
 
@@ -716,7 +582,7 @@ abiCode:
   armeabi-v7a → 1
 ```
 
-当前: `versionCode = 28`, `versionName = "1.2.8"`
+当前: `versionCode = 29`, `versionName = "1.2.9"`
 
 ### ABI 拆分
 
@@ -756,39 +622,31 @@ maven { url = uri("https://maven.aliyun.com/repository/public") }
 
 ---
 
-## 12. 包结构总览
+## 11. 包结构总览
 
 ```
-com.fam4k007.videoplayer/
-│  (26 个顶层文件)
+com.fam4k007.videoplayer/  (205 个 .kt 文件, 24 个一级子目录)
+│  (17 个顶层 Activity + 核心文件)
 │  VideoPlayerActivity.kt          — 播放器主 Activity
-│  VideoPlayerActivity+Setup.kt    — 初始化、Manager 创建、杜比视界检测
-│  VideoPlayerActivity+Playback.kt — 播放控制、均衡器恢复
-│  VideoPlayerActivity+UI.kt       — UI 相关操作
+│  VideoPlayerActivity+Setup.kt    — 初始化、Manager 创建
+│  VideoPlayerActivity+Playback.kt — 播放控制
+│  VideoPlayerActivity+UI.kt       — UI 操作
 │  VideoPlayerActivity+Observers.kt— MPV 事件观察
 │  VideoPlayerActivity+Danmaku.kt  — 弹幕操作
 │  VideoPlayerActivity+Subtitle.kt — 字幕操作
 │  VideoPlayerActivity+Orientation.kt — 横竖屏
 │  MainActivity.kt                 — 主页 Activity
 │  AppApplication.kt               — Application 入口
-│  AppConstants.kt                 — 常量定义（Preferences Key、默认值）
+│  AppConstants.kt                 — 常量定义
 │  BaseActivity.kt                 — Activity 基类
 │  PlaybackHistoryManager.kt       — 播放历史管理器
 │  VideoFileParcelable.kt          — 视频文件 Parcelable
 │  VideoFolder.kt                  — 视频文件夹模型
-│  AboutComposeActivity.kt         — 关于页面
-│  BiliBiliDanmakuComposeActivity.kt — B站弹幕页面
-│  DownloadActivity.kt             — 下载页面
-│  LicenseActivity.kt              — 开源许可
-│  PlaybackHistoryComposeActivity.kt — 播放历史页面
-│  PlaybackSettingsComposeActivity.kt — 播放设置页面
-│  SettingsComposeActivity.kt      — 设置页面
-│  SubtitleSearchActivity.kt       — 字幕搜索页面
-│  UserAgreementActivity.kt        — 用户协议页面
-│  VideoBrowserComposeActivity.kt  — 视频浏览页面
-│  VideoListComposeActivity.kt     — 视频列表页面
+│  (About/BiliBiliDanmaku/Download/License/PlaybackHistory/
+│   PlaybackSettings/Settings/SubtitleSearch/UserAgreement/
+│   VideoBrowser/VideoList)ComposeActivity.kt — 各 Compose 页面 Activity
 │
-├── di/                            — Koin 依赖注入
+├── di/                            — Koin 依赖注入 (6 模块)
 │   ├── AppModule.kt               — 模块入口
 │   ├── DatabaseModule.kt          — Room 数据库
 │   ├── NetworkModule.kt           — 网络服务
@@ -796,16 +654,16 @@ com.fam4k007.videoplayer/
 │   ├── DomainModule.kt            — 领域服务
 │   └── PresentationModule.kt      — ViewModel
 │
-│   ├── presentation/                  — 15 个 ViewModel
-│   ├── PlayerViewModel.kt         — 播放器核心状态（MPV 事件监听）
+├── presentation/                  — 15 个 ViewModel
+│   ├── PlayerViewModel.kt         — 播放器核心状态
 │   ├── LibraryViewModel.kt        — 视频库
 │   ├── SettingsViewModel.kt       — 设置
+│   ├── PlaybackSettingsViewModel.kt — 播放设置（含动画开关）
 │   ├── BilibiliViewModel.kt       — B站
 │   ├── BangumiIndexViewModel.kt   — 番剧索引
 │   ├── BangumiDetailViewModel.kt  — 番剧详情
 │   ├── WebDavViewModel.kt         — WebDAV
 │   ├── PlaybackHistoryViewModel.kt
-│   ├── PlaybackSettingsViewModel.kt
 │   ├── SubtitleSearchViewModel.kt
 │   ├── MediaInfoViewModel.kt
 │   ├── DeviceInfoViewModel.kt
@@ -813,12 +671,12 @@ com.fam4k007.videoplayer/
 │   ├── LogViewerViewModel.kt
 │   └── TVBrowserViewModel.kt
 │
-├── domain/                        — 业务逻辑
-│   ├── player/                    — 播放核心
+├── domain/                        — 业务逻辑 (11 Manager + 5 辅助)
+│   ├── player/                    — 播放核心 (7)
 │   │   ├── PlaybackEngine.kt      — mpv 播放控制
 │   │   ├── PlayerControlsManager.kt — 控制栏显隐
 │   │   ├── PlayerDialogManager.kt — 底部弹窗管理
-│   │   ├── GestureHandler.kt      — 手势识别
+│   │   ├── GestureHandler.kt      — 手势识别（View 版）
 │   │   ├── Anime4KManager.kt      — Anime4K 着色器
 │   │   ├── SeriesManager.kt       — 同系列识别
 │   │   └── FilePickerManager.kt   — 文件选择
@@ -828,112 +686,91 @@ com.fam4k007.videoplayer/
 │   │   └── SubtitleManager.kt
 │   ├── sniffer/                   — 串流嗅探
 │   │   └── VideoSelector.kt
-│   └── webdav/                    — WebDAV
-│       └── WebDavClient.kt
+│   ├── webdav/                    — WebDAV
+│   │   └── WebDavClient.kt
+│   └── media/                     — 媒体浏览
+│       ├── FolderBrowserManager.kt
+│       ├── MediaScanManager.kt
+│       ├── TreeNavigationManager.kt
+│       └── VideoBrowserManager.kt
 │
-├── repository/                    — 8 个 Repository
+├── repository/                    — 6 个 Repository
 │   ├── PlayerRepository.kt
 │   ├── VideoRepository.kt
 │   ├── BilibiliRepository.kt
-│   ├── BangumiRepository.kt      — 番剧数据仓库
-│   ├── TvBoxRepository.kt        — TV Box 数据仓库
 │   ├── WebDavRepository.kt
 │   ├── SubtitleRepository.kt
 │   └── MediaInfoRepository.kt
 │
-├── database/                      — Room 数据库
+├── database/                      — Room 数据库 (3 表)
 │   ├── VideoDatabase.kt
 │   ├── VideoCacheDao.kt / Entity.kt
-│   └── PlaybackHistoryDao.kt / Entity.kt
+│   ├── PlaybackHistoryDao.kt / Entity.kt
+│   └── PlaybackState.kt
 │
 ├── preferences/                   — 设置管理器
-│   └── PreferencesManager.kt
+│   └── PreferencesManager.kt      — 50+ 配置项统一管理
 │
-├── manager/                       — 功能管理器
+├── manager/                       — 功能管理器 + Compose 覆盖层
 │   ├── ScreenshotManager.kt       — 截图
 │   ├── SkipIntroOutroManager.kt   — 片头片尾跳过
 │   ├── ThemeManager.kt            — 主题
-│   └── compose/                   — Compose 覆盖层弹窗/抽屉 (11 文件)
-│       ├── ComposeOverlayManager.kt — 覆盖层管理器（统一入口）
-│       ├── ChapterDrawer.kt       — 章节抽屉
+│   ├── VideoThumbnailManager.kt   — 视频缩略图
+│   └── compose/                   — 9 个抽屉/弹窗
+│       ├── ComposeOverlayManager.kt — 覆盖层管理器（含全局动画开关）
+│       ├── ChapterDrawer.kt       — 章节抽屉（冻结标题+横线分隔）
 │       ├── SpeedDrawer.kt         — 倍速选择抽屉
-│       ├── EqualizerDrawer.kt     — 音频均衡器抽屉
-│       ├── SkipSettingsDrawer.kt  — 片头片尾设置抽屉
+│       ├── EqualizerDrawer.kt     — 均衡器抽屉
+│       ├── SkipSettingsDrawer.kt  — 片头片尾设置
 │       ├── VideoListDrawer.kt     — 视频列表抽屉
-│       ├── DanmakuDialogs.kt      — 弹幕设置对话框
+│       ├── DanmakuDialogs.kt      — 弹幕设置（冻结标题+横线分隔）
 │       ├── DanmakuFilePickerDialog.kt — 弹幕文件选择
-│       ├── SubtitleDialogs.kt     — 字幕设置对话框
+│       ├── SubtitleDialogs.kt     — 字幕设置
 │       ├── SubtitleFilePickerDialog.kt — 字幕文件选择
-│       └── DolbyVisionHintDialog.kt — 杜比视界提示对话框
+│       └── DolbyVisionHintDialog.kt — 杜比视界提示
 │
 ├── navigation/                    — 导航
 │   ├── AppNavGraph.kt
 │   └── AppScreen.kt
 │
 ├── ui/                            — Compose UI
-│   ├── screens/                   — 25 个全屏页面
-│   │   ├── HomeScreen.kt          — 主页
-│   │   ├── SettingsScreen.kt      — 设置
-│   │   ├── PlaybackSettingsScreen.kt — 播放设置
-│   │   ├── MediaSettingsScreen.kt — 媒体设置
-│   │   ├── PlayerScreen.kt        — 播放器
-│   │   ├── AboutScreen.kt         — 关于
-│   │   ├── BangumiIndexScreen.kt  — 番剧索引
-│   │   ├── BangumiDetailScreen.kt — 番剧详情
-│   │   ├── BiliBiliLoginScreen.kt — B站登录
-│   │   ├── BiliBiliDanmakuScreen.kt — B站弹幕
-│   │   ├── LibraryScreen.kt       — 视频库
-│   │   ├── FolderBrowserScreen.kt — 文件夹浏览
-│   │   ├── VideoListScreen.kt     — 视频列表
-│   │   ├── VideoListScreenPaging.kt — 视频列表（分页版）
-│   │   ├── PlaybackHistoryScreen.kt — 播放历史
-│   │   ├── SubtitleSearchScreen.kt — 字幕搜索
-│   │   ├── DeviceInfoScreen.kt    — 设备信息
-│   │   ├── CacheManagementScreen.kt — 缓存管理
-│   │   ├── DanmakuServerScreen.kt — 弹幕服务器管理
-│   │   ├── DownloadScreen.kt      — 下载
-│   │   ├── DownloadManagerScreen.kt — 下载管理
-│   │   ├── FolderBlacklistScreen.kt — 文件夹黑名单
-│   │   ├── LogViewerScreen.kt     — 日志查看
-│   │   ├── LicenseScreen.kt       — 开源许可
-│   │   ├── UserAgreementScreen.kt — 用户协议
-│   │   ├── TVBrowserScreen.kt     — TV 模式浏览
-│   │   └── dialogs/               — 页面级对话框
-│   │       ├── DisplayModeDialog.kt — 显示模式选择
-│   │       └── ThemeDialogs.kt    — 主题选择
-│   ├── components/                — 11 个可复用组件
-│   │   ├── Dialogs.kt             — 公共对话框（Confirm/Info/Input/Custom/Selection）
-│   │   ├── Cards.kt               — 卡片组件
-│   │   ├── SliderItem.kt          — 滑动条设置项
-│   │   ├── PreferenceItems.kt     — 设置项组件（TextItem/SwitchItem）
-│   │   ├── ImmersiveTopAppBar.kt  — 沉浸式顶栏
-│   │   ├── UpdateDialog.kt        — 更新对话框
-│   │   ├── DanDanPlaySearchDialog.kt — DanDanPlay 搜索
-│   │   ├── ExpandableCard.kt      — 可展开卡片
-│   │   ├── FileOperationMenu.kt   — 文件操作菜单
-│   │   ├── MultiSelectActionBar.kt — 多选操作栏
-│   │   └── CommonStates.kt        — 通用状态
-│   ├── player/                    — 播放器控件 (8 文件)
-│   │   ├── PlayerControlsCompose.kt  — 横屏控制面板（含长按倍速浮层、动态调速档位条）
+│   ├── screens/                   — 27 个全屏页面 + dialogs/
+│   │   ├── HomeScreen.kt / SettingsScreen.kt / PlaybackSettingsScreen.kt
+│   │   ├── MediaSettingsScreen.kt / PlayerScreen.kt / AboutScreen.kt
+│   │   ├── BangumiIndexScreen.kt / BangumiDetailScreen.kt
+│   │   ├── BiliBiliLoginScreen.kt / BiliBiliDanmakuScreen.kt
+│   │   ├── LibraryScreen.kt / FolderBrowserScreen.kt
+│   │   ├── VideoListScreen.kt / VideoListScreenPaging.kt
+│   │   ├── PlaybackHistoryScreen.kt / SubtitleSearchScreen.kt
+│   │   ├── DeviceInfoScreen.kt / CacheManagementScreen.kt
+│   │   ├── DanmakuServerScreen.kt / DownloadScreen.kt
+│   │   ├── DownloadManagerScreen.kt / FolderBlacklistScreen.kt
+│   │   ├── LogViewerScreen.kt / LicenseScreen.kt
+│   │   ├── UserAgreementScreen.kt / TVBrowserScreen.kt
+│   │   └── dialogs/ (DisplayModeDialog.kt / ThemeDialogs.kt)
+│   ├── components/                — 12 个可复用组件
+│   │   ├── Dialogs.kt / Cards.kt / SliderItem.kt / PreferenceItems.kt
+│   │   ├── ImmersiveTopAppBar.kt / UpdateDialog.kt
+│   │   ├── DanDanPlaySearchDialog.kt / ExpandableCard.kt
+│   │   ├── FileOperationMenu.kt / MultiSelectActionBar.kt
+│   │   ├── CommonStates.kt / SortOption.kt
+│   ├── player/                    — 8 个播放器控件
+│   │   ├── PlayerControlsCompose.kt  — 横屏控制面板
 │   │   ├── PortraitControls.kt       — 竖屏控制面板
 │   │   ├── CustomSeekbar.kt          — 自定义进度条
-│   │   ├── GestureHandler.kt         — 手势 (Compose 版，含长按动态调速)
-│   │   ├── SeekIndicator.kt          — 进度指示器
-│   │   ├── GestureIndicators.kt      — 手势指示器
-│   │   ├── SeekbarStyle.kt           — 进度条样式
-│   │   └── SeekbarThumbnailPreview.kt — 进度条缩略图预览
+│   │   ├── GestureHandler.kt         — 手势 (Compose 版)
+│   │   ├── GestureIndicators.kt      — 音量/亮度指示器（深色背景风格）
+│   │   ├── SeekIndicator.kt          — 快进/快退指示器
+│   │   ├── SeekbarStyle.kt           — 进度条样式定义
+│   │   └── SeekbarThumbnailPreview.kt — 缩略图预览
 │   ├── theme/                     — 5 个主题文件
-│   │   ├── Theme.kt               — 主题定义
-│   │   ├── AppTheme.kt            — 应用主题枚举
-│   │   ├── ThemeController.kt     — 主题控制器
-│   │   ├── Spacing.kt             — 间距定义
-│   │   └── Type.kt                — 字体排版
 │   ├── webdav/                    — WebDAV 页面
 │   └── viewmodels/                — UI 层 ViewModel
 │
-├── player/                        — mpv 播放器 View
+├── player/                        — mpv 播放器 View (传统)
 │   ├── CustomMPVView.kt
 │   ├── DoubleTapSeekIndicator.kt
+│   ├── SkipSegment.kt
 │   └── VideoAspect.kt
 │
 ├── danmaku/                       — 弹幕 View + 下载
@@ -941,89 +778,26 @@ com.fam4k007.videoplayer/
 │   ├── DanmakuConfig.kt
 │   └── BiliBiliDanmakuDownloadManager.kt
 │
-├── bilibili/                      — B 站 API（4 个子目录）
-│   ├── api/
-│   │   └── BiliBangumiApi.kt     — 番剧 API（索引、详情、播放地址、搜索）
-│   ├── auth/
-│   │   └── BiliBiliAuthManager.kt — 认证管理（二维码登录、Cookie）
-│   ├── model/
-│   │   ├── ApiModels.kt          — 通用 API 模型
-│   │   ├── BangumiDetail.kt      — 番剧详情模型（简化版）
-│   │   ├── BangumiIndexModels.kt — 番剧索引模型（条件/结果/详情/播放地址）
-│   │   └── BiliBiliModels.kt     — B站核心模型（用户/剧集/播放地址）
-│   └── repository/
-│       └── BangumiRepository.kt  — 番剧数据仓库
+├── bilibili/                      — B 站 API
+│   ├── api/BiliBangumiApi.kt     — 番剧 API
+│   ├── auth/BiliBiliAuthManager.kt — 认证管理
+│   ├── model/ (4 个模型文件)     — 数据模型
+│   └── repository/BangumiRepository.kt — 番剧数据仓库
 │
-├── tvbox/                         — TV Box 模块（6 个子目录）
-│   ├── config/
-│   │   ├── ConfigParser.kt       — 配置解析器
-│   │   └── TvBoxConfigManager.kt — TV Box 配置管理
-│   ├── crawler/
-│   │   └── JarLoader.java        — JAR 加载器（Java）
-│   ├── model/
-│   │   ├── ParseBean.kt          — 解析结果模型
-│   │   ├── SourceBean.kt         — 数据源模型
-│   │   └── VodInfo.kt            — 点播信息模型
-│   ├── repository/
-│   │   └── TvBoxRepository.kt    — TV Box 数据仓库
-│   ├── server/
-│   │   └── TvBoxProxyServer.kt   — HTTP 代理服务器
-│   ├── ui/
-│   │   ├── TvBoxSearchContainerScreen.kt — 搜索容器页面
-│   │   ├── TvBoxSearchScreen.kt  — 搜索页面
-│   │   └── VodDetailDialog.kt    — 点播详情对话框
-│   └── viewmodel/
-│       └── TvBoxSearchViewModel.kt — 搜索 ViewModel
+├── tv/                            — TV 浏览器
+│   └── TVBrowserActivity.kt
 │
 ├── dandanplay/                    — DanDanPlay API
-│   ├── DanDanPlayApi.kt           — 弹幕 API 客户端（支持自定义 baseUrl）
-│   ├── DanDanPlayModels.kt        — 数据模型（含 ServerMatchResult）
-│   └── DanmakuServer.kt           — 弹幕服务器配置模型（多服务器管理）
+│   ├── DanDanPlayApi.kt           — 弹幕 API 客户端
+│   ├── DanDanPlayModels.kt        — 数据模型
+│   └── DanmakuServer.kt           — 服务器配置
 │
 ├── remote/                        — 远程播放 (5 文件)
-│   ├── RemotePlaybackLauncher.kt  — 远程播放启动器
-│   ├── RemotePlaybackResolver.kt  — 远程播放解析器
-│   ├── RemotePlaybackRequest.kt   — 远程播放请求模型
-│   ├── RemotePlaybackHeaders.kt   — 远程播放请求头
-│   └── RemoteUrlParser.kt         — URL 解析
-│
-├── download/                      — 下载管理
-│   ├── BilibiliDownloadManager.kt
-│   ├── BilibiliDownloadViewModel.kt
-│   ├── DownloadExampleActivity.kt
-│   ├── DownloadItem.kt
-│   └── DownloadTaskStore.kt
-│
+├── download/                      — 下载管理 (5 文件)
 ├── subtitle/                      — 字幕下载
-│   └── ... 
-│
 ├── sniffer/                       — 视频嗅探 (3 文件)
-│   ├── VideoSnifferManager.kt
-│   ├── UrlDetector.kt
-│   └── DetectedVideo.kt
-│
-├── mediainfo/                     — 媒体信息
-├── paging/                        — 分页加载
 ├── service/                       — 后台 Service
-│   └── BackgroundPlaybackService.kt
-├── worker/                        — WorkManager 后台任务
-├── utils/                         — 14 个工具类
-│   ├── UpdateManager.kt           — 更新检查
-│   ├── ThumbnailCacheManager.kt   — 缩略图缓存
-│   ├── DeviceInfoDetector.kt      — 设备信息检测（HDR/杜比视界能力）
-│   ├── CrashHandler.kt            — 崩溃捕获
-│   ├── FileOperationManager.kt    — 文件操作
-│   ├── UriUtils.kt  FormatUtils.kt  Logger.kt
-│   ├── DialogUtils.kt  CookieManager.kt
-│   ├── MediaInfoHelper.kt  ScanFilter.kt
-│   ├── NoMediaChecker.kt  SecureStorage.kt
-│   └── media/                     — 媒体库相关 (4 文件)
-│       ├── MediaLibraryEvents.kt  — 媒体库事件
-│       ├── MediaScanReceiver.kt   — 媒体扫描广播接收器
-│       ├── NoMediaPathFilter.kt   — .nomedia 路径过滤
-│       └── TreeViewScanner.kt     — 树状视图扫描器
-├── tv/                            — TV 模式
-└── data/                          — 数据模型
-    ├── model/WebDavAccount.kt
-    └── preferences/WebDavAccountDataSource.kt
+├── utils/                         — 工具类 (16 文件 + media/ 子目录)
+├── worker/                        — WorkManager Worker
+└── paging/                        — 分页数据源
 ```

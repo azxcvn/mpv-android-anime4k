@@ -306,22 +306,6 @@
 # SubtitleDownloadManager 中的私有内部类也必须保护
 -keep class com.fam4k007.videoplayer.subtitle.SubtitleDownloadManager { *; }
 
-# ============================================
-# TVBox / catvod 相关规则（重要！JAR Spider 通过反射/继承引用）
-# ============================================
-
-# 保护 catvod 核心类（JAR 的 Spider 继承 Spider、调用 Proxy/Init）
--keep class com.github.catvod.** { *; }
--keepclassmembers class com.github.catvod.** { *; }
-
-# 保护 TVBox 业务层（JarLoader 通过 DexClassLoader + 反射加载）
--keep class com.fam4k007.videoplayer.tvbox.** { *; }
--keepclassmembers class com.fam4k007.videoplayer.tvbox.** { *; }
-
-# NanoHTTPD 代理服务器
--keep class fi.iki.elonen.** { *; }
--keepclassmembers class fi.iki.elonen.** { *; }
--dontwarn fi.iki.elonen.**
 -keep class com.fam4k007.videoplayer.subtitle.SubtitleDownloadManager$* { *; }
 
 # 保护 SubtitleSearchActivity 和 SubtitleSearchScreen
