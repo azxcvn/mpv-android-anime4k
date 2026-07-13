@@ -27,6 +27,8 @@ import com.fam4k007.videoplayer.ui.theme.rememberThemeController
 import com.fam4k007.videoplayer.utils.DialogUtils
 import com.fam4k007.videoplayer.utils.FormatUtils
 import com.fam4k007.videoplayer.utils.Logger
+import com.fam4k007.videoplayer.presentation.PlayerStateHolder
+import org.koin.android.ext.android.inject
 import java.lang.ref.WeakReference
 
 private const val TAG = "VideoPlayerActivity"
@@ -89,7 +91,7 @@ internal fun VideoPlayerActivity.setupComposeTestLayer() {
                             }
                         }
                     }
-                    // 监听亮度变更事件 — 仅调节当前窗口亮度，不修改系统亮度设置
+                    // 监听亮度变更事件
                     LaunchedEffect(Unit) {
                         viewModel.brightnessChangeEvent.collect { brightness ->
                             try {
