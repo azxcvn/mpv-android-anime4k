@@ -611,6 +611,8 @@ class VideoPlayerActivity : AppCompatActivity(),
         // 重新同步音量增强状态（用户可能在设置页面修改了）
         val currentBoost = preferencesManager.isVolumeBoostEnabled()
         viewModel.setVolumeBoostEnabled(currentBoost)
+        // 重新同步动画开关设置（用户可能在设置页面修改了）
+        viewModel.syncAnimationSettings()
         Logger.d(TAG, "Activity resumed, volume boost synced: $currentBoost")
         // 不自动恢复播放，让用户手动控制
         Logger.d(TAG, "Activity resumed")

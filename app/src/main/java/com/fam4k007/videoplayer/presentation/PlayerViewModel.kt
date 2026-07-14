@@ -388,6 +388,10 @@ class PlayerViewModel(
 
     fun setThumbnailManager(manager: com.fam4k007.videoplayer.manager.VideoThumbnailManager) {
         _thumbnailManager = manager
+        // 重置初始化标志，确保新 manager 在 Activity 重建后能被正确初始化
+        // PlayerViewModel 是 Koin 单例，Activity 销毁重建时复用同一实例
+        thumbnailInitialized = false
+        warmedThumbnailSource = null
     }
 
     fun initializeThumbnail(uri: Uri, durationMs: Long, isWebDav: Boolean = false) {
@@ -542,6 +546,15 @@ class PlayerViewModel(
 
     private val _drawerAnimationEnabled = MutableStateFlow(false)
     val drawerAnimationEnabled: StateFlow<Boolean> = _drawerAnimationEnabled.asStateFlow()
+
+    /**
+     * 同步动画设置（从 SharedPreferences 重新读取）
+     * 在 onResume 中调用，确保用户从设置页返回后动画开关立即生效
+     */
+    fun syncAnimationSettings() {
+        _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
+        _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
+    }
 
     private val _chapterBarEnabled = MutableStateFlow(true)
     val chapterBarEnabled: StateFlow<Boolean> = _chapterBarEnabled.asStateFlow()
