@@ -85,7 +85,7 @@ fun BiliBiliLoginScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -297,8 +297,8 @@ private fun LoggedInContent(
     if (showLogoutConfirm) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
-            title = { Text("退出登录") },
-            text = { Text("确定要退出当前B站账号吗？") },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to log out?") },
             confirmButton = {
                 TextButton(onClick = { showLogoutConfirm = false; onLogout() }) {
                     Text("Logout", color = MaterialTheme.colorScheme.error)

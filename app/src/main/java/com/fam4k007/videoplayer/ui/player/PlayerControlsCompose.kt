@@ -290,7 +290,7 @@ fun BottomControlPanel(
 
     // Anime4K 模式缩写文字
     val anime4KLabel = when (anime4KMode) {
-        com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF -> "关"
+        com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF -> "Off"
         com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.A -> "A"
         com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.B -> "B"
         com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.C -> "C"
@@ -517,7 +517,7 @@ fun BottomControlPanel(
                         .let { mod ->
                             if (gpuNext) {
                                 mod.clickable {
-                                    Toast.makeText(context, "已启用 GPU Next 渲染，无法开启超分", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "GPU Next rendering enabled, super resolution unavailable", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
                                 mod
@@ -527,7 +527,7 @@ fun BottomControlPanel(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "超分辨率：$anime4KLabel",
+                        text = "Super Resolution: $anime4KLabel",
                         color = if (anime4KActive) Color.Yellow
                                 else if (gpuNext) Color.Gray.copy(alpha = 0.5f)
                                 else Color.White.copy(alpha = 0.7f),
@@ -551,7 +551,7 @@ fun BottomControlPanel(
                             if (danmakuVisible) R.drawable.ic_danmaku_visible
                             else R.drawable.ic_danmaku_hidden
                         ),
-                        contentDescription = if (danmakuVisible) "隐藏弹幕" else "显示弹幕",
+                        contentDescription = if (danmakuVisible) "Hide Danmaku" else "Show Danmaku",
                         tint = if (danmakuVisible) Color.White else Color.White.copy(alpha = 0.5f),
                         modifier = Modifier.size(22.dp)
                     )
@@ -569,7 +569,7 @@ fun BottomControlPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.rewind_28_filled),
-                        contentDescription = "快退${seekTimeSeconds}秒",
+                        contentDescription = "Rewind ${seekTimeSeconds}s",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -588,7 +588,7 @@ fun BottomControlPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_player_previous1),
-                        contentDescription = "上一集",
+                        contentDescription = "Previous Episode",
                         tint = if (hasPrevious) Color.White else Color.White.copy(alpha = 0.3f),
                         modifier = Modifier.size(26.dp)
                     )
@@ -609,7 +609,7 @@ fun BottomControlPanel(
                     painter = painterResource(
                         if (paused == true) R.drawable.ic_player_play1 else R.drawable.ic_player_pause1
                     ),
-                    contentDescription = if (paused == true) "播放" else "暂停",
+                    contentDescription = if (paused == true) "Play" else "Pause",
                     tint = Color.White,
                     modifier = Modifier.size(48.dp)
                 )
@@ -634,7 +634,7 @@ fun BottomControlPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_player_next1),
-                        contentDescription = "下一集",
+                        contentDescription = "Next Episode",
                         tint = if (hasNext) Color.White else Color.White.copy(alpha = 0.3f),
                         modifier = Modifier.size(26.dp)
                     )
@@ -652,7 +652,7 @@ fun BottomControlPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.fast_forward_28_filled),
-                        contentDescription = "快进${seekTimeSeconds}秒",
+                        contentDescription = "Fast Forward ${seekTimeSeconds}s",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -677,7 +677,7 @@ fun BottomControlPanel(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(R.drawable.top_speed_24_regular),
-                            contentDescription = "倍速",
+                            contentDescription = "Speed",
                             tint = if (speed != 1.0f) Color.Yellow else Color.White,
                             modifier = Modifier.size(28.dp)
                         )
@@ -704,7 +704,7 @@ fun BottomControlPanel(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.crop_arrow_rotate_24_filled),
-                        contentDescription = "旋转",
+                        contentDescription = "Rotate",
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
@@ -884,7 +884,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.arrow_left_48_regular),
-                contentDescription = "返回",
+                contentDescription = "Back",
                 tint = Color.White,
                 modifier = Modifier.size(26.dp)
             )
@@ -958,7 +958,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.subtitles_24_filled),
-                contentDescription = "字幕",
+                contentDescription = "Subtitles",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -985,7 +985,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.comment_note_24_filled),
-                contentDescription = "弹幕",
+                contentDescription = "Danmaku",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1012,7 +1012,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ratio_one_to_one_24_filled),
-                contentDescription = "画面比例",
+                contentDescription = "Aspect Ratio",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1040,7 +1040,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_music_note_1_20_filled),
-                contentDescription = "音频",
+                contentDescription = "Audio",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1068,7 +1068,7 @@ fun TopControlPanel(
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vertical_48_regular),
-                contentDescription = "更多",
+                contentDescription = "More",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1113,7 +1113,7 @@ fun UnlockButtons(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.lock_open_48_filled),
-                    contentDescription = "解锁",
+                    contentDescription = "Unlock",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
@@ -1188,7 +1188,7 @@ fun RightSideControls(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_screen_cut_20_regular),
-                            contentDescription = "截图",
+                            contentDescription = "Screenshot",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
@@ -1201,7 +1201,7 @@ fun RightSideControls(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.lock_closed_48_filled),
-                            contentDescription = "锁定",
+                            contentDescription = "Lock",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
@@ -1214,7 +1214,7 @@ fun RightSideControls(
 
 /**
  * 长按倍速提示覆盖层
- * 长按时顶部居中显示"正在X.Xx倍速播放"
+ * 长按时顶部居中显示"Speed: X.Xx"
  * 左右滑动调速时显示速度档位选择条
  */
 @Composable
@@ -1254,9 +1254,9 @@ fun LongPressSpeedOverlay(
                 // 速度文字提示
                 Text(
                     text = if (isDynamicSpeedActive)
-                        "正在${String.format("%.2f", speed)}倍速播放"
+                        "Speed: ${String.format("%.2f", speed)}x"
                     else
-                        "正在${String.format("%.1f", speed)}倍速播放",
+                        "Speed: ${String.format("%.1f", speed)}x",
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -1270,7 +1270,7 @@ fun LongPressSpeedOverlay(
                 if (showHint.value && !isDynamicSpeedActive) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "可通过左右滑动，临时调节长按播放的倍数",
+                        text = "Swipe left/right to adjust long-press speed",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         modifier = Modifier
@@ -1368,13 +1368,13 @@ fun ResumeProgressToast(
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = "已为您恢复至 $positionText",
+                    text = "Resumed to $positionText",
                     color = Color.White,
                     fontSize = 13.sp
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "重新开始",
+                    text = "Restart from Beginning",
                     color = Color(0xFF4FC3F7),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,

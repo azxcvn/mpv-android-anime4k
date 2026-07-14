@@ -73,7 +73,7 @@ fun GestureIndicators(
                     ) { icon -> 
                         Icon(
                             imageVector = icon,
-                            contentDescription = "音量",
+                            contentDescription = "Volume",
                             tint = Color.White,
                             modifier = Modifier.size(26.dp)
                         )
@@ -101,7 +101,7 @@ fun GestureIndicators(
                     ) { icon ->
                         Icon(
                             imageVector = icon,
-                            contentDescription = "亮度",
+                            contentDescription = "Brightness",
                             tint = Color.White,
                             modifier = Modifier.size(26.dp)
                         )

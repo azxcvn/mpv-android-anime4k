@@ -44,9 +44,9 @@ class DoubleTapSeekIndicator @JvmOverloads constructor(
     var seconds: Int = 0
         set(value) {
             secondsText.text = if (value > 0) {
-                "+${value}秒"
+                "+${value}s"
             } else {
-                "${value}秒"
+                "${value}s"
             }
             field = value
         }

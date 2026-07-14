@@ -22,26 +22,26 @@ fun DolbyVisionHintDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "杜比视界提示",
+                "Dolby Vision Notice",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
         },
         text = {
             Text(
-                "若画面发绿，请在「设置 - 播放设置」中启用 GPU Next 渲染并切换为软解。若仍无法解决，则该设备可能不支持杜比视界播放。",
+                "If the screen appears green, enable GPU Next Rendering and switch to software decoding in Settings - Playback Settings. If the issue persists, your device may not support Dolby Vision playback.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("知道了", fontWeight = FontWeight.SemiBold)
+                Text("Got it", fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDontShowAgain) {
-                Text("不再提示", color = MaterialTheme.colorScheme.error)
+                Text("Don't show again", color = MaterialTheme.colorScheme.error)
             }
         },
         shape = RoundedCornerShape(28.dp),

@@ -106,7 +106,7 @@ fun ExpandableCard(
                 
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "收起" else "展开",
+                    contentDescription = if (expanded) "Collapse" else "Expand",
                     modifier = Modifier
                         .size(24.dp)
                         .rotate(rotationAngle),

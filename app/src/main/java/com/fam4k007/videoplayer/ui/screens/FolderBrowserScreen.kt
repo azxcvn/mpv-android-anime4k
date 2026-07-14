@@ -282,7 +282,7 @@ fun FolderBrowserScreen(
                                 if (selfNode != null) {
                                     item {
                                         Text(
-                                            text = "视频文件",
+                                            text = "Video Files",
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -302,7 +302,7 @@ fun FolderBrowserScreen(
                                         item {
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text(
-                                                text = "子文件夹",
+                                                text = "Subfolders",
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,

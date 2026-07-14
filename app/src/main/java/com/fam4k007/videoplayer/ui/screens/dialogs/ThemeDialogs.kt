@@ -89,12 +89,12 @@ fun ThemeSelectionDialog(
                     onDismiss()
                 }
             ) {
-                Text("确定")
+                Text("OK")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         modifier = modifier,
@@ -131,7 +131,7 @@ fun DarkModeSelectionDialog(
                 val modes = listOf(
                     DarkMode.Light to "Off",
                     DarkMode.Dark to "On",
-                    DarkMode.Amoled to "AMOLED模式",
+                    DarkMode.Amoled to "AMOLED Mode",
                     DarkMode.System to "Follow System"
                 )
                 
@@ -171,12 +171,12 @@ fun DarkModeSelectionDialog(
                     onDismiss()
                 }
             ) {
-                Text("确定")
+                Text("OK")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         modifier = modifier,

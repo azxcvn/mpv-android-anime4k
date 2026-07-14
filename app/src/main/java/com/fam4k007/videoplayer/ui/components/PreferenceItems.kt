@@ -239,7 +239,7 @@ fun ClickableItem(
         
         Icon(
             imageVector = Icons.Default.KeyboardArrowRight,
-            contentDescription = "前往",
+            contentDescription = "Navigate",
             modifier = Modifier.size(24.dp),
             tint = if (enabled) {
                 MaterialTheme.colorScheme.onSurfaceVariant

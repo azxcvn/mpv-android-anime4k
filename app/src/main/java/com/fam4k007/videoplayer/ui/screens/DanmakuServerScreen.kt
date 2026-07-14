@@ -34,10 +34,10 @@ fun DanmakuServerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("弹幕服务器", fontWeight = FontWeight.Bold) },
+                title = { Text("Danmaku Servers", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -50,7 +50,7 @@ fun DanmakuServerScreen(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加服务器")
+                Icon(Icons.Default.Add, contentDescription = "Add Server")
             }
         }
     ) { paddingValues ->
@@ -63,7 +63,7 @@ fun DanmakuServerScreen(
         ) {
             item {
                 Text(
-                    text = "启用的服务器将同时用于弹幕搜索，搜索结果会合并展示",
+                    text = "Enabled servers are used for danmaku search; results will be merged",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -144,7 +144,7 @@ private fun DanmakuServerCard(
                 if (server.isDefault) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "内置服务器，不可删除",
+                        text = "Built-in, cannot be deleted",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -155,7 +155,7 @@ private fun DanmakuServerCard(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "删除",
+                        contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -179,7 +179,7 @@ private fun AddDanmakuServerDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "添加弹幕服务器",
+                text = "Add Danmaku Server",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -189,15 +189,15 @@ private fun AddDanmakuServerDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("服务器名称") },
-                    placeholder = { Text("例：我的服务器") },
+                    label = { Text("Server Name") },
+                    placeholder = { Text("e.g.: My Server") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("服务器地址") },
+                    label = { Text("Server Address") },
                     placeholder = { Text("https://example.com") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true

@@ -85,7 +85,7 @@ fun UpdateDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "发现新版本",
+                        text = "New Version Found",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -97,7 +97,7 @@ fun UpdateDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "关闭",
+                            contentDescription = "Close",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -135,7 +135,7 @@ fun UpdateDialog(
                     }
                 } else {
                     Text(
-                        text = "发现新版本，是否立即下载？",
+                        text = "New version found, download now?",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
@@ -163,7 +163,7 @@ fun UpdateDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "立即下载",
+                            text = "Download Now",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -177,7 +177,7 @@ fun UpdateDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "备用下载",
+                            text = "Alternative Download",
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
@@ -189,7 +189,7 @@ fun UpdateDialog(
                             .height(32.dp)
                     ) {
                         Text(
-                            text = "忽略此版本",
+                            text = "Ignore This Version",
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             style = MaterialTheme.typography.bodySmall
                         )

@@ -95,7 +95,7 @@ fun AudioPlayerScreen(
             Spacer(Modifier.height(28.dp))
 
             // 标题 — 缩小，比缩略图小
-            Text(videoTitle.ifBlank { "未命名视频" }, color = textColor, fontSize = 14.sp,
+            Text(videoTitle.ifBlank { "Untitled Video" }, color = textColor, fontSize = 14.sp,
                 fontWeight = FontWeight.Normal, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 4.dp))
 
@@ -144,10 +144,10 @@ fun AudioPlayerScreen(
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) {
-                Icon(painterResource(R.drawable.arrow_left_48_regular), "返回",
+                Icon(painterResource(R.drawable.arrow_left_48_regular), "Back",
                     tint = textSecondary, modifier = Modifier.size(28.dp))
             }
-            Text("听视频", color = textSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("Listen to Video", color = textSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.size(48.dp))
         }
     }
@@ -171,7 +171,7 @@ private fun AudioControlButton(icon: Int, label: String? = null, iconTint: Color
 
 @Composable
 private fun SpeedBottomSheet(currentSpeed: Float, bg: Color, text: Color, onSelect: (Float) -> Unit, onDismiss: () -> Unit) {
-    BottomSheet("播放速度", bg, text, onDismiss) {
+    BottomSheet("Playback Speed", bg, text, onDismiss) {
         listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f).forEach { s ->
             val cur = s == currentSpeed
             Row(Modifier.fillMaxWidth().clickable { onSelect(s) }.padding(vertical = 12.dp),
@@ -187,10 +187,10 @@ private fun SpeedBottomSheet(currentSpeed: Float, bg: Color, text: Color, onSele
 
 @Composable
 private fun PlaylistBottomSheet(videoList: List<com.fam4k007.videoplayer.VideoFileParcelable>, currentIndex: Int, bg: Color, text: Color, onSelect: (Int) -> Unit, onDismiss: () -> Unit) {
-    BottomSheet("播放列表", bg, text, onDismiss) {
+    BottomSheet("Playlist", bg, text, onDismiss) {
         videoList.forEachIndexed { i, v ->
             val cur = i == currentIndex
-            Text(v.name.ifBlank { "视频 ${i + 1}" },
+            Text(v.name.ifBlank { "Video ${i + 1}" },
                 color = if (cur) Color(0xFF64B5F6) else text.copy(alpha = 0.8f),
                 fontSize = 14.sp, fontWeight = if (cur) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -216,7 +216,7 @@ private fun BottomSheet(title: String, bg: Color, text: Color, onDismiss: () -> 
                 HorizontalDivider(color = text.copy(alpha = 0.1f))
                 Box(Modifier.fillMaxWidth().clickable { onDismiss() }.padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center) {
-                    Text("关闭", color = text.copy(alpha = 0.5f), fontSize = 14.sp)
+                    Text("Close", color = text.copy(alpha = 0.5f), fontSize = 14.sp)
                 }
             }
         }

@@ -75,7 +75,7 @@ fun SubtitleSearchScreen(
                 title = { Text("Subtitle Search", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -129,7 +129,7 @@ fun SubtitleSearchScreen(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "清除",
+                                        contentDescription = "Clear",
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -145,7 +145,7 @@ fun SubtitleSearchScreen(
                             ) {
                                 Icon(
                                     Icons.Default.Send,
-                                    contentDescription = "搜索",
+                                    contentDescription = "Search",
                                     tint = if (currentFolderUri != null && searchQuery.isNotBlank()) 
                                         primaryColor 
                                     else 
@@ -580,7 +580,7 @@ private fun SubtitleItem(
             Spacer(modifier = Modifier.width(12.dp))
             Icon(
                 imageVector = Icons.Default.Download,
-                contentDescription = "下载",
+                contentDescription = "Download",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
@@ -602,7 +602,7 @@ private fun SearchOptionsDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "搜索选项",
+                "Search Options",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -751,7 +751,7 @@ private fun SearchOptionsDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         shape = RoundedCornerShape(28.dp),

@@ -48,13 +48,13 @@ fun CacheManagementScreen(
                 title = { Text("Cache Management", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     // 刷新按钮
                     IconButton(onClick = { viewModel.updateCacheSize() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -245,8 +245,8 @@ fun CacheManagementScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("清除所有缓存") },
-            text = { Text("确定要清除所有缓存吗？此操作不可恢复。") },
+            title = { Text("Clear All Cache") },
+            text = { Text("Are you sure you want to clear all cache? This action cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -269,8 +269,8 @@ fun CacheManagementScreen(
     if (showClearThumbnailDialog) {
         AlertDialog(
             onDismissRequest = { showClearThumbnailDialog = false },
-            title = { Text("清除缩略图缓存") },
-            text = { Text("确定要清除缩略图缓存吗？清除后下次浏览将重新生成。") },
+            title = { Text("Clear Thumbnail Cache") },
+            text = { Text("Are you sure you want to clear thumbnail cache? They will be regenerated on next browse.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -278,12 +278,12 @@ fun CacheManagementScreen(
                         viewModel.clearThumbnailCache()
                     }
                 ) {
-                    Text("确定", color = MaterialTheme.colorScheme.error)
+                    Text("OK", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearThumbnailDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )

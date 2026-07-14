@@ -31,7 +31,7 @@ class BilibiliDownloadManager(private val context: Context) {
             try {
                 val cookie = CookieManager.getBilibiliCookie(context)
                 if (cookie.isEmpty()) {
-                    return@withContext Result.failure(Exception("未登录，请先登录B站账号"))
+                    return@withContext Result.failure(Exception("Not logged in, please log in to Bilibili first"))
                 }
                 val request = Request.Builder()
                     .url("https://api.bilibili.com/x/web-interface/nav")
@@ -39,13 +39,13 @@ class BilibiliDownloadManager(private val context: Context) {
                     .addHeader("User-Agent", "Mozilla/5.0")
                     .build()
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: throw Exception("网络请求失败")
+                val body = response.body?.string() ?: throw Exception("Network request failed")
                 val json = JSONObject(body)
                 if (json.getInt("code") == 0) {
                     val data = json.getJSONObject("data")
                     val isLogin = data.getBoolean("isLogin")
                     if (!isLogin) {
-                        return@withContext Result.failure(Exception("Cookie已过期，请重新登录"))
+                        return@withContext Result.failure(Exception("Cookie expired, please log in again"))
                     }
                     val vipInfo = data.optJSONObject("vip_info")
                     val vipStatus = vipInfo?.optInt("status", 0) ?: 0
@@ -57,7 +57,7 @@ class BilibiliDownloadManager(private val context: Context) {
                         uname = data.optString("uname", "未知用户")
                     ))
                 } else {
-                    Result.failure(Exception("验证失败: ${json.optString("message")}"))
+                    Result.failure(Exception("Verification failed: ${json.optString("message")}"))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Cookie验证失败", e)
@@ -146,7 +146,7 @@ class BilibiliDownloadManager(private val context: Context) {
                         
                         if (dataObj == null) {
                             Log.e(TAG, "API返回结构异常: $responseBody")
-                            return@withContext Result.failure(Exception("API返回数据为空"))
+                            return@withContext Result.failure(Exception("API returned empty data"))
                         }
                         
                         val dash = dataObj.optJSONObject("dash")
@@ -188,17 +188,17 @@ class BilibiliDownloadManager(private val context: Context) {
                     } else {
                         // 处理常见错误码
                         val message = when (code) {
-                            -400 -> "请求错误，请检查链接是否正确"
-                            -403, -404 -> "无权访问或视频不存在，可能需要登录或大会员"
-                            -10403 -> "需要大会员权限"
-                            -352 -> "风控验证失败，请稍后重试"
-                            else -> json.optString("message", "未知错误")
+                            -400 -> "Request error, please check the link"
+                            -403, -404 -> "No access or video not found, may need login or premium"
+                            -10403 -> "Premium membership required"
+                            -352 -> "Risk control verification failed, please try again later"
+                            else -> json.optString("message", "Unknown error")
                         }
                         Log.e(TAG, "API错误: code=$code, message=$message")
                         Result.failure(Exception("$message (code: $code)"))
                     }
                 } else {
-                    Result.failure(Exception("网络请求失败: ${response.code}"))
+                    Result.failure(Exception("Network request failed: ${response.code}"))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "获取媒体信息失败", e)
@@ -229,12 +229,12 @@ class BilibiliDownloadManager(private val context: Context) {
                 val response = call.execute()
                 if (!response.isSuccessful) {
                     DownloadTaskStore.activeCalls.remove(taskId)
-                    return@withContext Result.failure(Exception("下载失败: ${response.code}"))
+                    return@withContext Result.failure(Exception("Download failed: ${response.code}"))
                 }
 
                 val body = response.body ?: run {
                     DownloadTaskStore.activeCalls.remove(taskId)
-                    return@withContext Result.failure(Exception("响应体为空"))
+                    return@withContext Result.failure(Exception("Response body is empty"))
                 }
 
                 val contentLength = body.contentLength()
@@ -267,7 +267,7 @@ class BilibiliDownloadManager(private val context: Context) {
                 if (DownloadTaskStore.activeCalls[taskId]?.isCanceled() == true ||
                     DownloadTaskStore.getItem(taskId)?.status == "paused") {
                     Log.d(TAG, "下载因暂停中断: $url")
-                    throw CancellationException("下载已暂停")
+                    throw CancellationException("Download paused")
                 }
                 Log.e(TAG, "下载文件失败", e)
                 Result.failure(e)
@@ -285,7 +285,7 @@ class BilibiliDownloadManager(private val context: Context) {
         return withContext(Dispatchers.IO) {
             try {
                 val result = parseIdType(url)
-                if (result == null) throw Exception("无法识别B站链接或ID")
+                if (result == null) throw Exception("Unable to recognize Bilibili link or ID")
                 if (result.type == MediaType.Video) {
                     val aid = result.id
                     // 直接使用aid（可能是BV号或av号）
@@ -308,7 +308,7 @@ class BilibiliDownloadManager(private val context: Context) {
                         seasonId = bangumiDetail.seasonId
                     )
                 } else {
-                    throw Exception("暂不支持的类型")
+                    throw Exception("Unsupported type")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "解析媒体链接失败", e)
@@ -415,7 +415,7 @@ class BilibiliDownloadManager(private val context: Context) {
         } else if (epId != null) {
             "https://api.bilibili.com/pgc/view/web/season?ep_id=$epId"
         } else {
-            throw Exception("无法识别番剧ID")
+            throw Exception("Unable to recognize anime ID")
         }
         val request = Request.Builder()
             .url(url)
@@ -424,12 +424,12 @@ class BilibiliDownloadManager(private val context: Context) {
             .addHeader("Cookie", CookieManager.getBilibiliCookie(context))
             .build()
         val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("番剧详情请求失败")
+        val body = response.body?.string() ?: throw Exception("Anime details request failed")
         val json = JSONObject(body)
-        if (json.optInt("code", -1) != 0) throw Exception("番剧API错误: ${json.optString("message")}")
-        val data = json.optJSONObject("result") ?: json.optJSONObject("data") ?: throw Exception("番剧数据为空")
-        val episodes = data.optJSONArray("episodes") ?: throw Exception("番剧集数为空")
-        val firstEp = episodes.optJSONObject(0) ?: throw Exception("番剧集数解析失败")
+        if (json.optInt("code", -1) != 0) throw Exception("Anime API error: ${json.optString("message")}")
+        val data = json.optJSONObject("result") ?: json.optJSONObject("data") ?: throw Exception("Anime data is empty")
+        val episodes = data.optJSONArray("episodes") ?: throw Exception("Anime episode list is empty")
+        val firstEp = episodes.optJSONObject(0) ?: throw Exception("Anime episode parsing failed")
         return BangumiDetailResult(
             aid = firstEp.optString("aid"),
             cid = firstEp.optString("cid"),
@@ -455,7 +455,7 @@ class BilibiliDownloadManager(private val context: Context) {
                     seasonId != null -> "https://api.bilibili.com/pgc/view/web/season?season_id=$seasonId"
                     epId != null -> "https://api.bilibili.com/pgc/view/web/season?ep_id=$epId"
                     id.matches("\\d+".toRegex()) -> "https://api.bilibili.com/pgc/view/web/season?season_id=$id"
-                    else -> throw Exception("无法识别番剧ID: $id")
+                    else -> throw Exception("Unable to recognize anime ID: $id")
                 }
                 
                 Log.d(TAG, "获取番剧集数列表，URL: $url")
@@ -468,7 +468,7 @@ class BilibiliDownloadManager(private val context: Context) {
                     .build()
                     
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: throw Exception("番剧详情请求失败")
+                val body = response.body?.string() ?: throw Exception("Anime details request failed")
                 
                 Log.d(TAG, "番剧API响应: ${body.take(200)}")
                 
@@ -478,11 +478,11 @@ class BilibiliDownloadManager(private val context: Context) {
                 if (code != 0) {
                     val message = json.optString("message", "未知错误")
                     Log.e(TAG, "番剧API错误: code=$code, message=$message")
-                    throw Exception("番剧API错误: $message")
+                    throw Exception("Anime API error: $message")
                 }
                 
-                val data = json.optJSONObject("result") ?: throw Exception("番剧数据为空")
-                val episodes = data.optJSONArray("episodes") ?: throw Exception("番剧集数为空")
+                val data = json.optJSONObject("result") ?: throw Exception("Anime data is empty")
+                val episodes = data.optJSONArray("episodes") ?: throw Exception("Anime episode list is empty")
                 val seasonIdFromApi = data.optString("season_id", "")
                 
                 Log.d(TAG, "获取到${episodes.length()}集，season_id: $seasonIdFromApi")
@@ -691,10 +691,10 @@ class BilibiliDownloadManager(private val context: Context) {
                 return Pair(cid, title)
             } else {
                 val message = json.optString("message", "未知错误")
-                throw Exception("获取视频详情失败: $message (code: $code)")
+                throw Exception("Failed to get video details: $message (code: $code)")
             }
         } else {
-            throw Exception("网络请求失败: ${response.code} - ${response.message}")
+            throw Exception("Network request failed: ${response.code} - ${response.message}")
         }
     }
 }

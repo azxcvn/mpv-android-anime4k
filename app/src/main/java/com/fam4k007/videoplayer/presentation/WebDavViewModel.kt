@@ -141,15 +141,15 @@ class WebDavViewModel(
 
         when {
             serverUrl.isEmpty() -> {
-                _addAccountState.value = state.copy(testResult = "❌ 请填写服务器地址")
+                _addAccountState.value = state.copy(testResult = "❌ Please enter server address")
                 return
             }
             !serverUrl.startsWith("http://") && !serverUrl.startsWith("https://") -> {
-                _addAccountState.value = state.copy(testResult = "❌ 服务器地址必须以 http:// 或 https:// 开头")
+                _addAccountState.value = state.copy(testResult = "❌ Server address must start with http:// or https://")
                 return
             }
             !state.isAnonymous && (state.account.isEmpty() || state.password.isEmpty()) -> {
-                _addAccountState.value = state.copy(testResult = "❌ 请填写账号和密码")
+                _addAccountState.value = state.copy(testResult = "❌ Please enter account and password")
                 return
             }
         }
@@ -176,7 +176,7 @@ class WebDavViewModel(
 
             _addAccountState.value = _addAccountState.value.copy(
                 isTesting = false,
-                testResult = if (result) "✅ 连接成功" else "❌ 连接失败，请检查配置"
+                testResult = if (result) "✅ Connection successful" else "❌ Connection failed, please check configuration"
             )
         }
     }
@@ -187,19 +187,19 @@ class WebDavViewModel(
 
         when {
             state.displayName.isEmpty() -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写显示名称")
+                _addAccountState.value = state.copy(saveError = "❌ Please enter display name")
                 return
             }
             state.serverUrl.isEmpty() -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写服务器地址")
+                _addAccountState.value = state.copy(saveError = "❌ Please enter server address")
                 return
             }
             !state.serverUrl.startsWith("http://") && !state.serverUrl.startsWith("https://") -> {
-                _addAccountState.value = state.copy(saveError = "❌ 服务器地址必须以 http:// 或 https:// 开头")
+                _addAccountState.value = state.copy(saveError = "❌ Server address must start with http:// or https://")
                 return
             }
             !state.isAnonymous && (state.account.isEmpty() || state.password.isEmpty()) -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写账号和密码")
+                _addAccountState.value = state.copy(saveError = "❌ Please enter account and password")
                 return
             }
         }
@@ -220,7 +220,7 @@ class WebDavViewModel(
                 onAccountAdded()
                 resetAddAccountState()
             } else {
-                _addAccountState.value = state.copy(saveError = "❌ 更新失败，账户不存在")
+                _addAccountState.value = state.copy(saveError = "❌ Update failed, account does not exist")
             }
         } else {
             // 新增模式
@@ -235,7 +235,7 @@ class WebDavViewModel(
                 onAccountAdded()
                 resetAddAccountState()
             } else {
-                _addAccountState.value = state.copy(saveError = "❌ 该账户已存在")
+                _addAccountState.value = state.copy(saveError = "❌ This account already exists")
             }
         }
     }
@@ -324,7 +324,7 @@ class WebDavViewModel(
                     val (newState, fallbackPath) = current.popPath()
                     newState.copy(
                         isLoading = false,
-                        error = "加载失败",
+                        error = "Load failed",
                         currentPath = fallbackPath ?: ""
                     )
                 }

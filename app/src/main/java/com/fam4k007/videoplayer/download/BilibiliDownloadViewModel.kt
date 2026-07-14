@@ -209,7 +209,7 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
      */
     fun parseVideoUrl(inputUrl: String) {
         if (inputUrl.isBlank()) {
-            _parseError.value = "请输入视频链接"
+            _parseError.value = "Please enter video link"
             return
         }
 
@@ -254,15 +254,15 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
                             _episodeList.value = episodesResult.getOrNull() ?: emptyList()
                             Log.d(TAG, "获取到${_episodeList.value.size}集")
                         } else {
-                            _parseError.value = "获取集数失败: ${episodesResult.exceptionOrNull()?.message}"
+                            _parseError.value = "Failed to get episodes: ${episodesResult.exceptionOrNull()?.message}"
                             Log.e(TAG, "获取集数失败", episodesResult.exceptionOrNull())
                         }
                     } else {
-                        _parseError.value = "番剧ID解析失败"
+                        _parseError.value = "Anime ID parsing failed"
                     }
                 }
             } catch (e: Exception) {
-                _parseError.value = e.message ?: "解析失败"
+                _parseError.value = e.message ?: "Parsing failed"
                 Log.e(TAG, "解析失败", e)
             } finally {
                 _isParsing.value = false
@@ -307,7 +307,7 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
 
         // 检查是否已设置下载路径
         if (_downloadPath.value.isEmpty()) {
-            _parseError.value = "请先设置保存路径"
+            _parseError.value = "Please set save path first"
             return
         }
 
@@ -622,11 +622,11 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
                                 }
                             } else {
                                 Log.e(TAG, "合并失败")
-                                DownloadTaskStore.updateItemStatus(newItem.id, "failed", "音视频合并失败")
+                                DownloadTaskStore.updateItemStatus(newItem.id, "failed", "Audio/video merge failed")
                             }
                         } else {
                             Log.e(TAG, "找不到音视频文件")
-                            DownloadTaskStore.updateItemStatus(newItem.id, "failed", "找不到音视频文件")
+                            DownloadTaskStore.updateItemStatus(newItem.id, "failed", "Audio/video files not found")
                         }
                     } else {
                         Log.d(TAG, "只有一个片段，无需合并")
@@ -825,7 +825,7 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
                                         audioFile.delete()
                                         DownloadTaskStore.updateItemStatus(item.id, "completed")
                                     } else {
-                                        DownloadTaskStore.updateItemStatus(item.id, "failed", "音视频合并失败")
+                                        DownloadTaskStore.updateItemStatus(item.id, "failed", "Audio/video merge failed")
                                     }
                                 }
                             } else {

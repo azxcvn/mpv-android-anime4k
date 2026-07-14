@@ -85,7 +85,7 @@ fun DownloadScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -195,7 +195,7 @@ fun DownloadScreen(
                                 IconButton(onClick = { videoUrl = "" }) {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "清除",
+                                        contentDescription = "Clear",
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

@@ -122,7 +122,7 @@ fun BiliBiliDanmakuScreen(
                                 IconButton(onClick = { url = "" }) {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "清除",
+                                        contentDescription = "Clear",
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

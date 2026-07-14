@@ -202,7 +202,7 @@ fun UserAgreementScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "同意",
+                        text = "Agree",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -245,7 +245,7 @@ private fun AgreementHeader(isPreview: Boolean = false, onBack: (() -> Unit)? = 
         ) {
             Image(
                 painter = painterResource(id = R.drawable.app_icon),
-                contentDescription = "应用图标",
+                contentDescription = "App Icon",
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(20.dp))

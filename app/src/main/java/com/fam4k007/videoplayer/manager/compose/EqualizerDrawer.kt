@@ -141,7 +141,7 @@ fun EqualizerDrawer(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "音频均衡器",
+                                text = "Audio Equalizer",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -261,7 +261,7 @@ fun EqualizerDrawer(
                                     )
                                 ) {
                                     Text(
-                                        text = "一键重置",
+                                        text = "Reset All",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -297,14 +297,14 @@ private fun EqualizerSwitch(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "启用均衡器",
+                text = "Enable Equalizer",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "调节音频频段增益、低音增强和虚拟环绕",
+                text = "Adjust bands, bass boost, and virtualizer",
                 fontSize = 12.sp,
                 color = Color(0x88FFFFFF),
                 lineHeight = 16.sp
@@ -342,7 +342,7 @@ private fun EqualizerBands(
 
     Column {
         Text(
-            text = "频段调节",
+            text = "Band Adjustment",
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             color = Color.White,
@@ -472,7 +472,7 @@ private fun BassBoostSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "低音增强",
+                text = "Bass Boost",
                 fontSize = 16.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium
@@ -537,7 +537,7 @@ private fun VirtualizerSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "虚拟器",
+                text = "Virtualizer",
                 fontSize = 16.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium

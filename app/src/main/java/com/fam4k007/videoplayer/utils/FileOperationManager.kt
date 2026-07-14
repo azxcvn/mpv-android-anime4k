@@ -26,7 +26,7 @@ object FileOperationManager {
                 val file = File(path)
                 if (!file.exists()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "文件不存在", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "File does not exist", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext false
                 }
@@ -41,13 +41,13 @@ object FileOperationManager {
                 
                 if (result) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "删除成功", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Deleted successfully", Toast.LENGTH_SHORT).show()
                     }
                     // 通知系统媒体库更新
                     notifyMediaStore(context, path)
                 } else {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "删除失败，可能没有权限", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Delete failed, possibly no permission", Toast.LENGTH_SHORT).show()
                     }
                 }
                 
@@ -55,7 +55,7 @@ object FileOperationManager {
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "删除失败：${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Delete failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
                 false
             }
@@ -74,7 +74,7 @@ object FileOperationManager {
                 val oldFile = File(oldPath)
                 if (!oldFile.exists()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "文件不存在", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "File does not exist", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext null
                 }
@@ -86,7 +86,7 @@ object FileOperationManager {
                 // 检查新文件是否已存在
                 if (newFile.exists()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "目标文件已存在", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Target file already exists", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext null
                 }
@@ -96,7 +96,7 @@ object FileOperationManager {
                 
                 if (result) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "重命名成功", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Renamed successfully", Toast.LENGTH_SHORT).show()
                     }
                     // 通知系统媒体库更新
                     notifyMediaStore(context, oldPath)
@@ -104,14 +104,14 @@ object FileOperationManager {
                     newFile.absolutePath
                 } else {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "重命名失败，可能没有权限", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Rename failed, possibly no permission", Toast.LENGTH_SHORT).show()
                     }
                     null
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "重命名失败：${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Rename failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
                 null
             }
@@ -131,7 +131,7 @@ object FileOperationManager {
                 val sourceFile = File(sourcePath)
                 if (!sourceFile.exists()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "源文件不存在", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Source file does not exist", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext false
                 }
@@ -144,7 +144,7 @@ object FileOperationManager {
                 // 检查目标文件是否已存在
                 if (destFile.exists()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "目标文件已存在", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Target file already exists", Toast.LENGTH_SHORT).show()
                     }
                     return@withContext false
                 }
@@ -159,13 +159,13 @@ object FileOperationManager {
                 
                 if (result) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "复制成功", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Copied successfully", Toast.LENGTH_SHORT).show()
                     }
                     // 通知系统媒体库更新
                     notifyMediaStore(context, destPath)
                 } else {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "复制失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Copy failed", Toast.LENGTH_SHORT).show()
                     }
                 }
                 
@@ -173,7 +173,7 @@ object FileOperationManager {
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "复制失败：${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Copy failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
                 false
             }

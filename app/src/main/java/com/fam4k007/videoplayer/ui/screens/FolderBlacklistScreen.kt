@@ -87,7 +87,7 @@ fun FolderBlacklistScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -277,8 +277,8 @@ fun FolderBlacklistScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("清除所有黑名单文件夹？") },
-            text = { Text("这将移除所有文件夹黑名单，你可以稍后重新添加。") },
+            title = { Text("Clear all blacklisted folders?") },
+            text = { Text("This will remove all blacklisted folders. You can re-add them later.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -292,7 +292,7 @@ fun FolderBlacklistScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )
@@ -430,7 +430,7 @@ private fun AddFolderBlacklistDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         }
     )

@@ -592,7 +592,7 @@ fun ExpandableActionButton(
                                 // 二级菜单 - 网络功能
                                 ActionItem(
                                     icon = Icons.Default.Tv,
-                                    label = "浏览器",
+                                    label = "Browser",
                                     onClick = {
                                         showNetworkSubmenu = false
                                         onTVClick()
@@ -617,7 +617,7 @@ fun ExpandableActionButton(
                                 
                                 ActionItem(
                                     icon = Icons.Default.VideoLibrary,
-                                    label = "Bilibili Bangumi",
+                                    label = "Bangumi",
                                     onClick = onBiliBiliClick
                                 )
                                 

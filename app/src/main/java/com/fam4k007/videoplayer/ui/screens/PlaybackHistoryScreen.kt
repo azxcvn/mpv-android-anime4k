@@ -175,12 +175,12 @@ fun PlaybackHistoryScreen(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("清空")
+                    Text("Clear")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
             shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),

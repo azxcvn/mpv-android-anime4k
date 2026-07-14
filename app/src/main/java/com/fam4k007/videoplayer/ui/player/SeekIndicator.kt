@@ -62,13 +62,13 @@ fun SeekIndicator(
                 ) {
                     Icon(
                         imageVector = if (seekOffset.compareTo(0) > 0) Icons.Default.FastForward else Icons.Default.FastRewind,
-                        contentDescription = if (seekOffset.compareTo(0) > 0) "快进" else "快退",
+                        contentDescription = if (seekOffset.compareTo(0) > 0) "Fast Forward" else "Rewind",
                         tint = Color.White,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = if (seekOffset.compareTo(0) > 0) "+${seekOffset}秒" else "${seekOffset}秒",
+                        text = if (seekOffset.compareTo(0) > 0) "+${seekOffset}s" else "${seekOffset}s",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -87,7 +87,7 @@ fun SeekIndicator(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = if (seekOffset.compareTo(0) > 0) "+${seekOffset}秒" else "${seekOffset}秒",
+                        text = if (seekOffset.compareTo(0) > 0) "+${seekOffset}s" else "${seekOffset}s",
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -95,7 +95,7 @@ fun SeekIndicator(
                     Spacer(modifier = Modifier.height(6.dp))
                     Icon(
                         imageVector = if (seekOffset.compareTo(0) > 0) Icons.Default.FastForward else Icons.Default.FastRewind,
-                        contentDescription = if (seekOffset.compareTo(0) > 0) "快进" else "快退",
+                        contentDescription = if (seekOffset.compareTo(0) > 0) "Fast Forward" else "Rewind",
                         tint = Color.White,
                         modifier = Modifier.size(28.dp)
                     )

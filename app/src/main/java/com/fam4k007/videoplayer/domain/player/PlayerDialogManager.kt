@@ -364,7 +364,7 @@ class PlayerDialogManager(
     fun showAudioOptionsDialog() {
         val activity = activityRef.get() ?: return
 
-        val items = listOf("音频轨道", "添加音频")
+        val items = listOf("Audio Track", "Add Audio")
 
         val configuration = activity.resources.configuration
         val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
@@ -373,7 +373,7 @@ class PlayerDialogManager(
         showPopupDialogAtLastAnchor(
             items,
             selectedPosition = -1,
-            title = "音频",
+            title = "Audio",
             showAbove = false,
             useFixedHeight = false,
             showScrollHint = false,
@@ -941,7 +941,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("Chapters")
         }
-        items.addAll(listOf("解码", "听视频", "片头片尾", "音频均衡器", autoRotateText))
+        items.addAll(listOf("Decoder", "Listen to Video", "Skip Intro/Outro", "Audio Equalizer", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration

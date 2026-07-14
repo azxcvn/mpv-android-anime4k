@@ -153,8 +153,8 @@ fun SettingsScreen(
             item {
                 PreferenceCard {
                     ClickableItem(
-                        title = "播放设置",
-                        subtitle = "修改与播放有关的参数配置",
+                        title = "Playback Settings",
+                        subtitle = "Configure playback-related parameters",
                         icon = Icons.Default.PlayCircle,
                         onClick = onNavigateToPlaybackSettings
                     )
@@ -169,22 +169,6 @@ fun SettingsScreen(
             }
             
             // 弹幕
-            item {
-                PreferenceSectionHeader(title = "弹幕")
-            }
-            
-            item {
-                PreferenceCard {
-                    ClickableItem(
-                        title = "弹幕服务器",
-                        subtitle = "管理弹幕搜索服务器",
-                        icon = Icons.Default.Storage,
-                        onClick = onNavigateToDanmakuServer
-                    )
-                }
-            }
-            
-            // 媒体
             item {
                 PreferenceSectionHeader(title = "Danmaku")
             }
@@ -215,8 +199,8 @@ fun SettingsScreen(
                     )
                     
                     ClickableItem(
-                        title = "其他媒体设置",
-                        subtitle = ".nomedia 规则、隐藏文件夹扫描等",
+                        title = "Other Media Settings",
+                        subtitle = ".nomedia rules, hidden folder scanning, etc.",
                         icon = Icons.Default.Tune,
                         onClick = onNavigateToMediaSettings
                     )

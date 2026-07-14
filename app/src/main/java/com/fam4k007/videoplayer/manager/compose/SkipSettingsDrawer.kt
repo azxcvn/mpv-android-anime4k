@@ -123,7 +123,7 @@ fun SkipSettingsDrawer(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "片头片尾设置",
+                                text = "Skip Intro/Outro Settings",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -158,7 +158,7 @@ fun SkipSettingsDrawer(
 
                         // 说明文本
                         Text(
-                            text = "由章节关键词自动检测 OP/ED 并在进度条上着色。\n也可设置固定的片头/片尾跳过秒数：",
+                            text = "Auto-detect OP/ED from chapter titles and highlight on seekbar.\nOr set fixed skip seconds:",
                             fontSize = 13.sp,
                             color = Color(0xAAFFFFFF),
                             modifier = Modifier.padding(bottom = 24.dp)
@@ -209,7 +209,7 @@ private fun SkipIntroContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "跳过片头",
+                text = "Skip Intro",
                 fontSize = 16.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium
@@ -222,7 +222,7 @@ private fun SkipIntroContent(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "${skipIntro.toInt()} 秒",
+                    text = "${skipIntro.toInt()} sec",
                     fontSize = 15.sp,
                     color = Color(0xFF64B5F6),
                     fontWeight = FontWeight.Bold
@@ -231,7 +231,7 @@ private fun SkipIntroContent(
         }
 
         Text(
-            text = "视频开始后前 ${skipIntro.toInt()} 秒将被跳过",
+            text = "First ${skipIntro.toInt()}s of video will be skipped",
             fontSize = 12.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 4.dp)
@@ -255,7 +255,7 @@ private fun SkipIntroContent(
         )
 
         Text(
-            text = "范围: 0 ~ 180 秒",
+            text = "Range: 0 ~ 180 sec",
             fontSize = 11.sp,
             color = Color(0x66FFFFFF),
             modifier = Modifier.padding(top = 4.dp)
@@ -285,7 +285,7 @@ private fun SkipOutroContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "跳过片尾",
+                text = "Skip Outro",
                 fontSize = 16.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium
@@ -298,7 +298,7 @@ private fun SkipOutroContent(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "${skipOutro.toInt()} 秒",
+                    text = "${skipOutro.toInt()} sec",
                     fontSize = 15.sp,
                     color = Color(0xFF64B5F6),
                     fontWeight = FontWeight.Bold
@@ -307,7 +307,7 @@ private fun SkipOutroContent(
         }
 
         Text(
-            text = "视频结束前 ${skipOutro.toInt()} 秒将自动跳转下一集",
+            text = "Auto-skip to next at ${skipOutro.toInt()}s before end",
             fontSize = 12.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 4.dp)
@@ -331,7 +331,7 @@ private fun SkipOutroContent(
         )
 
         Text(
-            text = "范围: 0 ~ 180 秒",
+            text = "Range: 0 ~ 180 sec",
             fontSize = 11.sp,
             color = Color(0x66FFFFFF),
             modifier = Modifier.padding(top = 4.dp)

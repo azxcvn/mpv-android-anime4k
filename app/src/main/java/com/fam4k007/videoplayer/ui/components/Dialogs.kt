@@ -50,8 +50,8 @@ fun ConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
-    confirmText: String = "确定",
-    dismissText: String = "取消",
+    confirmText: String = "OK",
+    dismissText: String = "Cancel",
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -99,7 +99,7 @@ fun InfoDialog(
     message: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    confirmText: String = "确定",
+    confirmText: String = "OK",
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -152,8 +152,8 @@ fun InputDialog(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     keyboardType: KeyboardType = KeyboardType.Text,
-    confirmText: String = "确定",
-    dismissText: String = "取消",
+    confirmText: String = "OK",
+    dismissText: String = "Cancel",
 ) {
     var inputText by remember { mutableStateOf(initialValue) }
     
@@ -298,7 +298,7 @@ fun <T> SelectionDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         modifier = modifier,

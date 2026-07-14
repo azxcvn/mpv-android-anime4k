@@ -164,7 +164,7 @@ fun VideoListScreenPaging(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "返回",
+                                contentDescription = "Back",
                                 tint = Color.White
                             )
                         }

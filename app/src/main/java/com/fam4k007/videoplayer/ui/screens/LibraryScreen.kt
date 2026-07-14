@@ -55,7 +55,7 @@ fun LibraryScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -80,8 +80,8 @@ fun LibraryScreen(
             item {
                 PreferenceCard {
                     ClickableItem(
-                        title = "浏览文件夹",
-                        subtitle = "浏览设备上的视频文件夹",
+                        title = "Browse Folders",
+                        subtitle = "Browse video folders on device",
                         icon = Icons.Default.Folder,
                         onClick = {
                             context.startActivity(Intent(context, VideoBrowserComposeActivity::class.java))
@@ -93,8 +93,8 @@ fun LibraryScreen(
                     )
                     
                     ClickableItem(
-                        title = "所有视频",
-                        subtitle = "查看所有本地视频",
+                        title = "All Videos",
+                        subtitle = "View all local videos",
                         icon = Icons.Default.VideoLibrary,
                         onClick = {
                             // TODO: 实现所有视频列表

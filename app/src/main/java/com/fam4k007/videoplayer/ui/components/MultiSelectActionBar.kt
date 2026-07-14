@@ -215,7 +215,7 @@ fun BatchDeleteConfirmDialog(
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
             shape = RoundedCornerShape(28.dp),

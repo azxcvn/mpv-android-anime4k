@@ -81,26 +81,26 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
             // 写入崩溃信息
             FileWriter(logFile).use { writer ->
                 writer.append("=============================================\n")
-                writer.append("           应用崩溃日志\n")
+                writer.append("           App Crash Log\n")
                 writer.append("=============================================\n\n")
                 
                 // 基本信息
-                writer.append("【时间】$timestamp\n")
-                writer.append("【应用版本】Unknown\n")  // BuildConfig不可用时使用占位符
-                writer.append("【设备型号】${Build.MANUFACTURER} ${Build.MODEL}\n")
-                writer.append("【系统版本】Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
-                writer.append("【CPU架构】${Build.SUPPORTED_ABIS.joinToString(", ")}\n\n")
+                writer.append("[Time] $timestamp\n")
+                writer.append("[App Version] Unknown\n")  // BuildConfig不可用时使用占位符
+                writer.append("[Device Model] ${Build.MANUFACTURER} ${Build.MODEL}\n")
+                writer.append("[System Version] Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
+                writer.append("[CPU Architecture] ${Build.SUPPORTED_ABIS.joinToString(", ")}\n\n")
                 
                 // 异常信息
-                writer.append("【异常类型】${throwable.javaClass.name}\n")
-                writer.append("【异常消息】${throwable.message ?: "无"}\n\n")
+                writer.append("[Exception Type] ${throwable.javaClass.name}\n")
+                writer.append("[Exception Message] ${throwable.message ?: "None"}\n\n")
                 
-                writer.append("【堆栈跟踪】\n")
+                writer.append("[Stack Trace]\n")
                 throwable.printStackTrace(PrintWriter(writer))
                 
                 writer.append("\n\n=============================================\n")
-                writer.append("提示：如需反馈问题，请将此文件发送给开发者\n")
-                writer.append("文件位置：${logFile.absolutePath}\n")
+                writer.append("Tip: To report issues, please send this file to the developer\n")
+                writer.append("File location: ${logFile.absolutePath}\n")
                 writer.append("=============================================\n")
             }
             
@@ -119,9 +119,9 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
         try {
             Handler(Looper.getMainLooper()).post {
                 val message = if (logFile != null) {
-                    "应用遇到错误已停止运行\n日志已保存至：\n${logFile.parent}"
+                    "App encountered an error and stopped running\nLog saved to:\n${logFile.parent}"
                 } else {
-                    "应用遇到错误已停止运行\n错误：${throwable.message}"
+                    "App encountered an error and stopped running\nError: ${throwable.message}"
                 }
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }

@@ -144,7 +144,7 @@ fun DanmakuSettingsDrawer(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "弹幕设置",
+                                text = "Danmaku Settings",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -176,14 +176,14 @@ fun DanmakuSettingsDrawer(
                         if (!hasDanmakuLoaded) {
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
-                                text = "未加载弹幕文件",
+                                text = "No danmaku file loaded",
                                 fontSize = 14.sp,
                                 color = Color(0xFFFF9800),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                text = "请在弹幕页面加载弹幕后再进行设置",
+                                text = "Please load a danmaku file before configuring",
                                 fontSize = 12.sp,
                                 color = Color(0x99FFFFFF),
                                 modifier = Modifier
@@ -200,7 +200,7 @@ fun DanmakuSettingsDrawer(
                         // 弹幕样式设置
                         item {
                             ExpandableSection(
-                                title = "弹幕样式",
+                                title = "Danmaku Style",
                                 isExpanded = expandedSection == "style",
                                 onToggle = { expandedSection = if (expandedSection == "style") null else "style" }
                             ) {
@@ -220,7 +220,7 @@ fun DanmakuSettingsDrawer(
                         // 弹幕配置设置
                         item {
                             ExpandableSection(
-                                title = "弹幕配置",
+                                title = "Danmaku Configuration",
                                 isExpanded = expandedSection == "config",
                                 onToggle = { expandedSection = if (expandedSection == "config") null else "config" }
                             ) {
@@ -273,7 +273,7 @@ fun DanmakuStyleContent(
     ) {
         // 弹幕大小
         Text(
-            text = "弹幕大小：${size.toInt()}%",
+            text = "Danmaku Size: ${size.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
@@ -296,14 +296,14 @@ fun DanmakuStyleContent(
 
         // 弹幕速度
         Text(
-            text = "弹幕速度：${speed.toInt()}%",
+            text = "Danmaku Speed: ${speed.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
         )
         
         Text(
-            text = "数值越大，弹幕移动越快",
+            text = "Higher value = faster movement",
             fontSize = 11.sp,
             color = Color(0x99FFFFFF),
             modifier = Modifier.padding(top = 2.dp)
@@ -326,7 +326,7 @@ fun DanmakuStyleContent(
 
         // 弹幕透明度
         Text(
-            text = "弹幕透明度：${alpha.toInt()}%",
+            text = "Danmaku Opacity: ${alpha.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
@@ -349,7 +349,7 @@ fun DanmakuStyleContent(
 
         // 描边粗细
         Text(
-            text = "描边粗细：${stroke.toInt()}%",
+            text = "Stroke Width: ${stroke.toInt()}%",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium
@@ -381,14 +381,14 @@ fun DanmakuStyleContent(
                 onSpeedChange(50)
                 onAlphaChange(100)
                 onStrokeChange(50)
-                Toast.makeText(context, "已重置为默认值", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Reset to defaults", Toast.LENGTH_SHORT).show()
             },
             colors = ButtonDefaults.textButtonColors(
                 contentColor = Color(0xFFFF6666)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("重置所有样式为默认值")
+            Text("Reset All Styles to Default")
         }
     }
 }
@@ -423,14 +423,14 @@ fun DanmakuConfigContent(
     ) {
         // 弹幕类型开关
         Text(
-            text = "弹幕类型显示",
+            text = "Danmaku Type Display",
             fontSize = 16.sp,
             color = Color.White,
             fontWeight = FontWeight.Bold
         )
 
         DanmakuSwitchItem(
-            title = "显示滚动弹幕",
+            title = "Show Scrolling Danmaku",
             checked = showScroll,
             onCheckedChange = { 
                 showScroll = it
@@ -439,7 +439,7 @@ fun DanmakuConfigContent(
         )
 
         DanmakuSwitchItem(
-            title = "显示顶部弹幕",
+            title = "Show Top Danmaku",
             checked = showTop,
             onCheckedChange = { 
                 showTop = it
@@ -448,7 +448,7 @@ fun DanmakuConfigContent(
         )
 
         DanmakuSwitchItem(
-            title = "显示底部弹幕",
+            title = "Show Bottom Danmaku",
             checked = showBottom,
             onCheckedChange = { 
                 showBottom = it
@@ -460,7 +460,7 @@ fun DanmakuConfigContent(
 
         // 弹幕显示区域
         Text(
-            text = "弹幕显示区域",
+            text = "Danmaku Display Area",
             fontSize = 16.sp,
             color = Color.White,
             fontWeight = FontWeight.Bold
@@ -498,11 +498,11 @@ fun DanmakuConfigContent(
 
         Text(
             text = when (displayArea) {
-                10 -> "仅显示 1 行滚动弹幕"
-                25 -> "显示少量弹幕"
-                50 -> "显示适量弹幕"
-                75 -> "显示较多弹幕"
-                100 -> "全屏满弹幕显示（推荐）"
+                10 -> "Show 1 line only"
+                25 -> "Show a few danmaku"
+                50 -> "Show moderate danmaku"
+                75 -> "Show more danmaku"
+                100 -> "Full-screen (Recommended)"
                 else -> ""
             },
             fontSize = 11.sp,
@@ -513,7 +513,7 @@ fun DanmakuConfigContent(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "同屏最大弹幕数：${if (maxScreenNum.toInt() == 0) "不限制" else maxScreenNum.toInt().toString()}",
+            text = "Max on-screen: ${if (maxScreenNum.toInt() == 0) "Unlimited" else maxScreenNum.toInt().toString()}",
             fontSize = 14.sp,
             color = Color.White,
             fontWeight = FontWeight.Medium

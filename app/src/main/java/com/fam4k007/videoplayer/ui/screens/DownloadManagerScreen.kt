@@ -83,7 +83,7 @@ fun DownloadManagerScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -124,7 +124,7 @@ fun DownloadManagerScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "清除全部",
+                                        "Clear All",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -236,11 +236,11 @@ fun DownloadManagerScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(28.dp),
             title = {
-                Text("清除全部", fontWeight = FontWeight.Bold)
+                Text("Clear All", fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
-                    Text("是否同时删除已下载的本地文件？")
+                    Text("Also delete downloaded local files?")
                     Spacer(modifier = Modifier.height(16.dp))
                     // 操作选项放在内容区，避免与取消按钮重叠
                     Button(
@@ -275,7 +275,7 @@ fun DownloadManagerScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )
@@ -292,7 +292,7 @@ fun DownloadManagerScreen(
             },
             text = {
                 Column {
-                    Text("是否同时删除已下载的本地文件？")
+                    Text("Also delete downloaded local files?")
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = item.title,
@@ -332,7 +332,7 @@ fun DownloadManagerScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )
@@ -486,7 +486,7 @@ private fun DownloadManagerItemCard(
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "删除",
+                        contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )

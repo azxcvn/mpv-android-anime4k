@@ -146,8 +146,8 @@ fun LogViewerScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("清空日志") },
-            text = { Text("确定要清空所有错误日志吗？此操作不可恢复。") },
+            title = { Text("Clear Logs") },
+            text = { Text("Clear all error logs? This cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -163,7 +163,7 @@ fun LogViewerScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
             shape = RoundedCornerShape(28.dp),

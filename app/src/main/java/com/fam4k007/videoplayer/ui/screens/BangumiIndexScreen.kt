@@ -149,7 +149,7 @@ fun BangumiIndexScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "番剧索引",
+                        text = "Bangumi Index",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -157,7 +157,7 @@ fun BangumiIndexScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -166,12 +166,12 @@ fun BangumiIndexScreen(
                         if (isLoggedIn) {
                             showLinkDialog = true
                         } else {
-                            Toast.makeText(context, "请在首页左上角登录账号后使用", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Please log in at the top-left corner", Toast.LENGTH_SHORT).show()
                         }
                     }) {
                         Icon(
                             imageVector = LinkIcon,
-                            contentDescription = "输入番剧链接",
+                            contentDescription = "Enter Bangumi Link",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -193,7 +193,7 @@ fun BangumiIndexScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "此功能需要登录后使用\n请在首页左上角登录",
+                    text = "Login required to use this feature\nPlease log in at the top-left",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -233,7 +233,7 @@ fun BangumiIndexScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "没有找到番剧",
+                                text = "No results found",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -288,7 +288,7 @@ fun BangumiIndexScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = { viewModel.refresh() }) {
-                                Text("重试")
+                                Text("Retry")
                             }
                         }
                     }
@@ -332,11 +332,11 @@ private fun LinkInputDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("输入番剧链接", fontWeight = FontWeight.Bold) },
+        title = { Text("Enter Bangumi Link", fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 Text(
-                    "从B站App分享番剧链接后粘贴到此处",
+                    "Share the link from Bilibili app and paste here",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -363,10 +363,10 @@ private fun LinkInputDialog(
                 ssRegex.find(linkText)?.let { onConfirm(it.groupValues[1].toInt(), false); return@Button }
                 epRegex.find(linkText)?.let { onConfirm(it.groupValues[1].toInt(), true); return@Button }
                 
-                errorMsg = "无效的番剧链接\n支持格式: .../ss12345"
-            }) { Text("确定") }
+                errorMsg = "Invalid Bangumi link\nSupported format: .../ss12345"
+            }) { Text("OK") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
     )
@@ -453,13 +453,13 @@ private fun FilterSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (isExpanded) "收起" else "展开全部",
+                    text = if (isExpanded) "Collapse" else "Expand All",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (isExpanded) "收起" else "展开",
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )

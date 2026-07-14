@@ -243,7 +243,7 @@ fun VideoListDrawer(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Sort,
-                                            contentDescription = "排序",
+                                            contentDescription = "Sort",
                                             tint = Color(0xFF64B5F6),
                                             modifier = Modifier.size(20.dp)
                                         )

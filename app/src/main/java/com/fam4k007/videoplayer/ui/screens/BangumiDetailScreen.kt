@@ -56,7 +56,7 @@ fun BangumiDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = seasonInfo?.title ?: "番剧详情",
+                        text = seasonInfo?.title ?: "Bangumi Details",
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -66,7 +66,7 @@ fun BangumiDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回"
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -119,7 +119,7 @@ fun BangumiDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.loadSeasonInfo(seasonId) }) {
-                            Text("重试")
+                            Text("Retry")
                         }
                     }
                 }
@@ -169,13 +169,13 @@ private fun BangumiDetailContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "选集",
+                        text = "Episodes",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     TextButton(onClick = { isReversed = !isReversed }) {
                         Text(
-                            text = if (isReversed) "正序" else "倒序",
+                            text = if (isReversed) "Ascending" else "Descending",
                             fontSize = 13.sp
                         )
                     }
@@ -274,7 +274,7 @@ private fun BangumiHeader(seasonInfo: PgcInfoResult) {
                 // 评分
                 seasonInfo.rating?.let { rating ->
                     Text(
-                        text = "评分 ${rating.score} (${rating.count}人)",
+                        text = "Rating ${rating.score} (${rating.count} ratings)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -284,32 +284,32 @@ private fun BangumiHeader(seasonInfo: PgcInfoResult) {
                 seasonInfo.stat?.let { stat ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "播放 ${formatNumber(stat.views)}",
+                        text = "Views ${formatNumber(stat.views)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "弹幕 ${formatNumber(stat.danmakus)}",
+                        text = "Danmaku ${formatNumber(stat.danmakus)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "追番 ${formatNumber(stat.favorites)}",
+                        text = "Following ${formatNumber(stat.favorites)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 // 地区 + 状态
-                val areaText = seasonInfo.areas?.firstOrNull()?.let { "地区 ${it.name}" } ?: ""
+                val areaText = seasonInfo.areas?.firstOrNull()?.let { "Region ${it.name}" } ?: ""
                 val statusText = seasonInfo.publish?.let { publish ->
                     val parts = mutableListOf<String>()
                     // 完结状态
                     when (publish.isFinish) {
-                        1 -> parts.add("已完结")
-                        0 -> parts.add("连载中")
+                        1 -> parts.add("Completed")
+                        0 -> parts.add("Ongoing")
                     }
                     // 更新时间（如"每周三更新"）
                     publish.timeFromShow?.takeIf { it.isNotEmpty() }?.let { parts.add(it) }
@@ -332,7 +332,7 @@ private fun BangumiHeader(seasonInfo: PgcInfoResult) {
                 seasonInfo.new_ep?.let { newEp ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "最新集数: ${newEp.title?.takeIf { it.isNotEmpty() } ?: newEp.indexShow ?: ""}",
+                        text = "Latest: ${newEp.title?.takeIf { it.isNotEmpty() } ?: newEp.indexShow ?: ""}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -359,7 +359,7 @@ private fun BangumiDescription(description: String) {
             .padding(16.dp)
     ) {
         Text(
-            text = "简介",
+            text = "Synopsis",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -376,7 +376,7 @@ private fun BangumiDescription(description: String) {
         if (description.length > 100) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = if (expanded) "收起" else "展开",
+                text = if (expanded) "Collapse" else "Expand",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { expanded = !expanded }
@@ -462,8 +462,8 @@ private fun EpisodeItem(
  */
 private fun formatNumber(number: Long): String {
     return when {
-        number >= 100000000 -> String.format("%.1f亿", number / 100000000.0)
-        number >= 10000 -> String.format("%.1f万", number / 10000.0)
+        number >= 100000000 -> String.format("%.1fB", number / 100000000.0)
+        number >= 10000 -> String.format("%.1fK", number / 10000.0)
         else -> number.toString()
     }
 }

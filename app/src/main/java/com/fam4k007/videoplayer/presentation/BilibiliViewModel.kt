@@ -94,11 +94,11 @@ class BilibiliViewModel(
                     startQRCodePolling(qrCodeInfo.qrcodeKey)
                 }.onFailure { error ->
                     Logger.e(TAG, "Failed to generate QR code", error)
-                    _loginState.value = LoginUiState.Error(error.message ?: "生成二维码失败")
+                    _loginState.value = LoginUiState.Error(error.message ?: "Failed to generate QR code")
                 }
             } catch (e: Exception) {
                 Logger.e(TAG, "Exception while generating QR code", e)
-                _loginState.value = LoginUiState.Error(e.message ?: "生成二维码异常")
+                _loginState.value = LoginUiState.Error(e.message ?: "QR code generation exception")
             }
         }
     }
@@ -123,7 +123,7 @@ class BilibiliViewModel(
                                 _loginState.value = LoginUiState.LoggedIn(userInfo)
                                 Logger.d(TAG, "Login successful: ${userInfo.uname}")
                             } else {
-                                _loginState.value = LoginUiState.Error("登录成功但无法获取用户信息")
+                                _loginState.value = LoginUiState.Error("Login successful but unable to get user info")
                             }
                             break // 停止轮询
                         }
@@ -135,7 +135,7 @@ class BilibiliViewModel(
                             Logger.d(TAG, "QR code scanned, waiting for confirmation...")
                         }
                         LoginResult.Expired -> {
-                            _loginState.value = LoginUiState.Error("二维码已过期，请重新生成")
+                            _loginState.value = LoginUiState.Error("QR code expired, please regenerate")
                             Logger.w(TAG, "QR code expired")
                             break
                         }
@@ -147,7 +147,7 @@ class BilibiliViewModel(
                     }
                 } catch (e: Exception) {
                     Logger.e(TAG, "Error polling QR code status", e)
-                    _loginState.value = LoginUiState.Error(e.message ?: "轮询登录状态失败")
+                    _loginState.value = LoginUiState.Error(e.message ?: "Failed to poll login status")
                     break
                 }
             }
@@ -197,7 +197,7 @@ class BilibiliViewModel(
                 Logger.d(TAG, "Loaded ${bangumiList.size} bangumi items")
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to load bangumi list", e)
-                _bangumiState.value = BangumiUiState.Error(e.message ?: "加载番剧列表失败")
+                _bangumiState.value = BangumiUiState.Error(e.message ?: "Failed to load anime list")
             }
         }
     }
@@ -215,7 +215,7 @@ class BilibiliViewModel(
                 Logger.d(TAG, "Loaded bangumi detail: ${detail.title}")
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to load bangumi detail", e)
-                _bangumiState.value = BangumiUiState.Error(e.message ?: "加载番剧详情失败")
+                _bangumiState.value = BangumiUiState.Error(e.message ?: "Failed to load anime details")
             }
         }
     }
@@ -237,7 +237,7 @@ class BilibiliViewModel(
                 Logger.d(TAG, "Search results for '$keyword': ${searchResults.size} items")
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to search bangumi", e)
-                _bangumiState.value = BangumiUiState.Error(e.message ?: "搜索失败")
+                _bangumiState.value = BangumiUiState.Error(e.message ?: "Search failed")
             }
         }
     }
@@ -260,7 +260,7 @@ class BilibiliViewModel(
                 Logger.d(TAG, "Danmaku search results: ${searchResults.size} items")
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to search danmaku", e)
-                _danmakuSearchState.value = DanmakuSearchState.Error(e.message ?: "搜索弹幕失败")
+                _danmakuSearchState.value = DanmakuSearchState.Error(e.message ?: "Failed to search danmaku")
             }
         }
     }

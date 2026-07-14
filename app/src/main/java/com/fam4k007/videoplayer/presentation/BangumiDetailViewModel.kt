@@ -68,7 +68,7 @@ class BangumiDetailViewModel(
                 },
                 onFailure = { error ->
                     Logger.e(TAG, "Failed to load season info", error)
-                    _uiState.value = BangumiDetailUiState.Error(error.message ?: "加载番剧详情失败")
+                    _uiState.value = BangumiDetailUiState.Error(error.message ?: "Failed to load anime details")
                 }
             )
         }
@@ -81,7 +81,7 @@ class BangumiDetailViewModel(
      */
     fun playEpisode(context: Context, episode: PgcEpisode) {
         viewModelScope.launch {
-            Toast.makeText(context, "正在获取播放地址...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Fetching playback URL...", Toast.LENGTH_SHORT).show()
             
             bangumiRepository.getPlayUrl(
                 avid = episode.aid,
@@ -95,7 +95,7 @@ class BangumiDetailViewModel(
                     val audioUrl = bangumiRepository.extractAudioUrl(playUrlResult)
                     
                     if (videoUrl.isNullOrEmpty()) {
-                        Toast.makeText(context, "获取播放地址失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Failed to get playback URL", Toast.LENGTH_SHORT).show()
                         return@fold
                     }
                     
@@ -103,19 +103,19 @@ class BangumiDetailViewModel(
                     val actualQuality = playUrlResult.dash?.video?.firstOrNull()?.id
                         ?: playUrlResult.quality
                     val qualityName = when (actualQuality) {
-                        127 -> "8K超高清"
-                        126 -> "杜比视界"
-                        125 -> "HDR真彩"
-                        120 -> "4K超清"
-                        116 -> "1080P60帧"
-                        112 -> "1080P高码率"
-                        80 -> "1080P高清"
-                        64 -> "720P高清"
-                        32 -> "480P清晰"
-                        16 -> "360P流畅"
+                        127 -> "8K Ultra HD"
+                        126 -> "Dolby Vision"
+                        125 -> "HDR True Color"
+                        120 -> "4K Ultra Clear"
+                        116 -> "1080P 60fps"
+                        112 -> "1080P High Bitrate"
+                        80 -> "1080P HD"
+                        64 -> "720P HD"
+                        32 -> "480P Clear"
+                        16 -> "360P Smooth"
                         else -> "${actualQuality}P"
                     }
-                    Toast.makeText(context, "画质: $qualityName", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Quality: $qualityName", Toast.LENGTH_SHORT).show()
                     
                     // 启动播放器
                     val title = "${_seasonInfo.value?.title ?: ""} ${episode.title}"
@@ -138,7 +138,7 @@ class BangumiDetailViewModel(
                 },
                 onFailure = { error ->
                     Logger.e(TAG, "Failed to get play url", error)
-                    Toast.makeText(context, "获取播放地址失败: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Failed to get playback URL: ${error.message}", Toast.LENGTH_LONG).show()
                 }
             )
         }
