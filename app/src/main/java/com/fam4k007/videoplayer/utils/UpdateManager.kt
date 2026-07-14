@@ -18,10 +18,10 @@ object UpdateManager {
     private const val TAG = "UpdateManager"
     
     // GitHub Releases API 地址
-    private const val GITHUB_API_URL = "https://api.github.com/repos/azxcvn/mpv-android-anime4k/releases/latest"
+    private const val GITHUB_API_URL = "https://api.github.com/repos/azxcvn/mpv-android-anime4k-EN/releases/latest"
     
     // 自定义下载地址
-    private const val CUSTOM_DOWNLOAD_URL = "https://github.com/azxcvn/mpv-android-anime4k/tree/meow-player-en/APP-EN"
+    private const val CUSTOM_DOWNLOAD_URL = "https://github.com/azxcvn/mpv-android-anime4k-EN/releases"
     // 备用下载地址
     private const val SECONDARY_DOWNLOAD_URL = "https://docs.qq.com/aio/p/scektroglatideb?p=pJTx0TLuJpKfJrmfpzYPBA&nlc=1"
     
