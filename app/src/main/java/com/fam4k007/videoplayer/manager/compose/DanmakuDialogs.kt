@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun DanmakuSettingsDrawer(
-    danmakuPath: String?,
+    hasDanmakuLoaded: Boolean,
     currentSize: Int,
     currentSpeed: Int,
     currentAlpha: Int,
@@ -41,9 +41,7 @@ fun DanmakuSettingsDrawer(
     currentShowScroll: Boolean,
     currentShowTop: Boolean,
     currentShowBottom: Boolean,
-    currentMaxScrollLine: Int,
-    currentMaxTopLine: Int,
-    currentMaxBottomLine: Int,
+    currentDisplayArea: Int,
     currentMaxScreenNum: Int,
     onSizeChange: (Int) -> Unit,
     onSpeedChange: (Int) -> Unit,
@@ -52,9 +50,7 @@ fun DanmakuSettingsDrawer(
     onShowScrollChange: (Boolean) -> Unit,
     onShowTopChange: (Boolean) -> Unit,
     onShowBottomChange: (Boolean) -> Unit,
-    onMaxScrollLineChange: (Int) -> Unit,
-    onMaxTopLineChange: (Int) -> Unit,
-    onMaxBottomLineChange: (Int) -> Unit,
+    onDisplayAreaChange: (Int) -> Unit,
     onMaxScreenNumChange: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -141,101 +137,66 @@ fun DanmakuSettingsDrawer(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                    // 标题栏
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "弹幕设置",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        
-                        // 关闭按钮
-                        IconButton(
-                            onClick = {
-                                isVisible = false
-                                coroutineScope.launch {
-                                    delay(300)
-                                    onDismiss()
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Text(
-                                text = "✕",
-                                fontSize = 20.sp,
-                                color = Color(0xFFBBBBBB)
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 弹幕信息卡片
-                    if (danmakuPath != null) {
-                        val fileName = danmakuPath.substringAfterLast("/")
+                        // 标题栏（冻结）
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFF1A2332), RoundedCornerShape(8.dp))
-                                .padding(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "📄",
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(end = 8.dp)
+                                text = "弹幕设置",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
-                            Column(modifier = Modifier.weight(1f)) {
+
+                            // 关闭按钮
+                            IconButton(
+                                onClick = {
+                                    isVisible = false
+                                    coroutineScope.launch {
+                                        delay(300)
+                                        onDismiss()
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Text(
-                                    text = "当前弹幕文件",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF9E9E9E)
-                                )
-                                Text(
-                                    text = fileName,
-                                    fontSize = 13.sp,
-                                    color = Color.White,
-                                    maxLines = 1
+                                    text = "✕",
+                                    fontSize = 20.sp,
+                                    color = Color(0xFFBBBBBB)
                                 )
                             }
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFF2C1810), RoundedCornerShape(8.dp))
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "⚠️",
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Divider(color = Color(0x33FFFFFF), thickness = 1.dp)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (!hasDanmakuLoaded) {
+                            Spacer(modifier = Modifier.height(24.dp))
                             Text(
                                 text = "未加载弹幕文件",
-                                fontSize = 13.sp,
-                                color = Color(0xFFFF9800)
+                                fontSize = 14.sp,
+                                color = Color(0xFFFF9800),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
                             )
-                        }
-                    }
-
-                    Divider(
-                        color = Color(0x33FFFFFF),
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
-
-                    // 可滚动内容区域
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                            Text(
+                                text = "请在弹幕页面加载弹幕后再进行设置",
+                                fontSize = 12.sp,
+                                color = Color(0x99FFFFFF),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            // 可滚动内容区域
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                         // 弹幕样式设置
                         item {
                             ExpandableSection(
@@ -267,21 +228,18 @@ fun DanmakuSettingsDrawer(
                                     currentShowScroll = currentShowScroll,
                                     currentShowTop = currentShowTop,
                                     currentShowBottom = currentShowBottom,
-                                    currentMaxScrollLine = currentMaxScrollLine,
-                                    currentMaxTopLine = currentMaxTopLine,
-                                    currentMaxBottomLine = currentMaxBottomLine,
+                                    currentDisplayArea = currentDisplayArea,
                                     currentMaxScreenNum = currentMaxScreenNum,
                                     onShowScrollChange = onShowScrollChange,
                                     onShowTopChange = onShowTopChange,
                                     onShowBottomChange = onShowBottomChange,
-                                    onMaxScrollLineChange = onMaxScrollLineChange,
-                                    onMaxTopLineChange = onMaxTopLineChange,
-                                    onMaxBottomLineChange = onMaxBottomLineChange,
+                                    onDisplayAreaChange = onDisplayAreaChange,
                                     onMaxScreenNumChange = onMaxScreenNumChange
                                 )
                             }
                         }
                     }
+                    } // else 块结束
                 }
                 }
             }
@@ -304,18 +262,10 @@ fun DanmakuStyleContent(
     onStrokeChange: (Int) -> Unit
 ) {
     val context = LocalContext.current
-    var size by remember { mutableStateOf(currentSize.toFloat()) }
-    var speed by remember { mutableStateOf(currentSpeed.toFloat()) }
-    var alpha by remember { mutableStateOf(currentAlpha.toFloat()) }
-    var stroke by remember { mutableStateOf(currentStroke.toFloat()) }
-
-    // 监听外部状态变化并同步
-    LaunchedEffect(currentSize, currentSpeed, currentAlpha, currentStroke) {
-        size = currentSize.toFloat()
-        speed = currentSpeed.toFloat()
-        alpha = currentAlpha.toFloat()
-        stroke = currentStroke.toFloat()
-    }
+    var size by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.size.toFloat()) }
+    var speed by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.speed.toFloat()) }
+    var alpha by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.alpha.toFloat()) }
+    var stroke by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.stroke.toFloat()) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -451,36 +401,21 @@ fun DanmakuConfigContent(
     currentShowScroll: Boolean,
     currentShowTop: Boolean,
     currentShowBottom: Boolean,
-    currentMaxScrollLine: Int,
-    currentMaxTopLine: Int,
-    currentMaxBottomLine: Int,
+    currentDisplayArea: Int,
     currentMaxScreenNum: Int,
     onShowScrollChange: (Boolean) -> Unit,
     onShowTopChange: (Boolean) -> Unit,
     onShowBottomChange: (Boolean) -> Unit,
-    onMaxScrollLineChange: (Int) -> Unit,
-    onMaxTopLineChange: (Int) -> Unit,
-    onMaxBottomLineChange: (Int) -> Unit,
+    onDisplayAreaChange: (Int) -> Unit,
     onMaxScreenNumChange: (Int) -> Unit
 ) {
-    var showScroll by remember { mutableStateOf(currentShowScroll) }
-    var showTop by remember { mutableStateOf(currentShowTop) }
-    var showBottom by remember { mutableStateOf(currentShowBottom) }
-    var maxScrollLine by remember { mutableStateOf(currentMaxScrollLine.toFloat()) }
-    var maxTopLine by remember { mutableStateOf(currentMaxTopLine.toFloat()) }
-    var maxBottomLine by remember { mutableStateOf(currentMaxBottomLine.toFloat()) }
-    var maxScreenNum by remember { mutableStateOf(currentMaxScreenNum.toFloat()) }
+    var showScroll by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showScrollDanmaku) }
+    var showTop by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showTopDanmaku) }
+    var showBottom by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showBottomDanmaku) }
+    var displayArea by remember { mutableIntStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent) }
+    var maxScreenNum by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum.toFloat()) }
 
-    // 监听外部状态变化并同步
-    LaunchedEffect(currentShowScroll, currentShowTop, currentShowBottom, currentMaxScrollLine, currentMaxTopLine, currentMaxBottomLine, currentMaxScreenNum) {
-        showScroll = currentShowScroll
-        showTop = currentShowTop
-        showBottom = currentShowBottom
-        maxScrollLine = currentMaxScrollLine.toFloat()
-        maxTopLine = currentMaxTopLine.toFloat()
-        maxBottomLine = currentMaxBottomLine.toFloat()
-        maxScreenNum = currentMaxScreenNum.toFloat()
-    }
+    val areaOptions = listOf(10, 25, 50, 75, 100)
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -523,79 +458,59 @@ fun DanmakuConfigContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 行数限制
+        // 弹幕显示区域
         Text(
-            text = "弹幕密度控制",
+            text = "弹幕显示区域",
             fontSize = 16.sp,
             color = Color.White,
             fontWeight = FontWeight.Bold
         )
 
-        Text(
-            text = "滚动弹幕最大行数：${if (maxScrollLine.toInt() == 0) "不限制" else maxScrollLine.toInt().toString()}",
-            fontSize = 14.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
-
-        Slider(
-            value = maxScrollLine,
-            onValueChange = {
-                maxScrollLine = it
-                onMaxScrollLineChange(it.toInt())
-            },
-            valueRange = 0f..20f,
-            steps = 19,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF64B5F6),
-                activeTrackColor = Color(0xFF64B5F6),
-                inactiveTrackColor = Color(0xFF555555)
-            )
-        )
-
-        Text(
-            text = "顶部弹幕最大行数：${if (maxTopLine.toInt() == 0) "不限制" else maxTopLine.toInt().toString()}",
-            fontSize = 14.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
-
-        Slider(
-            value = maxTopLine,
-            onValueChange = {
-                maxTopLine = it
-                onMaxTopLineChange(it.toInt())
-            },
-            valueRange = 0f..10f,
-            steps = 9,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF64B5F6),
-                activeTrackColor = Color(0xFF64B5F6),
-                inactiveTrackColor = Color(0xFF555555)
-            )
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            areaOptions.forEach { percent ->
+                val isSelected = displayArea == percent
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            color = if (isSelected) Color(0xFF64B5F6) else Color(0x1AFFFFFF),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            displayArea = percent
+                            onDisplayAreaChange(percent)
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$percent%",
+                        fontSize = 13.sp,
+                        color = if (isSelected) Color(0xFF121212) else Color.White,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+            }
+        }
 
         Text(
-            text = "底部弹幕最大行数：${if (maxBottomLine.toInt() == 0) "不限制" else maxBottomLine.toInt().toString()}",
-            fontSize = 14.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
+            text = when (displayArea) {
+                10 -> "仅显示 1 行滚动弹幕"
+                25 -> "显示少量弹幕"
+                50 -> "显示适量弹幕"
+                75 -> "显示较多弹幕"
+                100 -> "全屏满弹幕显示（推荐）"
+                else -> ""
+            },
+            fontSize = 11.sp,
+            color = Color(0x99FFFFFF),
+            modifier = Modifier.padding(top = 2.dp)
         )
 
-        Slider(
-            value = maxBottomLine,
-            onValueChange = {
-                maxBottomLine = it
-                onMaxBottomLineChange(it.toInt())
-            },
-            valueRange = 0f..10f,
-            steps = 9,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF64B5F6),
-                activeTrackColor = Color(0xFF64B5F6),
-                inactiveTrackColor = Color(0xFF555555)
-            )
-        )
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = "同屏最大弹幕数：${if (maxScreenNum.toInt() == 0) "不限制" else maxScreenNum.toInt().toString()}",

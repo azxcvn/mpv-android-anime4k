@@ -1,26 +1,50 @@
 package com.fam4k007.videoplayer.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.fam4k007.videoplayer.utils.UpdateManager
 
 /**
- * 统一的版本更新弹窗
- * 支持滚动查看更新内容、稍后提醒、忽略此版本
+ * 版本更新弹窗
+ *
+ * 三区域布局：
+ * - 顶部：标题 "发现新版本 vX.X.X" + 右上角 ✕ 关闭按钮
+ * - 中部：可滚动的更新内容
+ * - 底部：立即下载（实心全宽）→ 备用下载（描边全宽）→ 忽略此版本（文字链接）
  *
  * @param updateInfo 更新信息
- * @param onDismiss 关闭弹窗（稍后提醒）
+ * @param onDismiss 关闭弹窗（右上角 ✕ / 点击外部）
  * @param onDownload 立即下载
+ * @param onSecondaryDownload 备用下载
  * @param onIgnore 忽略此版本
  */
 @Composable
@@ -31,56 +55,147 @@ fun UpdateDialog(
     onSecondaryDownload: (String) -> Unit,
     onIgnore: () -> Unit
 ) {
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(28.dp),
-        title = {
-            Text(
-                text = "发现新版本 ${updateInfo.versionName}",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
             )
-        },
-        text = {
-            if (updateInfo.releaseNotes.isNotEmpty()) {
-                Text(
-                    text = updateInfo.releaseNotes,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 560.dp)
+            ) {
+                // ========== 顶部：标题 + 关闭按钮 ==========
+                Row(
                     modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .heightIn(max = 300.dp)
-                )
-            } else {
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 4.dp, top = 16.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "发现新版本",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "关闭",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                // 版本号
                 Text(
-                    text = "发现新版本，是否立即下载？",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = updateInfo.versionName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 )
-            }
-        },
-        confirmButton = {
-            Row {
-                TextButton(onClick = { onSecondaryDownload(updateInfo.secondaryDownloadUrl) }) {
-                    Text("备用下载", color = MaterialTheme.colorScheme.primary)
+
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                // ========== 中部：可滚动更新内容 ==========
+                if (updateInfo.releaseNotes.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = updateInfo.releaseNotes,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "发现新版本，是否立即下载？",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                    )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onDownload(updateInfo.downloadUrl) }) {
-                    Text("立即下载")
-                }
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onIgnore) {
-                    Text("忽略此版本")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) {
-                    Text("稍后提醒")
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                // ========== 底部：操作按钮（主次分明、紧凑） ==========
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // 主要操作：立即下载
+                    Button(
+                        onClick = { onDownload(updateInfo.downloadUrl) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "立即下载",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    // 次要操作：备用下载
+                    OutlinedButton(
+                        onClick = { onSecondaryDownload(updateInfo.secondaryDownloadUrl) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(38.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "备用下载",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    // 三级操作：忽略此版本
+                    TextButton(
+                        onClick = onIgnore,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                    ) {
+                        Text(
+                            text = "忽略此版本",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
-    )
+    }
 }

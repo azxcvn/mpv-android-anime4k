@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +59,7 @@ fun PortraitTopBar(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onVideoTitleClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -252,14 +256,26 @@ fun PortraitTopBar(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        // 锁定按钮
+        // 音频按钮
+        var audioBounds by remember { mutableStateOf(android.graphics.Rect()) }
         IconButton(
-            onClick = { viewModel.toggleLock() },
-            modifier = Modifier.size(32.dp),
+            onClick = {
+                audioBounds.let { b -> onAudioClick(b.left, b.top, b.width(), b.height()) }
+                viewModel.resetAutoHideTimer()
+            },
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .onGloballyPositioned { coords ->
+                        val r = coords.boundsInWindow()
+                        val x = r.left.toInt().coerceAtMost(screenWidthPx - r.width.toInt())
+                        audioBounds =
+                            android.graphics.Rect(x, r.top.toInt(), x + r.width.toInt(), r.top.toInt() + r.height.toInt())
+                    },
         ) {
             Icon(
-                painter = painterResource(R.drawable.lock_closed_48_filled),
-                contentDescription = "锁定",
+                painter = painterResource(R.drawable.ic_music_note_1_20_filled),
+                contentDescription = "音频",
                 tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
@@ -327,6 +343,9 @@ fun PortraitBottomControls(
     val hasChapters by viewModel.hasChapters.collectAsState()
     val chapterBarEnabled by viewModel.chapterBarEnabled.collectAsState()
     val gpuNext by viewModel.gpuNext.collectAsState()
+    val skipSegments by viewModel.skipSegments.collectAsState()
+    val currentSkippableSegment by viewModel.currentSkippableSegment.collectAsState()
+    val showSkipChip by viewModel.showSkipChip.collectAsState()
 
     // 拖动进度状态
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
@@ -335,8 +354,10 @@ fun PortraitBottomControls(
     // 缩略图预览状态
     val thumbnailBitmap by viewModel.thumbnailBitmap.collectAsState()
     val thumbnailTimeSec by viewModel.thumbnailTimeSec.collectAsState()
+    val thumbnailFraction by viewModel.thumbnailFraction.collectAsState()
+    val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
     val displayPosition =
-        if (isDragging) sliderPosition ?: precisePosition.toFloat() else precisePosition.toFloat()
+        (if (isDragging) sliderPosition ?: precisePosition.toFloat() else precisePosition.toFloat()).coerceAtLeast(0f)
 
     // Anime4K 标签
     val anime4KLabel =
@@ -372,6 +393,9 @@ fun PortraitBottomControls(
                 .padding(horizontal = 12.dp, vertical = 6.dp)
                 .navigationBarsPadding(),
         ) {
+            // 进度条整体下移
+            Spacer(modifier = Modifier.height(12.dp))
+
             // ── Row 1: 精简辅控（置于进度条上方，贴近进度条）──
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -558,6 +582,50 @@ fun PortraitBottomControls(
             }
         }
 
+        // ── 缩略图预览浮层 + Skip 按钮（零高度，浮在进度条正上方）──
+        Box(
+            Modifier.fillMaxWidth().height(0.dp)
+                .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
+        ) {
+            val thumbnailChapterTitle = remember(chapters, thumbnailTimeSec) {
+                chapters.lastOrNull { it.timeSeconds <= thumbnailTimeSec }?.title
+            }
+            SeekbarThumbnailPreview(
+                bitmap = thumbnailBitmap,
+                timeSec = thumbnailTimeSec,
+                fraction = thumbnailFraction,
+                show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+                isLoading = thumbnailLoading && isDragging,
+                chapterTitle = thumbnailChapterTitle,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方，左移16dp避开右侧控件）
+            val skipChipSegment = currentSkippableSegment
+            val skipChipVisible = showSkipChip && skipChipSegment != null
+            androidx.compose.animation.AnimatedVisibility(
+                visible = skipChipVisible,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 18.dp, top = 88.dp),
+            ) {
+                val seg = skipChipSegment ?: return@AnimatedVisibility
+                androidx.compose.material3.Surface(
+                    onClick = { viewModel.skipActiveSegment() },
+                    shape = RoundedCornerShape(999.dp),
+                    color = seg.type.accentColor.copy(alpha = 0.92f),
+                ) {
+                    Text(
+                        text = seg.type.label,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+
         // ── Row 2: 进度条 + 时间 ──
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -570,7 +638,7 @@ fun PortraitBottomControls(
                 modifier = Modifier.padding(end = 6.dp),
             )
 
-            // 进度条
+            // 进度滑块
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -592,6 +660,7 @@ fun PortraitBottomControls(
                         viewModel.seekToChapter(index)
                         viewModel.resetAutoHideTimer()
                     },
+                    skipSegments = skipSegments,
                     onSeek = { newValue ->
                         if (!isDragging) {
                             isDragging = true
@@ -612,13 +681,6 @@ fun PortraitBottomControls(
                 )
             }
 
-            // 缩略图预览弹窗
-            SeekbarThumbnailPreview(
-                bitmap = thumbnailBitmap,
-                timeSec = thumbnailTimeSec,
-                show = isDragging && thumbnailBitmap != null
-            )
-
             // 总时长/剩余时间（点击切换）
             val durationText = if (showRemainingTime) {
                 val remaining = duration - displayPosition.toInt()
@@ -636,7 +698,7 @@ fun PortraitBottomControls(
             )
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(0.dp))
 
         // ── Row 3: 主播放控制（均匀分布）──
         Row(
@@ -732,6 +794,7 @@ fun PortraitBottomControls(
         }
     }
 }
+
 }
 
 // ================== 工具函数 ==================

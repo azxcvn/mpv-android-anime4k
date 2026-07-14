@@ -28,12 +28,8 @@ import kotlinx.coroutines.launch
 fun SkipSettingsDrawer(
     currentSkipIntro: Int,
     currentSkipOutro: Int,
-    currentAutoSkipChapter: Boolean,
-    currentSkipToChapterIndex: Int,
     onSkipIntroChange: (Int) -> Unit,
     onSkipOutroChange: (Int) -> Unit,
-    onAutoSkipChapterChange: (Boolean) -> Unit,
-    onSkipToChapterIndexChange: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(false) }
@@ -162,21 +158,11 @@ fun SkipSettingsDrawer(
 
                         // 说明文本
                         Text(
-                            text = "设置视频播放时自动跳过的片头和片尾时长\n注意：设置会应用到当前文件夹的所有视频",
+                            text = "由章节关键词自动检测 OP/ED 并在进度条上着色。\n也可设置固定的片头/片尾跳过秒数：",
                             fontSize = 13.sp,
                             color = Color(0xAAFFFFFF),
                             modifier = Modifier.padding(bottom = 24.dp)
                         )
-
-                        // 自动跳过章节设置
-                        AutoSkipChapterContent(
-                            currentAutoSkipChapter = currentAutoSkipChapter,
-                            currentSkipToChapterIndex = currentSkipToChapterIndex,
-                            onAutoSkipChapterChange = onAutoSkipChapterChange,
-                            onSkipToChapterIndexChange = onSkipToChapterIndexChange
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
 
                         // 片头跳过设置
                         SkipIntroContent(
@@ -201,136 +187,6 @@ fun SkipSettingsDrawer(
 /**
  * 自动跳过章节设置内容
  */
-@Composable
-private fun AutoSkipChapterContent(
-    currentAutoSkipChapter: Boolean,
-    currentSkipToChapterIndex: Int,
-    onAutoSkipChapterChange: (Boolean) -> Unit,
-    onSkipToChapterIndexChange: (Int) -> Unit
-) {
-    // 使用内部状态管理开关状态，确保立即响应
-    var isChecked by remember { mutableStateOf(currentAutoSkipChapter) }
-    var chapterIndex by remember { mutableStateOf(currentSkipToChapterIndex) }
-    
-    // 当外部状态改变时同步更新
-    LaunchedEffect(currentAutoSkipChapter) {
-        isChecked = currentAutoSkipChapter
-    }
-    LaunchedEffect(currentSkipToChapterIndex) {
-        chapterIndex = currentSkipToChapterIndex
-    }
-    
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "自动跳过章节",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "利用视频章节信息自动跳到正片（优先级高于手动时间设置）",
-                    fontSize = 12.sp,
-                    color = Color(0x88FFFFFF),
-                    lineHeight = 16.sp
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Switch(
-                checked = isChecked,
-                onCheckedChange = { newValue ->
-                    isChecked = newValue
-                    onAutoSkipChapterChange(newValue)
-                },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color(0xFF4CAF50),
-                    checkedTrackColor = Color(0x884CAF50),
-                    uncheckedThumbColor = Color(0xFF9E9E9E),
-                    uncheckedTrackColor = Color(0x88757575)
-                )
-            )
-        }
-        
-        // 章节选择器（只在启用时显示）
-        androidx.compose.animation.AnimatedVisibility(
-            visible = isChecked,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column(modifier = Modifier.padding(top = 16.dp)) {
-                Text(
-                    text = "跳到第几个章节",
-                    fontSize = 14.sp,
-                    color = Color(0xCCFFFFFF),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "第 ${chapterIndex + 1} 个章节",
-                        fontSize = 15.sp,
-                        color = Color.White,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    // 减少按钮
-                    androidx.compose.material3.IconButton(
-                        onClick = {
-                            if (chapterIndex > 0) {
-                                chapterIndex--
-                                onSkipToChapterIndexChange(chapterIndex)
-                            }
-                        },
-                        enabled = chapterIndex > 0
-                    ) {
-                        Text(
-                            text = "−",
-                            fontSize = 24.sp,
-                            color = if (chapterIndex > 0) Color.White else Color(0x55FFFFFF)
-                        )
-                    }
-                    
-                    // 增加按钮
-                    androidx.compose.material3.IconButton(
-                        onClick = {
-                            if (chapterIndex < 9) {  // 最多10个章节
-                                chapterIndex++
-                                onSkipToChapterIndexChange(chapterIndex)
-                            }
-                        },
-                        enabled = chapterIndex < 9
-                    ) {
-                        Text(
-                            text = "+",
-                            fontSize = 24.sp,
-                            color = if (chapterIndex < 9) Color.White else Color(0x55FFFFFF)
-                        )
-                    }
-                }
-                
-                Text(
-                    text = "提示：章节0通常是OP前，章节1通常是OP结束后正片开始",
-                    fontSize = 11.sp,
-                    color = Color(0x66FFFFFF),
-                    modifier = Modifier.padding(top = 4.dp),
-                    lineHeight = 14.sp
-                )
-            }
-        }
-    }
-}
-
 /**
  * 片头跳过设置内容
  */

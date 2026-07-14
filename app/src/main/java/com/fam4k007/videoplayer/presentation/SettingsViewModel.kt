@@ -312,7 +312,7 @@ class SettingsViewModel(
     /**
      * 设置字幕位置
      */
-    fun setSubtitlePosition(position: Int) {
+    fun setSubtitlePosition(position: Float) {
         viewModelScope.launch {
             try {
                 playerRepository.setSubtitlePosition(position)
@@ -381,7 +381,7 @@ data class SettingsState(
     
     // 字幕设置
     val subtitleFontSize: Float = 16f,
-    val subtitlePosition: Int = 0,
+    val subtitlePosition: Float = 0f,
     
     // 其他设置
     val autoRotate: Boolean = false,

@@ -1,11 +1,16 @@
 package com.fam4k007.videoplayer.di
 
+import com.fam4k007.videoplayer.domain.media.FolderBrowserManager
+import com.fam4k007.videoplayer.domain.media.MediaScanManager
+import com.fam4k007.videoplayer.domain.media.TreeNavigationManager
+import com.fam4k007.videoplayer.domain.media.VideoBrowserManager
 import com.fam4k007.videoplayer.domain.player.Anime4KManager
 import com.fam4k007.videoplayer.domain.subtitle.SubtitleManager
 import com.fam4k007.videoplayer.domain.webdav.WebDavClient
 import com.fam4k007.videoplayer.domain.webdav.WebDavConfig
 import com.fam4k007.videoplayer.preferences.PreferencesManager
 import com.fam4k007.videoplayer.manager.ThemeManager
+import com.fam4k007.videoplayer.presentation.PlayerStateHolder
 import com.fam4k007.videoplayer.utils.ThumbnailCacheManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -45,4 +50,29 @@ val domainModule = module {
     factory { 
         ThemeManager 
     }
+
+    // ==================== 媒体库 Managers ====================
+
+    // FolderBrowserManager — 文件夹排序、黑名单过滤
+    factory {
+        FolderBrowserManager(preferencesManager = get())
+    }
+
+    // VideoBrowserManager — 视频排序、搜索过滤
+    factory {
+        VideoBrowserManager(preferencesManager = get())
+    }
+
+    // TreeNavigationManager — 树状视图导航栈管理
+    factory {
+        TreeNavigationManager()
+    }
+
+    // MediaScanManager — 媒体扫描协调
+    factory {
+        MediaScanManager(videoRepository = get())
+    }
+
+    // PlayerStateHolder — 播放状态共享容器（VPA 写入、AudioPlayer 读取）
+    single { PlayerStateHolder() }
 }

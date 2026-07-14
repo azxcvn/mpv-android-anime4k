@@ -108,7 +108,7 @@ fun rememberThemeController(context: Context): ThemeController {
  * 用于在 Compose 中管理主题切换
  */
 class ThemeState(
-    initialTheme: AppTheme = AppTheme.Default,
+    initialTheme: AppTheme = AppTheme.Lilac,
     initialDarkMode: DarkMode = DarkMode.System,
     initialAmoledMode: Boolean = false
 ) {

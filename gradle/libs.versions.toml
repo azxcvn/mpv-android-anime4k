@@ -1,14 +1,14 @@
 [versions]
 # Android SDK
-compileSdk = "34"
+compileSdk = "36"
 minSdk = "26"
 targetSdk = "34"
 ndk = "25.2.9519653"
 
 # Gradle Plugins
-agp = "8.5.2"
-kotlin = "2.0.20"
-ksp = "2.0.20-1.0.25"
+agp = "8.7.3"
+kotlin = "2.3.21"
+ksp = "2.3.7"
 
 # AndroidX Core
 appcompat = "1.7.0"

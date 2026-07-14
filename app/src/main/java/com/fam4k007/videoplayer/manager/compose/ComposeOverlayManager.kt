@@ -85,7 +85,7 @@ class ComposeOverlayManager(
     fun showSubtitleSettingsDrawer(
         currentDelay: Double,
         currentScale: Float,
-        currentPosition: Int,
+        currentPosition: Float,
         currentBorderSize: Int,
         currentTextColor: String,
         currentBorderColor: String,
@@ -93,7 +93,7 @@ class ComposeOverlayManager(
         currentBorderStyle: String,
         onDelayChange: (Double) -> Unit,
         onScaleChange: (Float) -> Unit,
-        onPositionChange: (Int) -> Unit,
+        onPositionChange: (Float) -> Unit,
         onBorderSizeChange: (Int) -> Unit,
         onTextColorChange: (String) -> Unit,
         onBorderColorChange: (String) -> Unit,
@@ -170,7 +170,7 @@ class ComposeOverlayManager(
     }
 
     fun showDanmakuSettingsDrawer(
-        danmakuPath: String?,
+        hasDanmakuLoaded: Boolean,
         currentSize: Int,
         currentSpeed: Int,
         currentAlpha: Int,
@@ -178,9 +178,7 @@ class ComposeOverlayManager(
         currentShowScroll: Boolean,
         currentShowTop: Boolean,
         currentShowBottom: Boolean,
-        currentMaxScrollLine: Int,
-        currentMaxTopLine: Int,
-        currentMaxBottomLine: Int,
+        currentDisplayArea: Int,
         currentMaxScreenNum: Int,
         onSizeChange: (Int) -> Unit,
         onSpeedChange: (Int) -> Unit,
@@ -189,14 +187,12 @@ class ComposeOverlayManager(
         onShowScrollChange: (Boolean) -> Unit,
         onShowTopChange: (Boolean) -> Unit,
         onShowBottomChange: (Boolean) -> Unit,
-        onMaxScrollLineChange: (Int) -> Unit,
-        onMaxTopLineChange: (Int) -> Unit,
-        onMaxBottomLineChange: (Int) -> Unit,
+        onDisplayAreaChange: (Int) -> Unit,
         onMaxScreenNumChange: (Int) -> Unit
     ) {
         setContent {
             DanmakuSettingsDrawer(
-                danmakuPath = danmakuPath,
+                hasDanmakuLoaded = hasDanmakuLoaded,
                 currentSize = currentSize,
                 currentSpeed = currentSpeed,
                 currentAlpha = currentAlpha,
@@ -204,9 +200,7 @@ class ComposeOverlayManager(
                 currentShowScroll = currentShowScroll,
                 currentShowTop = currentShowTop,
                 currentShowBottom = currentShowBottom,
-                currentMaxScrollLine = currentMaxScrollLine,
-                currentMaxTopLine = currentMaxTopLine,
-                currentMaxBottomLine = currentMaxBottomLine,
+                currentDisplayArea = currentDisplayArea,
                 currentMaxScreenNum = currentMaxScreenNum,
                 onSizeChange = onSizeChange,
                 onSpeedChange = onSpeedChange,
@@ -215,9 +209,7 @@ class ComposeOverlayManager(
                 onShowScrollChange = onShowScrollChange,
                 onShowTopChange = onShowTopChange,
                 onShowBottomChange = onShowBottomChange,
-                onMaxScrollLineChange = onMaxScrollLineChange,
-                onMaxTopLineChange = onMaxTopLineChange,
-                onMaxBottomLineChange = onMaxBottomLineChange,
+                onDisplayAreaChange = onDisplayAreaChange,
                 onMaxScreenNumChange = onMaxScreenNumChange,
                 onDismiss = { clearContent() }
             )
@@ -341,23 +333,15 @@ class ComposeOverlayManager(
     fun showSkipSettingsDrawer(
         currentSkipIntro: Int,
         currentSkipOutro: Int,
-        currentAutoSkipChapter: Boolean,
-        currentSkipToChapterIndex: Int,
         onSkipIntroChange: (Int) -> Unit,
-        onSkipOutroChange: (Int) -> Unit,
-        onAutoSkipChapterChange: (Boolean) -> Unit,
-        onSkipToChapterIndexChange: (Int) -> Unit
+        onSkipOutroChange: (Int) -> Unit
     ) {
         setContent {
             SkipSettingsDrawer(
                 currentSkipIntro = currentSkipIntro,
                 currentSkipOutro = currentSkipOutro,
-                currentAutoSkipChapter = currentAutoSkipChapter,
-                currentSkipToChapterIndex = currentSkipToChapterIndex,
                 onSkipIntroChange = onSkipIntroChange,
                 onSkipOutroChange = onSkipOutroChange,
-                onAutoSkipChapterChange = onAutoSkipChapterChange,
-                onSkipToChapterIndexChange = onSkipToChapterIndexChange,
                 onDismiss = { clearContent() }
             )
         }
@@ -369,9 +353,9 @@ class ComposeOverlayManager(
     @Deprecated("使用 showSubtitleSettingsDrawer 替代")
     fun showSubtitleMiscDialog(
         currentScale: Float,
-        currentPosition: Int,
+        currentPosition: Float,
         onScaleChange: (Float) -> Unit,
-        onPositionChange: (Int) -> Unit
+        onPositionChange: (Float) -> Unit
     ) {
         setContent {
             SubtitleMiscDialog(

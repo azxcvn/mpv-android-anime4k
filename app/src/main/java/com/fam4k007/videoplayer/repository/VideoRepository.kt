@@ -317,10 +317,6 @@ class VideoRepository(
         cacheOptionsTag = currentTag
 
         try {
-            val prefs = com.fam4k007.videoplayer.preferences.PreferencesManager.getInstance(context)
-            val includeNoMedia = prefs.getIncludeNoMediaFolders()
-            val includeHidden = prefs.isScanHiddenFoldersEnabled() // 用户开启隐藏文件夹扫描
-
             val folderMap = mutableMapOf<String, MutableList<com.fam4k007.videoplayer.VideoFile>>()
 
             if (includeNoMedia || includeHidden) {
@@ -336,59 +332,7 @@ class VideoRepository(
                 // ──────────────────────────────────────────────
                 // 方案 B：默认路径 — 使用 MediaStore（快）
                 // ──────────────────────────────────────────────
-                val projection = arrayOf(
-                    MediaStore.Video.Media.DATA,
-                    MediaStore.Video.Media.DISPLAY_NAME,
-                    MediaStore.Video.Media._ID,
-                    MediaStore.Video.Media.SIZE,
-                    MediaStore.Video.Media.DURATION,
-                    MediaStore.Video.Media.DATE_ADDED
-                )
-
-                context.contentResolver.query(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    "${MediaStore.Video.Media.DATE_ADDED} DESC"
-                )?.use { cursor ->
-                    val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
-                    val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-                    val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
-                    val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-                    val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
-
-                    while (cursor.moveToNext()) {
-                        val path = cursor.getString(dataColumn)
-                        val name = cursor.getString(nameColumn)
-                        val id = cursor.getLong(idColumn)
-                        val size = cursor.getLong(sizeColumn)
-                        val duration = cursor.getLong(durationColumn)
-                        val dateAdded = cursor.getLong(dateColumn)
-
-                        val file = File(path)
-                        if (!file.exists()) continue
-                        val folderPath = file.parent ?: continue
-
-                        val uri = Uri.withAppendedPath(
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                            id.toString()
-                        ).toString()
-
-                        val videoFile = com.fam4k007.videoplayer.VideoFile(
-                            uri = uri,
-                            name = name,
-                            path = path,
-                            size = size,
-                            duration = duration,
-                            dateAdded = dateAdded
-                        )
-
-                        folderMap.getOrPut(folderPath) { mutableListOf() }.add(videoFile)
-                    }
-                }
-
+                scanFromMediaStore(folderMap)
                 Logger.d(TAG, "MediaStore 扫描完成，共 ${folderMap.size} 个文件夹")
             }
 
@@ -577,6 +521,66 @@ class VideoRepository(
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to get path from URI: ${e.message}", e)
             null
+        }
+    }
+
+    /**
+     * 从 MediaStore 扫描所有视频文件（快速路径）
+     */
+    private fun scanFromMediaStore(
+        folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>
+    ) {
+        val projection = arrayOf(
+            MediaStore.Video.Media.DATA,
+            MediaStore.Video.Media.DISPLAY_NAME,
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.DATE_ADDED
+        )
+
+        context.contentResolver.query(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            null,
+            null,
+            "${MediaStore.Video.Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+
+            while (cursor.moveToNext()) {
+                val path = cursor.getString(dataColumn)
+                val name = cursor.getString(nameColumn)
+                val id = cursor.getLong(idColumn)
+                val size = cursor.getLong(sizeColumn)
+                val duration = cursor.getLong(durationColumn)
+                val dateAdded = cursor.getLong(dateColumn)
+
+                val file = File(path)
+                if (!file.exists()) continue
+                val folderPath = file.parent ?: continue
+
+                val uri = Uri.withAppendedPath(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                ).toString()
+
+                val videoFile = com.fam4k007.videoplayer.VideoFile(
+                    uri = uri,
+                    name = name,
+                    path = path,
+                    size = size,
+                    duration = duration,
+                    dateAdded = dateAdded
+                )
+
+                folderMap.getOrPut(folderPath) { mutableListOf() }.add(videoFile)
+            }
         }
     }
 

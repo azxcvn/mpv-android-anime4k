@@ -38,7 +38,7 @@ class AboutComposeActivity : BaseActivity() {
                     amoledMode = themeController.getAmoledMode()
                 ) {
                     AboutScreen(
-                        versionName = versionName,
+                        versionName = versionName ?: "",
                         onBack = {
                             finish()
                         },

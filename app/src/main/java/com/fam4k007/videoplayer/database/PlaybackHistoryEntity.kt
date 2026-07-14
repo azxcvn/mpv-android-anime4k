@@ -20,7 +20,8 @@ data class PlaybackHistoryEntity(
     val danmuPath: String? = null,        // 弹幕文件路径
     val danmuVisible: Boolean = true,     // 弹幕显示状态
     val danmuOffsetTime: Long = 0L,       // 弹幕时间偏移（毫秒）
-    val thumbnailPath: String? = null     // 视频缩略图路径
+    val thumbnailPath: String? = null,    // 视频缩略图路径
+    val hasBeenWatched: Boolean = false   // 是否已观看（进度超过阈值）
 ) {
     /**
      * 格式化播放时间

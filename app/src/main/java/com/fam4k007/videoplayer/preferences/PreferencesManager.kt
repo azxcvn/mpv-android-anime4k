@@ -479,20 +479,20 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * 获取视频的字幕位置（优先 per-video，回退 global）
      */
-    fun getSubtitlePosition(videoUri: String): Int {
+    fun getSubtitlePosition(videoUri: String): Float {
         if (sharedPreferences.contains("${videoUri}_sub_pos")) {
-            return sharedPreferences.getInt("${videoUri}_sub_pos", 100)
+            return sharedPreferences.getFloat("${videoUri}_sub_pos", 100f)
         }
-        return sharedPreferences.getInt("global_sub_pos", 100)
+        return sharedPreferences.getFloat("global_sub_pos", 100f)
     }
     
     /**
      * 保存视频的字幕位置（同时保存 per-video 和 global）
      */
-    fun setSubtitlePosition(videoUri: String, position: Int) {
+    fun setSubtitlePosition(videoUri: String, position: Float) {
         sharedPreferences.edit()
-            .putInt("${videoUri}_sub_pos", position)
-            .putInt("global_sub_pos", position)
+            .putFloat("${videoUri}_sub_pos", position)
+            .putFloat("global_sub_pos", position)
             .apply()
     }
     
@@ -524,6 +524,50 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean("${videoUri}_ass_override", enabled).apply()
     }
     
+    /**
+     * 获取已观看阈值（百分比，默认95）
+     */
+    fun getWatchedThreshold(): Int {
+        return sharedPreferences.getInt("watched_threshold", AppConstants.Defaults.DEFAULT_WATCHED_THRESHOLD)
+    }
+    
+    /**
+     * 设置已观看阈值
+     */
+    fun setWatchedThreshold(threshold: Int) {
+        sharedPreferences.edit().putInt("watched_threshold", threshold).apply()
+    }
+    
+    /**
+     * 获取是否显示视频列表进度条
+     */
+    fun isShowVideoProgressBarEnabled(): Boolean {
+        return sharedPreferences.getBoolean("show_video_progress_bar", true)
+    }
+    
+    /**
+     * 设置是否显示视频列表进度条
+     */
+    fun setShowVideoProgressBarEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("show_video_progress_bar", enabled).apply()
+    }
+
+    fun isControlsAnimationEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.CONTROLS_ANIMATION_ENABLED, false)
+    }
+
+    fun setControlsAnimationEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.CONTROLS_ANIMATION_ENABLED, enabled).apply()
+    }
+
+    fun isDrawerAnimationEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, false)
+    }
+
+    fun setDrawerAnimationEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, enabled).apply()
+    }
+
     /**
      * 获取视频的字幕轨道ID
      */
@@ -668,8 +712,8 @@ class PreferencesManager private constructor(context: Context) {
     fun getAppTheme(): String {
         return sharedPreferences.getString(
             "app_theme",
-            "Default"  // 默认主题
-        ) ?: "Default"
+            "Dynamic"  // 默认使用动态颜色主题
+        ) ?: "Dynamic"
     }
     
     /**
@@ -808,6 +852,14 @@ class PreferencesManager private constructor(context: Context) {
     
     fun setDanmakuMaxBottomLine(line: Int) {
         sharedPreferences.edit().putInt("danmaku_max_bottom_line", line).apply()
+    }
+
+    fun getDanmakuDisplayArea(): Int {
+        return sharedPreferences.getInt("danmaku_display_area", 100)
+    }
+
+    fun setDanmakuDisplayArea(percent: Int) {
+        sharedPreferences.edit().putInt("danmaku_display_area", percent).apply()
     }
     
     fun getDanmakuMaxScreenNum(): Int {
@@ -1488,12 +1540,12 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * 获取字幕位置（全局设置）
      */
-    fun getSubtitlePosition(): Int {
-        return sharedPreferences.getInt("subtitle_position", 100)
+    fun getSubtitlePosition(): Float {
+        return sharedPreferences.getFloat("subtitle_position", 100f)
     }
     
-    fun setSubtitlePosition(position: Int) {
-        sharedPreferences.edit().putInt("subtitle_position", position).apply()
+    fun setSubtitlePosition(position: Float) {
+        sharedPreferences.edit().putFloat("subtitle_position", position).apply()
     }
     
     /**
@@ -1639,12 +1691,25 @@ class PreferencesManager private constructor(context: Context) {
     fun isSeekbarThumbnailEnabled(): Boolean {
         return sharedPreferences.getBoolean(
             AppConstants.Preferences.SEEKBAR_THUMBNAIL_ENABLED,
-            false  // 默认关闭
+            true  // 默认开启
         )
     }
 
     fun setSeekbarThumbnailEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.SEEKBAR_THUMBNAIL_ENABLED, enabled).apply()
+    }
+
+    // ==================== 章节 OP/ED 检测 ====================
+
+    fun isChapterSkipDetectionEnabled(): Boolean {
+        return sharedPreferences.getBoolean(
+            AppConstants.Preferences.CHAPTER_SKIP_DETECTION_ENABLED,
+            true  // 默认开启
+        )
+    }
+
+    fun setChapterSkipDetectionEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.CHAPTER_SKIP_DETECTION_ENABLED, enabled).apply()
     }
 
     // ==================== MPV 解码器预设 ====================

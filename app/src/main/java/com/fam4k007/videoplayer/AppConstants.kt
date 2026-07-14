@@ -56,6 +56,15 @@ object AppConstants {
         // 进度条缩略图预览 Key
         const val SEEKBAR_THUMBNAIL_ENABLED = "seekbar_thumbnail_enabled"
 
+        // 章节 OP/ED 检测开关
+        const val CHAPTER_SKIP_DETECTION_ENABLED = "chapter_skip_detection_enabled"
+
+        // 播放界面动画开关
+        const val CONTROLS_ANIMATION_ENABLED = "controls_animation_enabled"
+
+        // 抽屉界面动画开关
+        const val DRAWER_ANIMATION_ENABLED = "drawer_animation_enabled"
+
         // MPV 解码器预设
         const val MPV_PROFILE = "mpv_profile"
         const val GPU_NEXT = "gpu_next"
@@ -130,6 +139,11 @@ object AppConstants {
         
         // 视频显示模式
         const val DEFAULT_VIDEO_DISPLAY_MODE = "folder"
+        
+        // 已观看阈值（百分比，默认95%）
+        const val DEFAULT_WATCHED_THRESHOLD = 95
+        const val MIN_WATCHED_THRESHOLD = 50
+        const val MAX_WATCHED_THRESHOLD = 100
     }
 
     /**

@@ -37,8 +37,8 @@ android {
         applicationId = "com.fam4k007.videoplayer"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 29
-        versionName = "1.2.9"
+        versionCode = 30
+        versionName = "1.3.0"
 
         buildConfigField(
             "String",
@@ -98,15 +98,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf("-opt-in=kotlin.RequiresOptIn")
-    }
-
     buildFeatures {
         viewBinding = true
         compose = true
         buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
 }
 
@@ -146,7 +148,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     // 本地 AAR 库（来自 libs 目录）
-    implementation(mapOf("name" to "mpv-android-lib-v0.1.10", "ext" to "aar"))
+    implementation(mapOf("name" to "mpvlib", "ext" to "aar"))
     implementation(mapOf("name" to "DanmakuFlameMaster", "ext" to "aar"))
     implementation(mapOf("name" to "mediainfoAndroid-v1.0.0-fix", "ext" to "aar"))
     implementation(mapOf("name" to "seeker-2.0.1", "ext" to "aar"))

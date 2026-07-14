@@ -50,6 +50,8 @@ fun PlayerControls(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onScreenshotClick: () -> Unit = {},
     onVideoTitleClick: () -> Unit = {},
     onRestartFromBeginning: () -> Unit = {},
     onRotateClick: () -> Unit = {},
@@ -70,8 +72,9 @@ fun PlayerControls(
         }
     }
 
-    // 超分启用时取消动画（避免 GPU 负载过高导致掉帧）
-    val hasAnimation = anime4KMode == com.fam4k007.videoplayer.domain.player.Anime4KManager.Mode.OFF
+    // 播放界面动画开关（从设置读取，默认关闭）
+    val controlsAnimationEnabled by viewModel.controlsAnimationEnabled.collectAsState()
+    val hasAnimation = controlsAnimationEnabled
     val animEnter = if (hasAnimation)
         androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically(initialOffsetY = { -it })
     else androidx.compose.animation.EnterTransition.None
@@ -113,6 +116,7 @@ fun PlayerControls(
                     onDanmakuClick = onDanmakuClick,
                     onAspectRatioClick = onAspectRatioClick,
                     onMoreClick = onMoreClick,
+                    onAudioClick = onAudioClick,
                     onVideoTitleClick = onVideoTitleClick
                 )
             }
@@ -149,6 +153,7 @@ fun PlayerControls(
                     onDanmakuClick = onDanmakuClick,
                     onAspectRatioClick = onAspectRatioClick,
                     onMoreClick = onMoreClick,
+                    onAudioClick = onAudioClick,
                     onVideoTitleClick = onVideoTitleClick
                 )
             }
@@ -174,6 +179,13 @@ fun PlayerControls(
 
         // 锁定时：左右解锁按钮
         UnlockButtons(viewModel = viewModel)
+
+        // 右侧叠加控件：截图 + 锁定（控制栏显示或锁定时可见）
+        RightSideControls(
+            viewModel = viewModel,
+            onScreenshotClick = onScreenshotClick,
+            hasAnimation = hasAnimation
+        )
 
         // 手势指示器（亮度/音量）
         GestureIndicators(
@@ -251,6 +263,9 @@ fun BottomControlPanel(
     val hasChapters by viewModel.hasChapters.collectAsState()
     val chapterBarEnabled by viewModel.chapterBarEnabled.collectAsState()
     val gpuNext by viewModel.gpuNext.collectAsState()
+    val skipSegments by viewModel.skipSegments.collectAsState()
+    val currentSkippableSegment by viewModel.currentSkippableSegment.collectAsState()
+    val showSkipChip by viewModel.showSkipChip.collectAsState()
 
     // 检测屏幕方向
     val configuration = LocalContext.current.resources.configuration
@@ -263,13 +278,15 @@ fun BottomControlPanel(
     // 缩略图预览状态
     val thumbnailBitmap by viewModel.thumbnailBitmap.collectAsState()
     val thumbnailTimeSec by viewModel.thumbnailTimeSec.collectAsState()
+    val thumbnailFraction by viewModel.thumbnailFraction.collectAsState()
+    val thumbnailLoading by viewModel.thumbnailLoading.collectAsState()
 
     // 计算当前显示的进度（拖动时显示临时位置，否则显示实际位置）
-    val displayPosition = if (isDragging) {
+    val displayPosition = (if (isDragging) {
         sliderPosition ?: precisePosition.toFloat()
     } else {
         precisePosition.toFloat()
-    }
+    }).coerceAtLeast(0f)
 
     // Anime4K 模式缩写文字
     val anime4KLabel = when (anime4KMode) {
@@ -298,8 +315,11 @@ fun BottomControlPanel(
                         )
                     )
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 0.dp)
     ) {
+        // 进度条整体下移
+        Spacer(modifier = Modifier.height(12.dp))
+
         // 章节名称行（仅在有章节信息且启用章节控制时显示）
         if (hasChapters && chapterBarEnabled) {
             var chapterBounds by remember { mutableStateOf(android.graphics.Rect()) }
@@ -343,7 +363,51 @@ fun BottomControlPanel(
             }
         }
 
-        // 进度条行（含缩略图预览）
+        // 缩略图预览浮层 + Skip 按钮（零高度，浮在进度条正上方）
+        Box(
+            Modifier.fillMaxWidth().height(0.dp)
+                .wrapContentHeight(unbounded = true, align = Alignment.Bottom)
+        ) {
+            val thumbnailChapterTitle = remember(chapters, thumbnailTimeSec) {
+                chapters.lastOrNull { it.timeSeconds <= thumbnailTimeSec }?.title
+            }
+            SeekbarThumbnailPreview(
+                bitmap = thumbnailBitmap,
+                timeSec = thumbnailTimeSec,
+                fraction = thumbnailFraction,
+                show = isDragging && (thumbnailBitmap != null || thumbnailLoading),
+                isLoading = thumbnailLoading && isDragging,
+                chapterTitle = thumbnailChapterTitle,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+
+            // Skip 按钮（OP/ED 片段中浮现，进度条右侧上方，左移避开右侧控件）
+            val skipChipSegment = currentSkippableSegment
+            val skipChipVisible = showSkipChip && skipChipSegment != null
+            androidx.compose.animation.AnimatedVisibility(
+                visible = skipChipVisible,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, bottom = 28.dp),
+            ) {
+                val seg = skipChipSegment ?: return@AnimatedVisibility
+                androidx.compose.material3.Surface(
+                    onClick = { viewModel.skipActiveSegment() },
+                    shape = RoundedCornerShape(999.dp),
+                    color = seg.type.accentColor.copy(alpha = 0.92f),
+                ) {
+                    Text(
+                        text = seg.type.label,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp),
+                    )
+                }
+            }
+        }
+
+        // 进度条行
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -356,7 +420,7 @@ fun BottomControlPanel(
                 modifier = Modifier.padding(end = 8.dp)
             )
 
-            // 进度滑块 + 缩略图浮层
+            // 进度滑块
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -378,6 +442,7 @@ fun BottomControlPanel(
                         viewModel.seekToChapter(index)
                         viewModel.resetAutoHideTimer()
                     },
+                    skipSegments = skipSegments,
                     onSeek = { newValue ->
                         if (!isDragging) {
                             isDragging = true
@@ -400,13 +465,6 @@ fun BottomControlPanel(
                 )
             }
 
-            // 缩略图预览弹窗
-            SeekbarThumbnailPreview(
-                bitmap = thumbnailBitmap,
-                timeSec = thumbnailTimeSec,
-                show = isDragging && thumbnailBitmap != null
-            )
-
             // 总时长/剩余时间（点击切换）
             val durationText = if (showRemainingTime) {
                 val remaining = duration - displayPosition.toInt()
@@ -424,7 +482,7 @@ fun BottomControlPanel(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(0.dp))
 
         // 控制按钮行
         Row(
@@ -762,6 +820,7 @@ fun TopControlPanel(
     onDanmakuClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onAspectRatioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onMoreClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onAudioClick: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
     onVideoTitleClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -961,14 +1020,27 @@ fun TopControlPanel(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 锁定按钮
+        // 音频按钮
+        var audioBounds by remember { mutableStateOf(android.graphics.Rect()) }
         IconButton(
-            onClick = { viewModel.toggleLock() },
-            modifier = Modifier.size(38.dp)
+            onClick = {
+                audioBounds.let { b -> onAudioClick(b.left, b.top, b.width(), b.height()) }
+                viewModel.resetAutoHideTimer()
+            },
+            modifier = Modifier
+                .size(38.dp)
+                .onGloballyPositioned { coords ->
+                    val r = coords.boundsInWindow()
+                    val x = r.left.toInt().coerceAtMost(screenWidthPx - r.width.toInt())
+                    val y = r.top.toInt()
+                    audioBounds = android.graphics.Rect(
+                        x, y, x + r.width.toInt(), y + r.height.toInt()
+                    )
+                }
         ) {
             Icon(
-                painter = painterResource(R.drawable.lock_closed_48_filled),
-                contentDescription = "锁定",
+                painter = painterResource(R.drawable.ic_music_note_1_20_filled),
+                contentDescription = "音频",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )
@@ -1026,7 +1098,7 @@ fun UnlockButtons(
     if (!areControlsLocked) return
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 左侧解锁按钮
+        // 仅保留左侧解锁按钮（右侧锁已由 RightSideControls 接管）
         androidx.compose.animation.AnimatedVisibility(
             visible = unlockButtonsVisible,
             enter = androidx.compose.animation.fadeIn(),
@@ -1037,39 +1109,104 @@ fun UnlockButtons(
         ) {
             IconButton(
                 onClick = { viewModel.toggleLock() },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.35f), shape = CircleShape)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.lock_open_48_filled),
                     contentDescription = "解锁",
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
+    }
+}
 
+// =====================================================================
+// 右侧叠加控件（截图 + 锁定）
+// =====================================================================
+
+/**
+ * 播放界面右侧叠加控件：截图按钮 + 锁定按钮
+ *
+ * - 控制栏未锁定时：截图和锁定按钮始终可见（跟随控制栏显示/隐藏）
+ * - 控制栏锁定时：仅显示锁图标（跟随 UnlockButtons 的可见性）
+ * - 截图按钮在上方，锁定按钮在下方
+ */
+@Composable
+fun RightSideControls(
+    viewModel: PlayerViewModel,
+    onScreenshotClick: () -> Unit = {},
+    hasAnimation: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val controlsShown by viewModel.controlsShown.collectAsState()
+    val areControlsLocked by viewModel.areControlsLocked.collectAsState()
+    val unlockButtonsVisible by viewModel.unlockButtonsVisible.collectAsState()
+
+    // 控制栏未锁定且显示时，或锁定时解锁按钮可见时，显示右侧控件
+    val showRightControls = (!areControlsLocked && controlsShown) || (areControlsLocked && unlockButtonsVisible)
+
+    val animEnter = if (hasAnimation) androidx.compose.animation.fadeIn() else androidx.compose.animation.EnterTransition.None
+    val animExit = if (hasAnimation) androidx.compose.animation.fadeOut() else androidx.compose.animation.ExitTransition.None
+
+    Box(modifier = modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedVisibility(
-            visible = unlockButtonsVisible,
-            enter = androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.fadeOut(),
+            visible = showRightControls,
+            enter = animEnter,
+            exit = animExit,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 56.dp)
+                .padding(end = 32.dp)
         ) {
-            IconButton(
-                onClick = { viewModel.toggleLock() },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.35f), shape = CircleShape)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.lock_open_48_filled),
-                    contentDescription = "解锁",
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
+            // 锁定时只显示解锁按钮，与左侧解锁按钮同一水平线（居中）
+            if (areControlsLocked) {
+                IconButton(
+                    onClick = { viewModel.toggleLock() },
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.lock_open_48_filled),
+                        contentDescription = "解锁",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            } else {
+                // 未锁定时显示截图 + 锁定
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 截图按钮
+                    IconButton(
+                        onClick = {
+                            onScreenshotClick()
+                            viewModel.resetAutoHideTimer()
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_screen_cut_20_regular),
+                            contentDescription = "截图",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    // 锁定按钮
+                    IconButton(
+                        onClick = { viewModel.toggleLock() },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.lock_closed_48_filled),
+                            contentDescription = "锁定",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -1297,10 +1434,10 @@ fun PauseIndicator(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_player_pause1),
+                painter = painterResource(R.drawable.ic_pause_circle_12_regular),
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.size(90.dp)
+                modifier = Modifier.size(80.dp)
             )
         }
     }

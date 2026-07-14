@@ -38,13 +38,15 @@ import com.fam4k007.videoplayer.presentation.LibraryViewModel
 import com.fam4k007.videoplayer.ui.components.BatchDeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
+import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.RenameDialog
+import com.fam4k007.videoplayer.ui.components.SortOption
 import com.fam4k007.videoplayer.utils.FileOperationManager
+import com.fam4k007.videoplayer.utils.FormatUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -664,32 +666,7 @@ private fun PermissionPrompt(onRequestPermission: () -> Unit) {
     }
 }
 
-@Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.FolderOff,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
 @Composable
 private fun SortDialog(
@@ -739,108 +716,6 @@ private fun SortDialog(
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
     )
-}
-
-@Composable
-private fun SortOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-private fun sortFolders(
-    folders: List<VideoFolder>,
-    sortType: String,
-    sortOrder: String
-): List<VideoFolder> {
-    return when (sortType) {
-        "NAME" -> {
-            if (sortOrder == "ASCENDING") {
-                folders.sortedWith(naturalComparator { it.folderName })
-            } else {
-                folders.sortedWith(naturalComparator<VideoFolder> { it.folderName }.reversed())
-            }
-        }
-        "VIDEO_COUNT" -> {
-            if (sortOrder == "ASCENDING") {
-                folders.sortedBy { it.videoCount }
-            } else {
-                folders.sortedByDescending { it.videoCount }
-            }
-        }
-        else -> folders
-    }
-}
-
-/**
- * 自然排序比较器 - 支持字符串中数字的正确排序
- */
-private fun <T> naturalComparator(selector: (T) -> String): Comparator<T> {
-    return Comparator { a, b ->
-        compareNatural(selector(a), selector(b))
-    }
-}
-
-
-
-private fun compareNatural(str1: String, str2: String): Int {
-    val s1 = str1.lowercase()
-    val s2 = str2.lowercase()
-    
-    var i1 = 0
-    var i2 = 0
-    
-    while (i1 < s1.length && i2 < s2.length) {
-        val c1 = s1[i1]
-        val c2 = s2[i2]
-        
-        if (c1.isDigit() && c2.isDigit()) {
-            var num1 = 0
-            while (i1 < s1.length && s1[i1].isDigit()) {
-                num1 = num1 * 10 + (s1[i1] - '0')
-                i1++
-            }
-            
-            var num2 = 0
-            while (i2 < s2.length && s2[i2].isDigit()) {
-                num2 = num2 * 10 + (s2[i2] - '0')
-                i2++
-            }
-            
-            if (num1 != num2) {
-                return num1 - num2
-            }
-        } else {
-            if (c1 != c2) {
-                return c1 - c2
-            }
-            i1++
-            i2++
-        }
-    }
-    
-    return s1.length - s2.length
 }
 
 // ==================== 树状视图视频项 ====================
@@ -906,13 +781,13 @@ private fun TreeVideoItem(
                 ) {
                     if (video.duration > 0) {
                         Text(
-                            text = formatDuration(video.duration),
+                            text = FormatUtils.formatDuration(video.duration),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Text(
-                        text = formatFileSize(video.size),
+                        text = FormatUtils.formatFileSize(video.size),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -929,24 +804,4 @@ private fun TreeVideoItem(
     }
 }
 
-private fun formatDuration(milliseconds: Long): String {
-    val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % 60
 
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    if (bytes < 1024) return "$bytes B"
-    val kb = bytes / 1024.0
-    if (kb < 1024) return String.format("%.1f KB", kb)
-    val mb = kb / 1024.0
-    if (mb < 1024) return String.format("%.1f MB", mb)
-    val gb = mb / 1024.0
-    return String.format("%.2f GB", gb)
-}

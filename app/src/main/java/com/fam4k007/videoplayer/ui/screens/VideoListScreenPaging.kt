@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.Pager
@@ -44,7 +46,9 @@ import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.fam4k007.videoplayer.R
+import com.fam4k007.videoplayer.AppConstants
 import com.fam4k007.videoplayer.VideoFileParcelable
+import com.fam4k007.videoplayer.database.PlaybackState
 import com.fam4k007.videoplayer.database.VideoDatabase
 import com.fam4k007.videoplayer.mediainfo.MediaInfoActivity
 import com.fam4k007.videoplayer.paging.VideoPagingSource
@@ -53,15 +57,17 @@ import com.fam4k007.videoplayer.utils.FileOperationManager
 import com.fam4k007.videoplayer.ui.components.BatchDeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.CopyDestinationDialog
 import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
+import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.FileOperationMenu
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
+import com.fam4k007.videoplayer.ui.components.SortOption
+import com.fam4k007.videoplayer.utils.FormatUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 import java.io.File
 
 /**
@@ -125,6 +131,32 @@ fun VideoListScreenPaging(
     var isEditMode by remember { mutableStateOf(false) }
     var selectedVideos by remember { mutableStateOf<Set<VideoFileParcelable>>(emptySet()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    
+    // 加载播放进度数据（屏幕恢复时自动刷新）
+    var playbackStates by remember { mutableStateOf<Map<String, PlaybackState>>(emptyMap()) }
+    var watchedThreshold by remember { mutableStateOf(AppConstants.Defaults.DEFAULT_WATCHED_THRESHOLD) }
+    var showProgressBar by remember { mutableStateOf(true) }
+    var refreshTrigger by remember { mutableStateOf(0) }
+    
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshTrigger++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    
+    LaunchedEffect(refreshTrigger) {
+        val states = withContext(Dispatchers.IO) {
+            val db = VideoDatabase.getDatabase(context)
+            db.playbackHistoryDao().getAllPlaybackStates().associateBy { it.uri }
+        }
+        playbackStates = states
+        watchedThreshold = preferencesManager.getWatchedThreshold()
+        showProgressBar = preferencesManager.isShowVideoProgressBarEnabled()
+    }
     
     // 当需要刷新时
     fun refreshVideos() {
@@ -251,6 +283,9 @@ fun VideoListScreenPaging(
                                     isSelected = video == selectedVideoForOperation,
                                     isEditMode = isEditMode,
                                     isChecked = selectedVideos.contains(video),
+                                    playbackState = playbackStates[video.uri],
+                                    watchedThreshold = watchedThreshold,
+                                    showProgressBar = showProgressBar,
                                     onClick = { 
                                         if (isEditMode) {
                                             // 编辑模式下切换选中状态
@@ -593,6 +628,10 @@ private fun SearchTopBar(
     onSearchQueryChange: (String) -> Unit,
     onCloseSearch: () -> Unit
 ) {
+    val textStyle = TextStyle(
+        color = Color.White,
+        fontSize = 18.sp
+    )
     TopAppBar(
         title = {
             BasicTextField(
@@ -601,20 +640,18 @@ private fun SearchTopBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 18.sp
-                ),
+                textStyle = textStyle,
                 cursorBrush = SolidColor(Color.White),
                 decorationBox = { innerTextField ->
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            "搜索视频...",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 18.sp
-                        )
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                "搜索视频...",
+                                style = textStyle.copy(color = Color.White.copy(alpha = 0.6f))
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 },
                 singleLine = true
             )
@@ -652,6 +689,9 @@ private fun VideoItem(
     isSelected: Boolean,
     isEditMode: Boolean,
     isChecked: Boolean,
+    playbackState: PlaybackState?,
+    watchedThreshold: Int,
+    showProgressBar: Boolean,
     onClick: () -> Unit,
     onMoreClick: () -> Unit,
     onLongClick: () -> Unit
@@ -667,11 +707,17 @@ private fun VideoItem(
                 withContext(Dispatchers.Main) {
                     thumbnailBitmap = bitmap
                 }
-            } catch (e: Exception) {
-                // 忽略错误
-            }
+            } catch (e: Exception) { }
         }
     }
+    
+    // 计算观看状态
+    val progressPercent = if (playbackState != null && playbackState.duration > 0) {
+        ((playbackState.position.toFloat() / playbackState.duration) * 100).toInt().coerceIn(0, 100)
+    } else 0
+    val isWatched = playbackState?.hasBeenWatched == true || (progressPercent >= watchedThreshold && progressPercent > 0)
+    val isWatching = progressPercent in 1 until watchedThreshold
+    val showBar = showProgressBar && progressPercent in 1..99
 
     Card(
         modifier = Modifier
@@ -705,7 +751,6 @@ private fun VideoItem(
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 复选框（编辑模式）
             AnimatedVisibility(
                 visible = isEditMode,
                 enter = slideInHorizontally(
@@ -719,12 +764,12 @@ private fun VideoItem(
             ) {
                 Checkbox(
                     checked = isChecked,
-                    onCheckedChange = null,  // 点击整行触发
+                    onCheckedChange = null,
                     modifier = Modifier.padding(end = 8.dp)
                 )
             }
             
-            // 缩略图
+            // 缩略图（带进度条和时长浮层）
             Box(
                 modifier = Modifier
                     .width(120.dp)
@@ -748,52 +793,109 @@ private fun VideoItem(
                         modifier = Modifier.size(32.dp)
                     )
                 }
+                
+                // 进度条
+                if (showBar) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = 0.5f))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(progressPercent / 100f)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+                
+                // 时长浮层（右下角）
+                if (video.duration > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 3.dp, bottom = if (showBar) 4.dp else 1.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = FormatUtils.formatDuration(video.duration),
+                            fontSize = 9.sp,
+                            color = Color.White,
+                            maxLines = 1,
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 视频信息
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .height(68.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // 标题（顶部对齐）
                 Text(
                     text = video.name,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (isWatched)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
                     lineHeight = 16.sp
                 )
 
-                // 时长和大小标签（底部对齐）
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = formatFileSize(video.size),
+                        text = when {
+                            isWatched -> "已观看"
+                            isWatching -> "观看中 ${progressPercent}%"
+                            else -> "未观看"
+                        },
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                        color = when {
+                            isWatched -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            isWatching -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                     Text(
-                        text = formatDuration(video.duration),
+                        text = FormatUtils.formatFileSize(video.size),
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        maxLines = 1,
+                        color = if (isWatched)
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            // 更多按钮（非编辑模式）
             if (!isEditMode) {
-                IconButton(onClick = onMoreClick) {
+                IconButton(onClick = onMoreClick, modifier = Modifier.size(28.dp)) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "更多",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -801,52 +903,7 @@ private fun VideoItem(
     }
 }
 
-@Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.VideoLibrary,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    return when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
-        bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
-        else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-    }
-}
-
-private fun formatDuration(millis: Long): String {
-    val hours = TimeUnit.MILLISECONDS.toHours(millis)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
-
-    return when {
-        hours > 0 -> String.format("%d:%02d:%02d", hours, minutes, seconds)
-        else -> String.format("%d:%02d", minutes, seconds)
-    }
-}
 
 @Composable
 private fun VideoSortDialog(
@@ -898,30 +955,3 @@ private fun VideoSortDialog(
     )
 }
 
-@Composable
-private fun SortOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}

@@ -117,7 +117,7 @@ fun ChapterDrawer(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        // 标题栏
+                        // 标题栏（冻结）
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,6 +149,8 @@ fun ChapterDrawer(
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Divider(color = Color(0x33FFFFFF), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // 章节列表

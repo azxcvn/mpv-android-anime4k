@@ -33,24 +33,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.fam4k007.videoplayer.R
+import com.fam4k007.videoplayer.AppConstants
 import com.fam4k007.videoplayer.VideoFileParcelable
+import com.fam4k007.videoplayer.database.PlaybackState
+import com.fam4k007.videoplayer.database.VideoDatabase
 import com.fam4k007.videoplayer.presentation.LibraryViewModel
 import com.fam4k007.videoplayer.utils.ThumbnailCacheManager
 import com.fam4k007.videoplayer.utils.FileOperationManager
+import com.fam4k007.videoplayer.utils.FormatUtils
 import com.fam4k007.videoplayer.ui.components.BatchDeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.CopyDestinationDialog
 import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
+import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
+import com.fam4k007.videoplayer.ui.components.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
-import java.util.concurrent.TimeUnit
+import org.koin.compose.koinInject
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -62,7 +71,8 @@ fun VideoListScreen(
     onNavigateBack: () -> Unit,
     onOpenVideo: (VideoFileParcelable, Int, List<VideoFileParcelable>) -> Unit,
     onOpenMediaInfo: (VideoFileParcelable) -> Unit = {},
-    viewModel: LibraryViewModel = koinViewModel()
+    viewModel: LibraryViewModel = koinViewModel(),
+    preferencesManager: com.fam4k007.videoplayer.preferences.PreferencesManager = koinInject()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -94,6 +104,32 @@ fun VideoListScreen(
             // 否则从文件夹扫描（folder模式）
             viewModel.scanVideosInFolder(folderPath)
         }
+    }
+    
+    // 加载播放进度数据（屏幕恢复时自动刷新）
+    var playbackStates by remember { mutableStateOf<Map<String, PlaybackState>>(emptyMap()) }
+    var watchedThreshold by remember { mutableStateOf(AppConstants.Defaults.DEFAULT_WATCHED_THRESHOLD) }
+    var showProgressBar by remember { mutableStateOf(true) }
+    var refreshTrigger by remember { mutableStateOf(0) }
+    
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshTrigger++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    
+    LaunchedEffect(videoListState.filteredVideos, refreshTrigger) {
+        val states = withContext(Dispatchers.IO) {
+            val db = VideoDatabase.getDatabase(context)
+            db.playbackHistoryDao().getAllPlaybackStates().associateBy { it.uri }
+        }
+        playbackStates = states
+        watchedThreshold = preferencesManager.getWatchedThreshold()
+        showProgressBar = preferencesManager.isShowVideoProgressBarEnabled()
     }
 
     Scaffold(
@@ -191,6 +227,9 @@ fun VideoListScreen(
                             isSelected = video == selectedVideoForOperation,
                             isEditMode = isEditMode,
                             isChecked = selectedVideos.contains(video),
+                            playbackState = playbackStates[video.uri],
+                            watchedThreshold = watchedThreshold,
+                            showProgressBar = showProgressBar,
                             onClick = { 
                                 if (isEditMode) {
                                     // 编辑模式下切换选中状态
@@ -481,6 +520,9 @@ private fun VideoItem(
     isSelected: Boolean,
     isEditMode: Boolean,
     isChecked: Boolean,
+    playbackState: PlaybackState?,
+    watchedThreshold: Int,
+    showProgressBar: Boolean,
     onClick: () -> Unit,
     onMoreClick: () -> Unit
 ) {
@@ -489,7 +531,7 @@ private fun VideoItem(
     var thumbnailBitmap by remember(video.uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
 
     LaunchedEffect(video.uri) {
-        thumbnailBitmap = null // 立即清空旧缩略图
+        thumbnailBitmap = null
         lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val cacheManager = ThumbnailCacheManager.getInstance(context)
@@ -497,11 +539,17 @@ private fun VideoItem(
                 withContext(Dispatchers.Main) {
                     thumbnailBitmap = bitmap
                 }
-            } catch (e: Exception) {
-                // 忽略错误
-            }
+            } catch (e: Exception) { }
         }
     }
+    
+    // 计算观看状态
+    val progressPercent = if (playbackState != null && playbackState.duration > 0) {
+        ((playbackState.position.toFloat() / playbackState.duration) * 100).toInt().coerceIn(0, 100)
+    } else 0
+    val isWatched = playbackState?.hasBeenWatched == true || (progressPercent >= watchedThreshold && progressPercent > 0)
+    val isWatching = progressPercent in 1 until watchedThreshold
+    val showBar = showProgressBar && progressPercent in 1..99
 
     Card(
         modifier = Modifier
@@ -547,12 +595,12 @@ private fun VideoItem(
             ) {
                 Checkbox(
                     checked = isChecked,
-                    onCheckedChange = null,  // 点击整行触发
+                    onCheckedChange = null,
                     modifier = Modifier.padding(end = 8.dp)
                 )
             }
             
-            // 缩略图
+            // 缩略图（带进度条和时长浮层）
             Box(
                 modifier = Modifier
                     .width(120.dp)
@@ -576,6 +624,47 @@ private fun VideoItem(
                         modifier = Modifier.size(32.dp)
                     )
                 }
+                
+                // 进度条（底部，3dp高）
+                if (showBar) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = 0.5f))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(progressPercent / 100f)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+                
+                // 时长浮层（右下角）
+                if (video.duration > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 3.dp, bottom = if (showBar) 4.dp else 1.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = FormatUtils.formatDuration(video.duration),
+                            fontSize = 9.sp,
+                            color = Color.White,
+                            maxLines = 1,
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -587,44 +676,65 @@ private fun VideoItem(
                     .height(68.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // 标题（顶部对齐）
+                // 标题
                 Text(
                     text = video.name,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (isWatched)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
                     lineHeight = 16.sp
                 )
 
-                // 时长和大小标签（底部对齐）
+                // 状态标签 + 文件大小
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // 观看状态标签
                     Text(
-                        text = formatDuration(video.duration),
+                        text = when {
+                            isWatched -> "已观看"
+                            isWatching -> "观看中 ${progressPercent}%"
+                            else -> "未观看"
+                        },
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                        color = when {
+                            isWatched -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            isWatching -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                     Text(
-                        text = formatFileSize(video.size),
+                        text = FormatUtils.formatFileSize(video.size),
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        maxLines = 1,
+                        color = if (isWatched)
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            // 更多按钮（非编辑模式）
+            // 更多按钮
             if (!isEditMode) {
                 IconButton(
                     onClick = onMoreClick,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "更多信息",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -639,26 +749,28 @@ private fun SearchTopBar(
     onSearchQueryChange: (String) -> Unit,
     onCloseSearch: () -> Unit
 ) {
+    val textStyle = TextStyle(
+        fontSize = 18.sp,
+        color = MaterialTheme.colorScheme.onSurface
+    )
     TopAppBar(
         title = {
             BasicTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
+                textStyle = textStyle,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            text = "搜索视频...",
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "搜索视频...",
+                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 },
                 singleLine = true
             )
@@ -737,170 +849,3 @@ private fun VideoSortDialog(
     )
 }
 
-@Composable
-private fun SortOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.VideoLibrary,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun sortVideos(
-    videos: List<VideoFileParcelable>,
-    sortType: String,
-    sortOrder: String
-): List<VideoFileParcelable> {
-    return when (sortType) {
-        "NAME" -> {
-            if (sortOrder == "ASCENDING") {
-                videos.sortedWith(naturalComparator { it.name })
-            } else {
-                videos.sortedWith(naturalComparator<VideoFileParcelable> { it.name }.reversed())
-            }
-        }
-        "DATE" -> {
-            if (sortOrder == "ASCENDING") {
-                videos.sortedBy { it.dateAdded }
-            } else {
-                videos.sortedByDescending { it.dateAdded }
-            }
-        }
-        else -> videos
-    }
-}
-
-/**
- * 自然排序比较器 - 支持字符串中数字的正确排序
- * 例如：1, 2, 3, 10, 11, 12 而不是 1, 10, 11, 12, 2, 3
- */
-private fun <T> naturalComparator(selector: (T) -> String): Comparator<T> {
-    return Comparator { a, b ->
-        compareNatural(selector(a), selector(b))
-    }
-}
-
-/**
- * 自然排序字符串比较
- */
-private fun compareNatural(str1: String, str2: String): Int {
-    val s1 = str1.lowercase()
-    val s2 = str2.lowercase()
-    
-    var i1 = 0
-    var i2 = 0
-    
-    while (i1 < s1.length && i2 < s2.length) {
-        val c1 = s1[i1]
-        val c2 = s2[i2]
-        
-        // 如果两个字符都是数字，则提取完整的数字进行比较
-        if (c1.isDigit() && c2.isDigit()) {
-            // 提取第一个数字
-            var num1 = 0
-            while (i1 < s1.length && s1[i1].isDigit()) {
-                num1 = num1 * 10 + (s1[i1] - '0')
-                i1++
-            }
-            
-            // 提取第二个数字
-            var num2 = 0
-            while (i2 < s2.length && s2[i2].isDigit()) {
-                num2 = num2 * 10 + (s2[i2] - '0')
-                i2++
-            }
-            
-            // 比较数字大小
-            if (num1 != num2) {
-                return num1 - num2
-            }
-        } else {
-            // 普通字符比较
-            if (c1 != c2) {
-                return c1 - c2
-            }
-            i1++
-            i2++
-        }
-    }
-    
-    // 如果一个字符串是另一个的前缀，则较短的排在前面
-    return s1.length - s2.length
-}
-
-private fun filterVideos(
-    videos: List<VideoFileParcelable>,
-    query: String
-): List<VideoFileParcelable> {
-    if (query.isEmpty()) return videos
-    val lowerQuery = query.lowercase()
-    return videos.filter { it.name.lowercase().contains(lowerQuery) }
-}
-
-private fun formatDuration(milliseconds: Long): String {
-    val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % 60
-
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    if (bytes < 1024) return "$bytes B"
-    val kb = bytes / 1024.0
-    if (kb < 1024) return String.format("%.1f KB", kb)
-    val mb = kb / 1024.0
-    if (mb < 1024) return String.format("%.1f MB", mb)
-    val gb = mb / 1024.0
-    return String.format("%.2f GB", gb)
-}

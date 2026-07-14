@@ -11,6 +11,7 @@ import com.fam4k007.videoplayer.domain.player.Anime4KManager
 import com.fam4k007.videoplayer.VideoFileParcelable
 import `is`.xyz.mpv.MPVLib
 import `is`.xyz.mpv.MPVNode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * 重复模式（百分百复用 mpvEx RepeatMode）
@@ -355,18 +357,34 @@ class PlayerViewModel(
 
     // ==================== 缩略图预览 ====================
 
+    /** 缩略图专用调度器：单线程顺序处理 */
+    private val thumbnailDispatcher = Dispatchers.Default.limitedParallelism(1)
+
     private var _thumbnailManager: com.fam4k007.videoplayer.manager.VideoThumbnailManager? = null
     private var thumbnailInitialized = false
 
-    // 当前预览缩略图
     private val _thumbnailBitmap = MutableStateFlow<android.graphics.Bitmap?>(null)
     val thumbnailBitmap: StateFlow<android.graphics.Bitmap?> = _thumbnailBitmap.asStateFlow()
 
-    // 当前拖动时间位置（秒）
     private val _thumbnailTimeSec = MutableStateFlow(-1L)
     val thumbnailTimeSec: StateFlow<Long> = _thumbnailTimeSec.asStateFlow()
 
-    private var thumbnailLoadJob: Job? = null
+    private val _thumbnailLoading = MutableStateFlow(false)
+    val thumbnailLoading: StateFlow<Boolean> = _thumbnailLoading.asStateFlow()
+
+    private val _thumbnailFraction = MutableStateFlow(0f)
+    val thumbnailFraction: StateFlow<Float> = _thumbnailFraction.asStateFlow()
+
+    // ── Worker 模式 ──
+    private var thumbnailRequestId = 0L
+    private var thumbnailWorkerJob: Job? = null
+    private val thumbnailRequestLock = Any()
+    private var pendingThumbnailPosition: Float? = null
+    private var pendingThumbnailDuration: Float? = null
+    private var lastQueuedThumbnailKey: String? = null
+    private var warmedThumbnailSource: String? = null
+    private val thumbnailBucketsPerSec = 2f
+    private val thumbnailPrefetchRadius = 5
 
     fun setThumbnailManager(manager: com.fam4k007.videoplayer.manager.VideoThumbnailManager) {
         _thumbnailManager = manager
@@ -384,46 +402,107 @@ class PlayerViewModel(
         if (!manager.isThumbnailSupported()) return
         val sec = positionSec.toLong()
         _thumbnailTimeSec.value = sec
+        _thumbnailFraction.value = if (durationSec > 0f) (positionSec / durationSec).coerceIn(0f, 1f) else 0f
 
-        // 策略1：立即显示精确缓存
         val exactCached = manager.getThumbnailAt(sec)
-        if (exactCached != null) {
-            _thumbnailBitmap.value = exactCached
-            return
-        }
-        // 策略2：显示附近缓存帧（先显示近似帧，再后台提取精确帧）
+        if (exactCached != null) { _thumbnailBitmap.value = exactCached; _thumbnailLoading.value = false; return }
+
         var nearby: android.graphics.Bitmap? = null
         for (offset in 1..3) {
             nearby = manager.getThumbnailAt(sec + offset) ?: manager.getThumbnailAt(sec - offset)
             if (nearby != null) break
         }
-        if (nearby != null) _thumbnailBitmap.value = nearby
-        // 策略3：防抖后台提取（30ms 内如果位置再次变化则取消上次请求）
-        thumbnailLoadJob?.cancel()
-        thumbnailLoadJob = viewModelScope.launch {
-            delay(30)
-            val targetSec = _thumbnailTimeSec.value
-            val bitmap = manager.extractThumbnailRealtime(targetSec)
-            if (bitmap != null) {
-                _thumbnailBitmap.value = bitmap
-            }
+        if (nearby != null) { _thumbnailBitmap.value = nearby; _thumbnailLoading.value = false }
+        else if (_thumbnailBitmap.value == null) _thumbnailLoading.value = true
+
+        val queueKey = "${(positionSec * thumbnailBucketsPerSec).roundToInt().coerceAtLeast(0)}"
+        if (queueKey == lastQueuedThumbnailKey) return
+        lastQueuedThumbnailKey = queueKey
+
+        synchronized(thumbnailRequestLock) {
+            pendingThumbnailPosition = positionSec
+            pendingThumbnailDuration = durationSec
         }
+        ensureThumbnailWorker()
     }
 
     fun onSeekbarDragStart(positionSec: Float) {
-        // 不再限制预加载范围，拖动时按需即时提取
+        _thumbnailManager?.preloadAroundPosition(positionSec.toLong())
     }
 
     fun onSeekbarDragEnd() {
-        thumbnailLoadJob?.cancel()
+        thumbnailRequestId++
+        lastQueuedThumbnailKey = null
+        synchronized(thumbnailRequestLock) { pendingThumbnailPosition = null; pendingThumbnailDuration = null }
         _thumbnailBitmap.value = null
-        _thumbnailTimeSec.value = -1L
+        _thumbnailLoading.value = false
     }
 
     fun resetThumbnailState() {
         thumbnailInitialized = false
+        _thumbnailManager?.resetForNewVideo()
+        thumbnailRequestId++
+        lastQueuedThumbnailKey = null
+        warmedThumbnailSource = null
+        synchronized(thumbnailRequestLock) { pendingThumbnailPosition = null; pendingThumbnailDuration = null }
         _thumbnailBitmap.value = null
         _thumbnailTimeSec.value = -1L
+        _thumbnailFraction.value = 0f
+        _thumbnailLoading.value = false
+    }
+
+    fun warmSeekThumbnailer() {
+        if (!_seekbarThumbnailEnabled.value) return
+        val manager = _thumbnailManager ?: return
+        if (!manager.isThumbnailSupported()) return
+        val currentSource = runCatching { MPVLib.getPropertyString("path") }.getOrNull()
+        if (currentSource == warmedThumbnailSource) return
+        warmedThumbnailSource = currentSource
+        val currentPos = precisePosition.value
+        if (currentPos > 0f) { manager.warmThumbnail(currentPos.toLong()); Logger.d(TAG, "缩略图预热 @ ${currentPos}s") }
+    }
+
+    // ── Worker ──
+    private fun ensureThumbnailWorker() {
+        if (thumbnailWorkerJob?.isActive == true) return
+        thumbnailWorkerJob = viewModelScope.launch(thumbnailDispatcher) {
+            while (isActive) {
+                val targetSec: Float; val durationSec: Float; val requestId: Long
+                synchronized(thumbnailRequestLock) {
+                    val p = pendingThumbnailPosition; val d = pendingThumbnailDuration
+                    if (p == null || d == null) break
+                    pendingThumbnailPosition = null; pendingThumbnailDuration = null
+                    targetSec = p; durationSec = d; requestId = ++thumbnailRequestId
+                }
+                val manager = _thumbnailManager ?: break
+                if (!manager.isThumbnailSupported()) break
+                val bitmap = manager.extractThumbnailRealtime(targetSec.toLong())
+                if (requestId == thumbnailRequestId) {
+                    if (bitmap != null) {
+                        if (_thumbnailBitmap.value != null || _thumbnailLoading.value) {
+                            _thumbnailBitmap.value = bitmap; _thumbnailLoading.value = false
+                        }
+                    } else _thumbnailLoading.value = false
+                }
+                if (synchronized(thumbnailRequestLock) { pendingThumbnailPosition == null }) {
+                    prefetchNearbyThumbnails(targetSec, durationSec)
+                }
+            }
+        }
+    }
+
+    private suspend fun prefetchNearbyThumbnails(centerSec: Float, durationSec: Float) {
+        val manager = _thumbnailManager ?: return
+        if (!manager.isThumbnailSupported()) return
+        val centerBucket = (centerSec * thumbnailBucketsPerSec).roundToInt().coerceAtLeast(0)
+        val maxBucket = if (durationSec > 0f) (durationSec * thumbnailBucketsPerSec).roundToInt() else Int.MAX_VALUE
+        for (distance in 1..thumbnailPrefetchRadius) {
+            synchronized(thumbnailRequestLock) { if (pendingThumbnailPosition != null) return }
+            val next = centerBucket + distance
+            if (next <= maxBucket) manager.extractThumbnailRealtime((next / thumbnailBucketsPerSec).toLong())
+            val prev = centerBucket - distance
+            if (prev >= 0) manager.extractThumbnailRealtime((prev / thumbnailBucketsPerSec).toLong())
+        }
     }
     
     // 是否为在线视频
@@ -457,6 +536,12 @@ class PlayerViewModel(
     // GPU Next 状态
     private val _gpuNext = MutableStateFlow(false)
     val gpuNext: StateFlow<Boolean> = _gpuNext.asStateFlow()
+
+    private val _controlsAnimationEnabled = MutableStateFlow(false)
+    val controlsAnimationEnabled: StateFlow<Boolean> = _controlsAnimationEnabled.asStateFlow()
+
+    private val _drawerAnimationEnabled = MutableStateFlow(false)
+    val drawerAnimationEnabled: StateFlow<Boolean> = _drawerAnimationEnabled.asStateFlow()
 
     private val _chapterBarEnabled = MutableStateFlow(true)
     val chapterBarEnabled: StateFlow<Boolean> = _chapterBarEnabled.asStateFlow()
@@ -495,6 +580,7 @@ class PlayerViewModel(
     fun updateChapters(chapters: List<Pair<String, Double>>) {
         _chapters.value = chapters.map { (title, time) -> Chapter(title, time) }
         _currentChapterIndex.value = -1
+        refreshChapterDerivedSegments()
     }
 
     /**
@@ -526,6 +612,162 @@ class PlayerViewModel(
         if (index in chapters.indices) {
             seekTo(chapters[index].timeSeconds.toInt())
         }
+    }
+
+    // ==================== OP/ED 片段检测 ====================
+
+    /** 内置关键词（多语言，借鉴 mpvRx） */
+    private val introKeywords = listOf(
+        "intro", "opening", "op", "op1", "op2", "op3",
+        "オープニング", "主題歌", "主题曲", "片头",
+        "开幕", "片头曲", "序章", "prologue", "avance",
+        "a partire", "开场", "头曲",
+    )
+    private val outroKeywords = listOf(
+        "outro", "ending", "ed", "ed1", "ed2", "ed3",
+        "エンディング", "片尾", "结尾", "片尾曲", "尾曲",
+        "闭幕", "epilogue", "finale", "credits", "closing",
+        "fin", "fine",
+    )
+    private val recapKeywords = listOf(
+        "recap", "summary", "振り返り", "前回", "回顾",
+        "复习", "总集", "résumé", "riepilogo", "resumen",
+        "前情提要", "上集回顾", "前回まで", "これまで",
+    )
+    private val creditsKeywords = listOf(
+        "credits", "end credits", "staff", "cast",
+        "制作", "スタッフ", "出演", "声の出演",
+        "creditless", "クレジット",
+    )
+    private val previewKeywords = listOf(
+        "preview", "next episode", "次回予告", "予告",
+        "预告", "下集", "次回", "次巻", "avant", "preview",
+        "次回预告", "先行", "trailer",
+    )
+
+    /** 检测到的跳过片段列表 */
+    private val _skipSegments = MutableStateFlow<List<com.fam4k007.videoplayer.player.SkipSegment>>(emptyList())
+    val skipSegments: StateFlow<List<com.fam4k007.videoplayer.player.SkipSegment>> = _skipSegments.asStateFlow()
+
+    /** 当前播放位置所在的可跳过片段 */
+    private val _currentSkippableSegment = MutableStateFlow<com.fam4k007.videoplayer.player.SkipSegment?>(null)
+    val currentSkippableSegment: StateFlow<com.fam4k007.videoplayer.player.SkipSegment?> = _currentSkippableSegment.asStateFlow()
+
+    /** 是否自动显示 skip 按钮 */
+    private val _showSkipChip = MutableStateFlow(false)
+    val showSkipChip: StateFlow<Boolean> = _showSkipChip.asStateFlow()
+
+    /** 已跳过的片段类型（防止重复跳过） */
+    private val skippedSegmentTypes = mutableSetOf<com.fam4k007.videoplayer.player.SkipSegmentType>()
+
+    /** 章节 OP/ED 检测开关 */
+    private val _chapterSkipDetectionEnabled = MutableStateFlow(true)
+    val chapterSkipDetectionEnabled: StateFlow<Boolean> = _chapterSkipDetectionEnabled.asStateFlow()
+
+    fun toggleChapterSkipDetection() {
+        _chapterSkipDetectionEnabled.value = !_chapterSkipDetectionEnabled.value
+        if (!_chapterSkipDetectionEnabled.value) {
+            _skipSegments.value = emptyList()
+            _currentSkippableSegment.value = null
+            _showSkipChip.value = false
+            skippedSegmentTypes.clear()
+        } else {
+            refreshChapterDerivedSegments()
+        }
+    }
+
+    /** 当章节列表更新后重新检测 OP/ED */
+    fun refreshChapterDerivedSegments() {
+        if (!_chapterSkipDetectionEnabled.value) return
+        val chapterList = _chapters.value
+        val dur = _duration.value.toDouble()
+        if (dur <= 0.0 || chapterList.isEmpty()) {
+            _skipSegments.value = emptyList()
+            return
+        }
+        val derived = chapterList.mapIndexedNotNull { index, chapter ->
+            val type = chapterTitleToType(chapter.title) ?: return@mapIndexedNotNull null
+            val start = chapter.timeSeconds
+            val end = chapterList.getOrNull(index + 1)?.timeSeconds ?: dur
+            val normalizedEnd = end.coerceAtMost(dur)
+            if (normalizedEnd - start < 5.0) return@mapIndexedNotNull null
+            val fraction = start / dur
+            when (type) {
+                com.fam4k007.videoplayer.player.SkipSegmentType.INTRO ->
+                    if (fraction > 0.5) return@mapIndexedNotNull null
+                com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO ->
+                    if (fraction < 0.4) return@mapIndexedNotNull null
+                else -> {}
+            }
+            com.fam4k007.videoplayer.player.SkipSegment(type, start, normalizedEnd, "chapter")
+        }
+        _skipSegments.value = derived.distinctBy { Triple(it.type, it.startSeconds.toInt(), it.endSeconds.toInt()) }
+        skippedSegmentTypes.clear()
+    }
+
+    /** 关键词匹配章节标题 → 片段类型 */
+    private fun chapterTitleToType(title: String): com.fam4k007.videoplayer.player.SkipSegmentType? {
+        val lowered = title.trim().lowercase()
+        if (lowered.isBlank()) return null
+        val normalizedLatin = lowered.replace(Regex("""[^a-z0-9]+"""), " ").trim()
+        val compactLatin = normalizedLatin.replace(" ", "")
+        val compactRaw = lowered.replace(Regex("""[\s\p{Punct}・_]+"""), "")
+
+        fun hasKeyword(keywords: List<String>): Boolean = keywords.any { kw ->
+            val k = kw.lowercase()
+            when {
+                k.matches(Regex("""[a-z0-9]+""")) ->
+                    normalizedLatin.contains(Regex("""(?:^|\s)${Regex.escape(k)}(?:\s|$)""")) ||
+                        (k.length >= 4 && compactLatin.contains(k))
+                else -> compactRaw.contains(k.replace(" ", ""))
+            }
+        }
+
+        val introOk = hasKeyword(introKeywords)
+        val outroOk = hasKeyword(outroKeywords)
+
+        return when {
+            hasKeyword(recapKeywords) -> com.fam4k007.videoplayer.player.SkipSegmentType.RECAP
+            hasKeyword(creditsKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.CREDITS
+            hasKeyword(previewKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.PREVIEW
+            outroOk && !introOk -> com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO
+            introOk -> com.fam4k007.videoplayer.player.SkipSegmentType.INTRO
+            else -> null
+        }
+    }
+
+    /** 跳过当前所在片段 */
+    fun skipActiveSegment() {
+        val segment = _currentSkippableSegment.value ?: return
+        skippedSegmentTypes.add(segment.type)
+        seekTo(segment.endSeconds.toInt())
+        _currentSkippableSegment.value = null
+        _showSkipChip.value = false
+        Logger.d(TAG, "跳过${segment.type.label} @ ${segment.startSeconds}-${segment.endSeconds}s")
+    }
+
+    /** 轮询中检查是否需要显示 skip 按钮 */
+    private fun updateSkipChipState(positionSeconds: Double) {
+        val segments = _skipSegments.value
+        if (segments.isEmpty()) { _currentSkippableSegment.value = null; _showSkipChip.value = false; return }
+
+        // 如果用户回拖到已跳过片段之前，清除标记允许重新跳过
+        skippedSegmentTypes.toList().forEach { type ->
+            val seg = segments.firstOrNull { it.type == type } ?: return@forEach
+            if (positionSeconds < seg.startSeconds) {
+                skippedSegmentTypes.remove(type)
+            }
+        }
+
+        val active = segments.firstOrNull { pos ->
+            pos.isValid && pos.type !in skippedSegmentTypes &&
+                positionSeconds in pos.startSeconds..pos.endSeconds &&
+                (pos.endSeconds - positionSeconds) >= 1.0
+        }
+        _currentSkippableSegment.value = active
+        _showSkipChip.value = active != null  // 只要在片段内就持续显示
     }
 
     // 保存的播放位置（用于恢复播放）
@@ -618,8 +860,14 @@ class PlayerViewModel(
         _chapterBarEnabled.value = playerRepository.isChapterBarEnabled()
         // 加载缩略图预览开关
         _seekbarThumbnailEnabled.value = playerRepository.isSeekbarThumbnailEnabled()
+        // 加载章节 OP/ED 检测开关
+        _chapterSkipDetectionEnabled.value = playerRepository.isChapterSkipDetectionEnabled()
         // 加载 GPU Next 状态
         _gpuNext.value = playerRepository.getGpuNext()
+        // 加载播放界面动画开关
+        _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
+        // 加载抽屉界面动画开关
+        _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
     }
     
     // 轮询协程的Job
@@ -643,6 +891,7 @@ class PlayerViewModel(
                     MPVLib.getPropertyDouble("time-pos")?.let {
                         _precisePosition.value = it
                         updateCurrentChapter(it)
+                        updateSkipChipState(it)
                     }
                 } catch (e: Exception) {
                     // 忽略错误，可能MPV还未初始化
@@ -758,10 +1007,24 @@ class PlayerViewModel(
         }
     }
     
+    fun cleanup() {
+        positionPollingJob?.cancel()
+        durationPollingJob?.cancel()
+        positionPollingJob = null
+        durationPollingJob = null
+        mpvInitialized = false
+        mpvObserverRegistered = false
+    }
+
+    fun resetPlaybackState() {
+        _position.value = 0
+        _duration.value = 0
+        _paused.value = false
+    }
+
     // ==================== MPVLib.EventObserver 实现 ====================
-    
+
     override fun eventProperty(property: String) {
-        // MPV属性变化事件（新版API）
         Logger.v(TAG, "MPV property changed: $property")
     }
     
@@ -872,7 +1135,61 @@ class PlayerViewModel(
         }
     }
     
-    override fun event(eventId: Int) {
+    /**
+     * 手动刷新音频/字幕轨道列表
+     * 用于外部添加音轨后立即更新UI
+     */
+    fun refreshTrackList() {
+        try {
+            val trackCount = MPVLib.getPropertyInt("track-list/count") ?: 0
+            val currentAudioId = MPVLib.getPropertyInt("aid") ?: -1
+            val currentSubId = MPVLib.getPropertyInt("sid") ?: -1
+            
+            val subtitles = mutableListOf<SubtitleTrack>()
+            val audios = mutableListOf<AudioTrack>()
+            
+            for (i in 0 until trackCount) {
+                val type = MPVLib.getPropertyString("track-list/$i/type") ?: continue
+                val id = MPVLib.getPropertyInt("track-list/$i/id") ?: continue
+                val lang = MPVLib.getPropertyString("track-list/$i/lang")
+                val title = MPVLib.getPropertyString("track-list/$i/title")
+                val codec = MPVLib.getPropertyString("track-list/$i/codec")
+                val external = MPVLib.getPropertyString("track-list/$i/external")?.toBooleanStrictOrNull() ?: false
+                
+                when (type) {
+                    "sub" -> {
+                        subtitles.add(SubtitleTrack(
+                            id = id,
+                            lang = lang,
+                            title = title,
+                            type = type,
+                            selected = id == currentSubId,
+                            external = external
+                        ))
+                    }
+                    "audio" -> {
+                        audios.add(AudioTrack(
+                            id = id,
+                            lang = lang,
+                            title = title,
+                            type = type,
+                            selected = id == currentAudioId,
+                            codec = codec
+                        ))
+                    }
+                }
+            }
+            
+            _subtitleTracks.value = subtitles
+            _audioTracks.value = audios
+            
+            Logger.d(TAG, "Refreshed track-list: ${subtitles.size} subtitle tracks, ${audios.size} audio tracks")
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to refresh track-list", e)
+        }
+    }
+    
+    override fun event(eventId: Int, data: MPVNode) {
         // MPV事件（文件加载、播放结束等）
         when (eventId) {
             21 -> { // MPV_EVENT_PLAYBACK_RESTART
@@ -1179,10 +1496,16 @@ class PlayerViewModel(
         _anime4KEnabled.value = enabled
         _anime4KMode.value = mode
         _anime4KQuality.value = quality
-        // 超分开启时全局禁用动画，消除 GPU 额外负载
-        com.fam4k007.videoplayer.manager.compose.ComposeOverlayManager.globalDisableAnimations =
-            enabled && mode != Anime4KManager.Mode.OFF
+        // 超分开启或抽屉动画关闭时全局禁用动画
+        updateGlobalAnimationFlag()
         Logger.d(TAG, "Anime4K: enabled=$enabled, mode=$mode, quality=$quality")
+    }
+
+    private fun updateGlobalAnimationFlag() {
+        val anime4KActive = _anime4KEnabled.value && _anime4KMode.value != Anime4KManager.Mode.OFF
+        val drawerAnimEnabled = _drawerAnimationEnabled.value
+        com.fam4k007.videoplayer.manager.compose.ComposeOverlayManager.globalDisableAnimations =
+            anime4KActive || !drawerAnimEnabled
     }
     
     /**
@@ -1343,6 +1666,15 @@ class PlayerViewModel(
             } else {
                 Logger.d(TAG, "Already at first video")
             }
+        }
+    }
+
+    fun playVideoAtIndex(index: Int) {
+        val uris = _playlistUris.value
+        if (index in uris.indices) {
+            _currentIndex.value = index
+            _currentVideoUri.value = uris[index]
+            viewModelScope.launch { _switchVideoEvent.emit(uris[index]) }
         }
     }
 

@@ -49,37 +49,18 @@ class SkipIntroOutroManager(
      */
     fun showSkipSettingsDrawer(folderPath: String?) {
         if (folderPath == null) return
-        
-        // 获取当前文件夹的跳过设置
+
         val skipIntro = preferencesManager.getSkipIntroSeconds(folderPath)
         val skipOutro = preferencesManager.getSkipOutroSeconds(folderPath)
-        val autoSkipChapter = preferencesManager.getAutoSkipChapter(folderPath)
-        val skipToChapterIndex = preferencesManager.getSkipToChapterIndex(folderPath)
-        
+
         composeOverlayManager.showSkipSettingsDrawer(
             currentSkipIntro = skipIntro,
             currentSkipOutro = skipOutro,
-            currentAutoSkipChapter = autoSkipChapter,
-            currentSkipToChapterIndex = skipToChapterIndex,
             onSkipIntroChange = { seconds ->
                 preferencesManager.setSkipIntroSeconds(folderPath, seconds)
-                // 重置标记，允许重新跳过
-                hasSkippedIntro = false
             },
             onSkipOutroChange = { seconds ->
                 preferencesManager.setSkipOutroSeconds(folderPath, seconds)
-                // 重置标记
-                hasShownOutroWarning = false
-            },
-            onAutoSkipChapterChange = { enabled ->
-                preferencesManager.setAutoSkipChapter(folderPath, enabled)
-                // 重置标记，允许重新跳过
-                hasSkippedIntro = false
-            },
-            onSkipToChapterIndexChange = { index ->
-                preferencesManager.setSkipToChapterIndex(folderPath, index)
-                // 重置标记，允许重新跳过
-                hasSkippedIntro = false
             }
         )
     }
@@ -102,73 +83,8 @@ class SkipIntroOutroManager(
         seekTo: (Int) -> Unit,
         onOutroReached: () -> Boolean
     ) {
-        if (folderPath == null || duration <= 0) return
-        
-        // 获取跳过设置
-        val skipIntro = preferencesManager.getSkipIntroSeconds(folderPath)
-        val skipOutro = preferencesManager.getSkipOutroSeconds(folderPath)
-        val autoSkipChapter = preferencesManager.getAutoSkipChapter(folderPath)
-        val skipToChapterIndex = preferencesManager.getSkipToChapterIndex(folderPath)
-        
-        // 调试日志
-        if (position < 15.0) {
-            Log.d(TAG, "Skip check: pos=$position, skipIntro=$skipIntro, skipOutro=$skipOutro, " +
-                    "autoChapter=$autoSkipChapter, chapterIdx=$skipToChapterIndex, " +
-                    "hasSkipped=$hasSkippedIntro, isReady=$isVideoReady")
-        }
-        
-        // 自动跳过章节（优先级最高）
-        // 需要等待视频准备好，并且在前10秒内
-        if (!hasSkippedIntro && autoSkipChapter && isVideoReady && position < 10.0) {
-            val chapters = getChapters()
-            Log.d(TAG, "Checking chapter skip: chapters.size=${chapters.size}, skipToIndex=$skipToChapterIndex")
-            
-            // 确保目标章节存在
-            if (chapters.size > skipToChapterIndex && skipToChapterIndex >= 0) {
-                // 跳到指定章节
-                val (chapterTitle, chapterTime) = chapters[skipToChapterIndex]
-                hasSkippedIntro = true
-                seekTo(chapterTime.toInt())
-                DialogUtils.showToastShort(context, "已自动跳到章节：$chapterTitle")
-                Log.d(TAG, "Auto-skipped to chapter[$skipToChapterIndex]: $chapterTitle at ${chapterTime}s")
-                return  // 跳过后不再执行手动时间跳过
-            } else {
-                Log.d(TAG, "Target chapter index $skipToChapterIndex not available in ${chapters.size} chapters")
-            }
-        }
-        
-        // 片头跳过：在视频开始的前N秒内，且尚未跳过
-        // 需要等待视频准备好才能跳过
-        if (!hasSkippedIntro && skipIntro > 0 && isVideoReady) {
-            // 检查position是否在skipIntro时间之前，且在合理的检测窗口内
-            val maxDetectionTime = maxOf(skipIntro.toDouble() + 5.0, 15.0)  // 至少检测15秒
-            if (position < skipIntro.toDouble() && position < maxDetectionTime) {
-                hasSkippedIntro = true
-                seekTo(skipIntro)
-                DialogUtils.showToastShort(context, "已跳过片头 $skipIntro 秒")
-                Log.d(TAG, "Auto-skipped intro: $skipIntro seconds, position was: $position")
-            }
-        }
-        
-        // 片尾跳过：接近视频结尾时
-        if (skipOutro > 0 && duration - position <= skipOutro && duration - position > 0.5) {
-            if (!hasShownOutroWarning) {
-                hasShownOutroWarning = true
-                
-                Log.d(TAG, "Approaching outro: ${duration - position}s remaining, skipOutro=$skipOutro")
-                
-                // 调用回调，尝试播放下一集
-                // 返回true表示有下一集并已开始播放，返回false表示没有下一集
-                val playedNext = onOutroReached()
-                if (playedNext) {
-                    DialogUtils.showToastShort(context, "已跳过片尾，播放下一集")
-                    Log.d(TAG, "Auto-skipped outro and playing next video")
-                } else {
-                    // 没有下一集，跳到视频最后
-                    DialogUtils.showToastShort(context, "已是最后一集，跳过片尾")
-                    Log.d(TAG, "No next video, skipped to end")
-                }
-            }
-        }
+        // 手动时间跳过已禁用，改用章节关键词自动检测 OP/ED
+        // 见 PlayerViewModel.refreshChapterDerivedSegments()
+        return
     }
 }

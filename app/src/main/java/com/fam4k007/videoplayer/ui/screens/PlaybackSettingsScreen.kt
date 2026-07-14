@@ -1,4 +1,4 @@
-package com.fam4k007.videoplayer.ui.screens
+﻿package com.fam4k007.videoplayer.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +28,7 @@ import com.fam4k007.videoplayer.ui.components.TextItem
 import com.fam4k007.videoplayer.ui.player.SeekbarStyle
 import com.fam4k007.videoplayer.ui.theme.spacing
 import com.fam4k007.videoplayer.domain.player.Anime4KManager
+import kotlin.math.roundToInt
 
 /**
  * Compose 版本的播放设置页面
@@ -273,6 +274,31 @@ fun PlaybackSettingsScreen(
                 }
             }
 
+            // 观看进度
+            item {
+                PreferenceSectionHeader("观看进度")
+            }
+
+            item {
+                PreferenceCard {
+                    SwitchItem(
+                        title = "显示播放进度条",
+                        subtitle = if (settings.showVideoProgressBar) "视频列表缩略图上显示观看进度" else "隐藏进度条，仅通过标签显示状态",
+                        checked = settings.showVideoProgressBar,
+                        onCheckedChange = { viewModel.setShowVideoProgressBar(it) }
+                    )
+                    SliderItem(
+                        title = "已观看阈值",
+                        value = settings.watchedThreshold.toFloat(),
+                        valueRange = 50f..100f,
+                        steps = 9,
+                        onValueChange = { viewModel.setWatchedThreshold(it.roundToInt()) },
+                        valueFormatter = { "${it.roundToInt()}%" },
+                        subtitle = "播放进度超过此值即标记为已观看"
+                    )
+                }
+            }
+
             // 画质增强
             item {
                 PreferenceSectionHeader("画质增强")
@@ -289,6 +315,28 @@ fun PlaybackSettingsScreen(
                     Anime4KQualitySelector(
                         currentQuality = settings.anime4KQuality,
                         onQualityChange = { viewModel.setAnime4KQuality(it) }
+                    )
+                }
+            }
+
+            // 播放界面
+            item {
+                PreferenceSectionHeader("播放界面")
+            }
+
+            item {
+                PreferenceCard {
+                    SwitchItem(
+                        title = "启用播放界面动画",
+                        subtitle = if (settings.controlsAnimationEnabled) "控制栏显示/隐藏时带有滑动动画" else "控制栏直接显示/隐藏，无动画",
+                        checked = settings.controlsAnimationEnabled,
+                        onCheckedChange = { viewModel.setControlsAnimationEnabled(it) }
+                    )
+                    SwitchItem(
+                        title = "启用抽屉界面动画",
+                        subtitle = if (settings.drawerAnimationEnabled) "右侧抽屉式面板带有过渡动画" else "抽屉面板直接显示/隐藏，无动画",
+                        checked = settings.drawerAnimationEnabled,
+                        onCheckedChange = { viewModel.setDrawerAnimationEnabled(it) }
                     )
                 }
             }
@@ -463,7 +511,8 @@ private fun DoubleTapModeCard(
                 Text(
                     "双击任意位置暂停或播放",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -500,7 +549,8 @@ private fun DoubleTapModeCard(
                 Text(
                     "双击左半屏快退，右半屏快进",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
@@ -884,7 +934,8 @@ private fun MpvProfileCard(
                     Text(
                         option.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
@@ -948,7 +999,8 @@ private fun SeekbarStyleCard(
                             SeekbarStyle.Thick -> "宽幅轨道，便于触摸操作，沉稳醒目"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
@@ -1034,7 +1086,8 @@ private fun QualityOption(
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }

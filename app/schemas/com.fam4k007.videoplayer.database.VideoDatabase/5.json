@@ -1,0 +1,213 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "634bba3d695ef20026698d1d7117dde6",
+    "entities": [
+      {
+        "tableName": "video_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `name` TEXT NOT NULL, `nameSortKey` TEXT NOT NULL, `path` TEXT NOT NULL, `folderPath` TEXT NOT NULL, `folderName` TEXT NOT NULL, `size` INTEGER NOT NULL, `duration` INTEGER NOT NULL, `dateModified` INTEGER NOT NULL, `dateAdded` INTEGER NOT NULL, `lastScanned` INTEGER NOT NULL, PRIMARY KEY(`uri`))",
+        "fields": [
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameSortKey",
+            "columnName": "nameSortKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "path",
+            "columnName": "path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "folderPath",
+            "columnName": "folderPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "folderName",
+            "columnName": "folderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "size",
+            "columnName": "size",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateModified",
+            "columnName": "dateModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateAdded",
+            "columnName": "dateAdded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastScanned",
+            "columnName": "lastScanned",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "uri"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_video_cache_folderName",
+            "unique": false,
+            "columnNames": [
+              "folderName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_video_cache_folderName` ON `${TABLE_NAME}` (`folderName`)"
+          },
+          {
+            "name": "index_video_cache_folderPath_nameSortKey",
+            "unique": false,
+            "columnNames": [
+              "folderPath",
+              "nameSortKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_video_cache_folderPath_nameSortKey` ON `${TABLE_NAME}` (`folderPath`, `nameSortKey`)"
+          },
+          {
+            "name": "index_video_cache_folderPath_dateAdded",
+            "unique": false,
+            "columnNames": [
+              "folderPath",
+              "dateAdded"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_video_cache_folderPath_dateAdded` ON `${TABLE_NAME}` (`folderPath`, `dateAdded`)"
+          },
+          {
+            "name": "index_video_cache_lastScanned",
+            "unique": false,
+            "columnNames": [
+              "lastScanned"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_video_cache_lastScanned` ON `${TABLE_NAME}` (`lastScanned`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "playback_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `fileName` TEXT NOT NULL, `position` INTEGER NOT NULL, `duration` INTEGER NOT NULL, `lastPlayed` INTEGER NOT NULL, `folderName` TEXT NOT NULL, `danmuPath` TEXT, `danmuVisible` INTEGER NOT NULL, `danmuOffsetTime` INTEGER NOT NULL, `thumbnailPath` TEXT, `hasBeenWatched` INTEGER NOT NULL, PRIMARY KEY(`uri`))",
+        "fields": [
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileName",
+            "columnName": "fileName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPlayed",
+            "columnName": "lastPlayed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "folderName",
+            "columnName": "folderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "danmuPath",
+            "columnName": "danmuPath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "danmuVisible",
+            "columnName": "danmuVisible",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "danmuOffsetTime",
+            "columnName": "danmuOffsetTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailPath",
+            "columnName": "thumbnailPath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "hasBeenWatched",
+            "columnName": "hasBeenWatched",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "uri"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '634bba3d695ef20026698d1d7117dde6')"
+    ]
+  }
+}

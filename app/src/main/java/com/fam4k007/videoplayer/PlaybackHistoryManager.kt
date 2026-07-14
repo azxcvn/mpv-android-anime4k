@@ -82,7 +82,8 @@ class PlaybackHistoryManager(private val context: Context) {
                 danmuPath = danmuPath,
                 danmuVisible = danmuVisible,
                 danmuOffsetTime = danmuOffsetTime,
-                thumbnailPath = thumbnailPath
+                thumbnailPath = thumbnailPath,
+                hasBeenWatched = false
             )
         }
         
@@ -121,6 +122,7 @@ class PlaybackHistoryManager(private val context: Context) {
     ) {
         scope.launch {
             try {
+                val oldEntity = historyDao.getHistoryByUri(uri.toString())
                 val entity = PlaybackHistoryEntity(
                     uri = uri.toString(),
                     fileName = fileName,
@@ -129,7 +131,8 @@ class PlaybackHistoryManager(private val context: Context) {
                     lastPlayed = System.currentTimeMillis(),
                     folderName = folderName,
                     danmuPath = danmuPath,
-                    danmuVisible = danmuVisible
+                    danmuVisible = danmuVisible,
+                    hasBeenWatched = oldEntity?.hasBeenWatched == true
                 )
                 
                 historyDao.insertOrUpdate(entity)
