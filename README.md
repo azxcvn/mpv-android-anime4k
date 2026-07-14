@@ -1,6 +1,6 @@
 # 小喵player - 本地动漫视频实时超分播放器
 
-**[中文版本](README.md) | [English Version](README_EN.md)**
+**[中文版本](README.md) | [English Version](docs/README_EN.md)**
 
 一个基于 libmpv 的 Android 本地视频播放器，核心特色是开源实现 Anime4K 实时超分算法，针对动漫/动画/番剧视频风格进行优化，显著提升低分辨率动漫的观看体验。
 
