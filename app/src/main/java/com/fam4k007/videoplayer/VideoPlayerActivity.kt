@@ -926,7 +926,11 @@ class VideoPlayerActivity : AppCompatActivity(),
     }
     
     override fun onShowSkipSettings() {
-        skipIntroOutroManager.showSkipSettingsDrawer(viewModel.currentFolderPath.value)
+        skipIntroOutroManager.showSkipSettingsDrawer(
+            folderPath = viewModel.currentFolderPath.value,
+            getCurrentPosition = { viewModel.position.value.toDouble() },
+            getDuration = { viewModel.duration.value.toDouble() }
+        )
     }
 
     override fun onShowEqualizer() {

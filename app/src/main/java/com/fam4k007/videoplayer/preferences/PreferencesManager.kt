@@ -963,6 +963,44 @@ class PreferencesManager private constructor(context: Context) {
     // ==================== 片头片尾跳过 ====================
     
     /**
+     * 全局开关：是否启用片头片尾跳过功能
+     * 关闭后即使设置了秒数也不会执行跳过
+     */
+    fun isSkipIntroOutroEnabled(): Boolean {
+        return sharedPreferences.getBoolean("skip_intro_outro_enabled", false)
+    }
+
+    fun setSkipIntroOutroEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("skip_intro_outro_enabled", enabled).apply()
+    }
+
+    /**
+     * 片头滑动条范围最大值（按文件夹存储），默认 180
+     */
+    fun getSkipIntroRangeSeconds(folderPath: String): Int {
+        val key = "skip_range_folder_${folderPath.hashCode()}"
+        return sharedPreferences.getInt(key, 180)
+    }
+
+    fun setSkipIntroRangeSeconds(folderPath: String, seconds: Int) {
+        val key = "skip_range_folder_${folderPath.hashCode()}"
+        sharedPreferences.edit().putInt(key, seconds.coerceIn(10, 600)).apply()
+    }
+
+    /**
+     * 片尾滑动条范围最大值（按文件夹存储），默认 180
+     */
+    fun getSkipOutroRangeSeconds(folderPath: String): Int {
+        val key = "skip_outro_range_folder_${folderPath.hashCode()}"
+        return sharedPreferences.getInt(key, 180)
+    }
+
+    fun setSkipOutroRangeSeconds(folderPath: String, seconds: Int) {
+        val key = "skip_outro_range_folder_${folderPath.hashCode()}"
+        sharedPreferences.edit().putInt(key, seconds.coerceIn(10, 600)).apply()
+    }
+
+    /**
      * 获取片头跳过秒数（按文件夹存储）
      */
     fun getSkipIntroSeconds(folderPath: String): Int {
