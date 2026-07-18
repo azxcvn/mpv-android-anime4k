@@ -568,6 +568,14 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, enabled).apply()
     }
 
+    fun getVideoAspect(): String {
+        return sharedPreferences.getString("video_aspect", "FIT") ?: "FIT"
+    }
+
+    fun setVideoAspect(aspect: String) {
+        sharedPreferences.edit().putString("video_aspect", aspect).apply()
+    }
+
     /**
      * 获取视频的字幕轨道ID
      */

@@ -229,6 +229,14 @@ class PlayerRepository(
         preferencesManager.setDrawerAnimationEnabled(enabled)
     }
 
+    fun getVideoAspect(): String {
+        return preferencesManager.getVideoAspect()
+    }
+
+    fun setVideoAspect(aspect: String) {
+        preferencesManager.setVideoAspect(aspect)
+    }
+
     /**
      * 获取所有播放状态（用于视频列表快速查询进度）
      */

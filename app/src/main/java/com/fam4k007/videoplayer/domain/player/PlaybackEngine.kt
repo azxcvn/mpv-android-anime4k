@@ -1318,27 +1318,68 @@ class PlaybackEngine(
     fun changeVideoAspect(aspect: VideoAspect) {
         try {
             val context = contextRef.get() ?: return
-            
+
+            // 先重置 zoom 和 unscaled，仅特定模式设置
+            MPVLib.setPropertyDouble("video-zoom", 0.0)
+            MPVLib.setPropertyString("video-unscaled", "no")
+
             when (aspect) {
-                VideoAspect.CROP -> {
-                    // 裁剪模式：使用panscan=1.0
-                    MPVLib.setPropertyDouble("panscan", 1.0)
-                    MPVLib.setPropertyDouble("video-aspect-override", -1.0)
-                }
                 VideoAspect.FIT -> {
-                    // 适应屏幕模式：panscan=0，保持原始比例
                     MPVLib.setPropertyDouble("panscan", 0.0)
                     MPVLib.setPropertyDouble("video-aspect-override", -1.0)
                 }
                 VideoAspect.STRETCH -> {
-                    // 拉伸模式：根据屏幕比例拉伸
-                    val displayMetrics = context.resources.displayMetrics
-                    val ratio = displayMetrics.widthPixels / displayMetrics.heightPixels.toDouble()
+                    val dm = context.resources.displayMetrics
+                    val ratio = dm.widthPixels / dm.heightPixels.toDouble()
                     MPVLib.setPropertyDouble("panscan", 0.0)
                     MPVLib.setPropertyDouble("video-aspect-override", ratio)
                 }
+                VideoAspect.CROP -> {
+                    MPVLib.setPropertyDouble("panscan", 1.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", -1.0)
+                }
+                VideoAspect.EQUAL_WIDTH -> {
+                    val w = MPVLib.getPropertyInt("video-params/w") ?: return
+                    val dm = context.resources.displayMetrics
+                    val zoom = dm.widthPixels.toDouble() / w
+                    MPVLib.setPropertyDouble("panscan", 0.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", -1.0)
+                    MPVLib.setPropertyDouble("video-zoom", zoom)
+                }
+                VideoAspect.EQUAL_HEIGHT -> {
+                    val h = MPVLib.getPropertyInt("video-params/h") ?: return
+                    val dm = context.resources.displayMetrics
+                    val zoom = dm.heightPixels.toDouble() / h
+                    MPVLib.setPropertyDouble("panscan", 0.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", -1.0)
+                    MPVLib.setPropertyDouble("video-zoom", zoom)
+                }
+                VideoAspect.ORIGINAL -> {
+                    val vw = MPVLib.getPropertyInt("video-params/w") ?: return
+                    val vh = MPVLib.getPropertyInt("video-params/h") ?: return
+                    if (vw <= 0 || vh <= 0) return
+                    val dm = context.resources.displayMetrics
+                    val sw = dm.widthPixels.toDouble()
+                    val sh = dm.heightPixels.toDouble()
+                    val videoAspect = vw.toDouble() / vh
+                    val screenAspect = sw / sh
+                    // mpv 将视频 scale 到填满屏幕的较大维度，反算 1:1 像素映射所需 zoom
+                    val fitScale = if (videoAspect > screenAspect) sw / vw else sh / vh
+                    val zoom = Math.log(1.0 / fitScale) / Math.log(2.0)
+                    MPVLib.setPropertyDouble("panscan", 0.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", -1.0)
+                    MPVLib.setPropertyDouble("video-zoom", zoom)
+                }
+                VideoAspect.RATIO_4_3 -> {
+                    MPVLib.setPropertyDouble("panscan", 0.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", 4.0 / 3.0)
+                }
+                VideoAspect.RATIO_16_9 -> {
+                    MPVLib.setPropertyDouble("panscan", 0.0)
+                    MPVLib.setPropertyDouble("video-aspect-override", 16.0 / 9.0)
+                }
             }
-            
+
             Log.d(TAG, "Video aspect changed to: ${aspect.displayName}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to change video aspect", e)

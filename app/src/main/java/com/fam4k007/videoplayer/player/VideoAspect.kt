@@ -4,18 +4,12 @@ package com.fam4k007.videoplayer.player
  * 视频画面比例模式
  */
 enum class VideoAspect(val displayName: String) {
-    FIT("Fit to Screen"),      // 原始比例，完整显示
-    STRETCH("Stretch"),     // 拉伸填充屏幕
-    CROP("Crop");        // 裁剪填充屏幕
-    
-    /**
-     * 获取下一个模式（循环切换）
-     */
-    fun next(): VideoAspect {
-        return when (this) {
-            FIT -> STRETCH
-            STRETCH -> CROP
-            CROP -> FIT
-        }
-    }
+    FIT("自动"),
+    STRETCH("拉伸"),
+    CROP("裁剪"),
+    EQUAL_WIDTH("等宽"),
+    EQUAL_HEIGHT("等高"),
+    ORIGINAL("原始"),
+    RATIO_4_3("4:3"),
+    RATIO_16_9("16:9");
 }
