@@ -495,27 +495,23 @@ class PlayerDialogManager(
     fun showAspectRatioDialog(currentAspect: VideoAspect) {
         val activity = activityRef.get() ?: return
 
-        val items = listOf("适应屏幕", "拉伸", "裁剪")
-        val currentSelection = when (currentAspect) {
-            VideoAspect.FIT -> 0
-            VideoAspect.STRETCH -> 1
-            VideoAspect.CROP -> 2
-        }
+        val items = listOf("自动", "拉伸", "裁剪", "等宽", "等高", "原始", "4:3", "16:9")
+        val aspects = listOf(
+            VideoAspect.FIT, VideoAspect.STRETCH, VideoAspect.CROP,
+            VideoAspect.EQUAL_WIDTH, VideoAspect.EQUAL_HEIGHT, VideoAspect.ORIGINAL,
+            VideoAspect.RATIO_4_3, VideoAspect.RATIO_16_9
+        )
+        val currentSelection = aspects.indexOf(currentAspect).coerceAtLeast(0)
 
         showPopupDialogAtLastAnchor(
             items,
             currentSelection,
             title = "画面比例",
             showAbove = false,
-            useFixedHeight = false,
-            showScrollHint = false
+            useFixedHeight = true,
+            showScrollHint = true
         ) { position ->
-            val newAspect = when (position) {
-                0 -> VideoAspect.FIT
-                1 -> VideoAspect.STRETCH
-                2 -> VideoAspect.CROP
-                else -> VideoAspect.FIT
-            }
+            val newAspect = aspects.getOrElse(position) { VideoAspect.FIT }
             playbackEngine.changeVideoAspect(newAspect)
             (activity as? VideoAspectCallback)?.onVideoAspectChanged(newAspect)
             DialogUtils.showToastShort(activity, "画面比例：${items[position]}")

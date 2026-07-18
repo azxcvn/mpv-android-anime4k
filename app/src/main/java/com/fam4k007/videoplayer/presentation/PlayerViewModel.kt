@@ -189,8 +189,10 @@ class PlayerViewModel(
     private val _playerUpdate = MutableStateFlow<PlayerUpdates>(PlayerUpdates.None)
     val playerUpdate: StateFlow<PlayerUpdates> = _playerUpdate.asStateFlow()
     
-    // 视频比例模式
-    private val _videoAspect = MutableStateFlow(VideoAspect.FIT)
+    // 视频比例模式（从持久化存储读取）
+    private val _videoAspect = MutableStateFlow(
+        try { VideoAspect.valueOf(playerRepository.getVideoAspect()) } catch (_: Exception) { VideoAspect.FIT }
+    )
     val videoAspect: StateFlow<VideoAspect> = _videoAspect.asStateFlow()
     
     // Anime4K 状态
@@ -1394,6 +1396,7 @@ class PlayerViewModel(
      */
     fun setVideoAspect(aspect: VideoAspect) {
         _videoAspect.value = aspect
+        playerRepository.setVideoAspect(aspect.name)
         Logger.d(TAG, "Video aspect changed to: ${aspect.displayName}")
     }
     
