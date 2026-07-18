@@ -313,6 +313,12 @@ internal fun VideoPlayerActivity.initializeManagers() {
                     com.fam4k007.videoplayer.utils.Logger.d(TAG, "Loaded ${chapters.size} chapters")
                 }, 300)
 
+                // 恢复已保存的视频画面比例
+                Handler(Looper.getMainLooper()).postDelayed({
+                    playbackEngine.changeVideoAspect(currentVideoAspect)
+                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Restored video aspect: ${currentVideoAspect.displayName}")
+                }, 400)
+
                 // 延迟标记视频准备好，确保视频真正开始播放
                 Handler(Looper.getMainLooper()).postDelayed({
                     skipIntroOutroManager.markVideoReady()
