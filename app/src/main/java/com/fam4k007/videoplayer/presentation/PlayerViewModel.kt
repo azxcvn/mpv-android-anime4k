@@ -554,6 +554,7 @@ class PlayerViewModel(
     fun syncAnimationSettings() {
         _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
         _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
+        updateGlobalAnimationFlag()
     }
 
     private val _chapterBarEnabled = MutableStateFlow(true)
