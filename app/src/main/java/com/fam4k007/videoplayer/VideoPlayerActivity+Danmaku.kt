@@ -44,7 +44,12 @@ internal fun VideoPlayerActivity.loadDanmakuForVideo(videoUri: android.net.Uri) 
         // 如果历史记录存在但 danmuPath 为 null，说明之前尝试过但没找到，不要重复尝试
         else if (history == null) {
             com.fam4k007.videoplayer.utils.Logger.d(TAG, "No history found, trying auto-find...")
-            autoFindAndLoadDanmaku(videoUri)
+            // 先尝试自动匹配缓存（自建服务器切集自动加载）
+            if (preferencesManager.isDanmakuAutoMatchEnabled()) {
+                tryAutoMatchDanmaku(videoUri)
+            } else {
+                autoFindAndLoadDanmaku(videoUri)
+            }
         } else {
             com.fam4k007.videoplayer.utils.Logger.d(TAG, "History exists but no danmaku path, skipping auto-find")
         }
@@ -120,6 +125,65 @@ internal fun VideoPlayerActivity.autoFindAndLoadDanmaku(videoUri: android.net.Ur
 }
 
 /**
+ * 尝试从缓存自动匹配弹幕（自建服务器切集自动加载）
+ */
+internal fun VideoPlayerActivity.tryAutoMatchDanmaku(videoUri: android.net.Uri) {
+    try {
+        Logger.d(TAG, "tryAutoMatchDanmaku: loading cache...")
+        val cache = com.fam4k007.videoplayer.dandanplay.DanmakuAutoMatchCache.load(preferencesManager)
+        if (cache == null) { Logger.d(TAG, "tryAutoMatchDanmaku: no cache found"); return }
+        Logger.d(TAG, "tryAutoMatchDanmaku: cache loaded, animeId=${cache.animeId}, server=${cache.serverUrl}, episodes=${cache.episodes.size}")
+        val videoPath = getRealPathFromUri(videoUri)
+        if (videoPath == null) { Logger.d(TAG, "tryAutoMatchDanmaku: videoPath is null"); return }
+        val fileName = videoPath.substringAfterLast("/")
+        val epNum = com.fam4k007.videoplayer.dandanplay.extractEpisodeNumber(fileName)
+        Logger.d(TAG, "tryAutoMatchDanmaku: fileName=$fileName, epNum=$epNum")
+        if (epNum == null) { Logger.d(TAG, "tryAutoMatchDanmaku: failed to extract episode number"); return }
+        val matched = com.fam4k007.videoplayer.dandanplay.findMatchingEpisode(cache, epNum)
+        if (matched == null) { Logger.d(TAG, "tryAutoMatchDanmaku: no matching episode for epNum=$epNum"); return }
+        Logger.d(TAG, "Auto-match danmaku: ${cache.animeTitle} - ${matched.episodeTitle} (ep=$epNum, id=${matched.episodeId})")
+
+        lifecycleScope.launch {
+            try {
+                val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(cache.serverUrl)
+                val result = api.getDanmaku(matched.episodeId)
+                result.fold(
+                    onSuccess = { danmakuResponse ->
+                        val xmlContent = api.convertToXml(danmakuResponse)
+                        val danmakuDir = java.io.File(getExternalFilesDir(null), "danmaku/network")
+                        if (!danmakuDir.exists()) danmakuDir.mkdirs()
+                        val cleanName = "${cache.animeTitle}_${matched.episodeTitle}_${matched.episodeId}"
+                            .replace("[^a-zA-Z0-9_\\u4e00-\\u9fa5]".toRegex(), "_")
+                        val danmakuFile = java.io.File(danmakuDir, "$cleanName.xml")
+                        danmakuFile.writeText(xmlContent)
+
+                        val loaded = danmakuManager.loadDanmakuFile(danmakuFile.absolutePath, autoShow = true)
+                        if (loaded) {
+                            kotlinx.coroutines.delay(150)  // 等待 DanmakuView 内部处理完成，避免渲染竞态
+                            val currentPosition = (playbackEngine.currentPosition * 1000).toLong()
+                            danmakuManager.seekTo(currentPosition)
+                            runOnUiThread {
+                                DialogUtils.showToastShort(this@tryAutoMatchDanmaku, "已自动加载弹幕: ${cache.animeTitle} ${matched.episodeTitle}")
+                            }
+                            videoUri?.let { uri ->
+                                historyManager.updateDanmu(uri = uri, danmuPath = danmakuFile.absolutePath, danmuVisible = true, danmuOffsetTime = 0L)
+                            }
+                        }
+                    },
+                    onFailure = { e ->
+                        Logger.w(TAG, "Auto-match danmaku failed: ${e.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                Logger.w(TAG, "Auto-match danmaku error: ${e.message}")
+            }
+        }
+    } catch (e: Exception) {
+        Logger.w(TAG, "Auto-match danmaku failed: ${e.message}")
+    }
+}
+
+/**
  * 加载网络弹幕
  */
 internal fun VideoPlayerActivity.loadNetworkDanmaku(episodeId: Int, animeTitle: String, episodeTitle: String, serverUrl: String? = null) {
@@ -156,6 +220,7 @@ internal fun VideoPlayerActivity.loadNetworkDanmaku(episodeId: Int, animeTitle: 
                     val loaded = danmakuManager.loadDanmakuFile(danmakuFile.absolutePath, autoShow = true)
 
                     if (loaded) {
+                        kotlinx.coroutines.delay(150)  // 等待 DanmakuView 内部处理完成
                         // 同步弹幕到当前播放位置
                         val currentPosition = (playbackEngine.currentPosition * 1000).toLong()
                         danmakuManager.seekTo(currentPosition)
@@ -195,6 +260,29 @@ internal fun VideoPlayerActivity.loadNetworkDanmaku(episodeId: Int, animeTitle: 
 }
 
 /**
+ * 保存自动匹配缓存（直接使用已获取的集列表，无需二次请求）
+ */
+internal fun VideoPlayerActivity.saveDanmakuAutoMatchCache(
+    animeId: Int, animeTitle: String, serverUrl: String?,
+    episodes: List<com.fam4k007.videoplayer.dandanplay.EpisodeInfo>
+) {
+    Logger.d(TAG, "saveDanmakuAutoMatchCache: animeId=$animeId, title=$animeTitle, server=$serverUrl, episodes=${episodes.size}")
+    val cache = com.fam4k007.videoplayer.dandanplay.DanmakuAutoMatchCache(
+        animeId = animeId,
+        animeTitle = animeTitle,
+        serverUrl = serverUrl,
+        episodes = episodes.map { ep ->
+            com.fam4k007.videoplayer.dandanplay.DanmakuAutoMatchCache.CachedEpisode(
+                episodeId = ep.episodeId,
+                episodeTitle = ep.episodeTitle
+            )
+        }
+    )
+    com.fam4k007.videoplayer.dandanplay.DanmakuAutoMatchCache.save(preferencesManager, cache)
+    Logger.d(TAG, "Danmaku auto-match cache saved: $animeTitle (${cache.episodes.size} episodes)")
+}
+
+/**
  * 显示匹配结果选择对话框
  */
 internal fun VideoPlayerActivity.showMatchSelectionDialog(results: List<com.fam4k007.videoplayer.dandanplay.ServerMatchResult>) {
@@ -205,6 +293,18 @@ internal fun VideoPlayerActivity.showMatchSelectionDialog(results: List<com.fam4
         .setItems(items) { dialog, which ->
             val result = results[which]
             loadNetworkDanmaku(result.matchInfo.episodeId, result.matchInfo.animeTitle, result.matchInfo.episodeTitle, result.serverUrl)
+            // 匹配弹幕没有集列表，需异步获取后缓存
+            lifecycleScope.launch {
+                val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(result.serverUrl)
+                api.searchAnime(result.matchInfo.animeTitle).fold(
+                    onSuccess = { response ->
+                        response.animes.firstOrNull { it.animeId == result.matchInfo.animeId }?.let {
+                            saveDanmakuAutoMatchCache(result.matchInfo.animeId, result.matchInfo.animeTitle, result.serverUrl, it.episodes)
+                        }
+                    },
+                    onFailure = { Logger.w(TAG, "Match cache: search failed ${it.message}") }
+                )
+            }
             dialog.dismiss()
         }
         .setNegativeButton("取消", null)

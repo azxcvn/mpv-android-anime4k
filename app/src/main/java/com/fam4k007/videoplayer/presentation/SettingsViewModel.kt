@@ -45,6 +45,7 @@ class SettingsViewModel(
                     rememberSpeed = playerRepository.isRememberSpeedEnabled(),
                     rememberBrightness = playerRepository.isRememberBrightnessEnabled(),
                     autoLoadDanmaku = playerRepository.isAutoLoadDanmakuEnabled(),
+                    danmakuAutoMatch = playerRepository.isDanmakuAutoMatchEnabled(),
                     hardwareDecoding = playerRepository.isHardwareDecodingEnabled(),
                     gestureControlEnabled = playerRepository.isGestureControlEnabled(),
                     
@@ -145,6 +146,17 @@ class SettingsViewModel(
                 _settingsState.value = _settingsState.value.copy(autoLoadDanmaku = enabled)
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to set auto load danmaku", e)
+            }
+        }
+    }
+
+    fun setDanmakuAutoMatch(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setDanmakuAutoMatchEnabled(enabled)
+                _settingsState.value = _settingsState.value.copy(danmakuAutoMatch = enabled)
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set danmaku auto match", e)
             }
         }
     }
@@ -364,6 +376,7 @@ data class SettingsState(
     val rememberSpeed: Boolean = true,
     val rememberBrightness: Boolean = true,
     val autoLoadDanmaku: Boolean = true,
+    val danmakuAutoMatch: Boolean = false,  // 切集自动匹配弹幕（需自建服务器）
     val hardwareDecoding: Boolean = true,
     val gestureControlEnabled: Boolean = true,
     
