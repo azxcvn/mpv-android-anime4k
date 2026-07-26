@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,7 +38,7 @@ import org.koin.compose.koinInject
 @Composable
 fun DanDanPlaySearchDialog(
     onDismiss: () -> Unit,
-    onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String) -> Unit
+    onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String, animeId: Int, serverUrl: String?, episodes: List<EpisodeInfo>) -> Unit
 ) {
     val preferencesManager: PreferencesManager = koinInject()
     var isVisible by remember { mutableStateOf(false) }
@@ -131,7 +133,7 @@ fun DanDanPlaySearchDialog(
 @Composable
 private fun DanDanPlaySearchContent(
     onDismiss: () -> Unit,
-    onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String) -> Unit
+    onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String, animeId: Int, serverUrl: String?, episodes: List<EpisodeInfo>) -> Unit
 ) {
     val preferencesManager: PreferencesManager = koinInject()
     var searchText by remember { mutableStateOf("") }
@@ -139,6 +141,8 @@ private fun DanDanPlaySearchContent(
     var isSearching by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedAnime by remember { mutableStateOf<AnimeSearchInfo?>(null) }
+    var selectedAnimeServerUrl by remember { mutableStateOf<String?>(null) }  // 选中番剧的来源服务器
+    var animeServerMap by remember { mutableStateOf(mapOf<Int, String?>()) }  // animeId → serverUrl
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -193,29 +197,15 @@ private fun DanDanPlaySearchContent(
 
         // 搜索框（仅在搜索界面显示）
         if (selectedAnime == null) {
-            Column(
+            OutlinedTextField(
+                value = searchText,
+                onValueChange = { searchText = it },
+                placeholder = { Text("输入番剧名称", color = Color(0xFF888888)) },
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    placeholder = { Text("Enter anime title", color = Color(0xFF888888)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color(0xFF64B5F6),
-                        unfocusedBorderColor = Color(0xFF555555),
-                        cursorColor = Color(0xFF64B5F6)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                Button(
-                    onClick = {
-                        if (searchText.isNotBlank()) {
+                singleLine = true,
+                trailingIcon = {
+                    if (searchText.isNotBlank() && !isSearching) {
+                        IconButton(onClick = {
                             coroutineScope.launch {
                                 isSearching = true
                                 errorMessage = null
@@ -228,22 +218,26 @@ private fun DanDanPlaySearchContent(
                                     }
                                     
                                     val allResults = mutableListOf<AnimeSearchInfo>()
+                                    val serverMap = mutableMapOf<Int, String?>()  // animeId → serverUrl
                                     val errors = mutableListOf<String>()
                                     
                                     for (server in enabledServers) {
                                         try {
-                                            android.util.Log.d("DanDanPlayUI", "搜索服务器: ${server.name} (${server.url})")
-                                            val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(
-                                                if (server.isDefault) null else server.url
-                                            )
+                                            val serverUrl = if (server.isDefault) null else server.url
+                                            if (serverUrl != null && !serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                                                android.util.Log.w("DanDanPlayUI", "跳过无效服务器 URL: ${server.name} -> $serverUrl")
+                                                errors.add("${server.name}: URL 格式无效")
+                                                continue
+                                            }
+                                            val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(serverUrl)
                                             val result = api.searchAnime(searchText)
                                             result.fold(
                                                 onSuccess = { response ->
                                                     android.util.Log.d("DanDanPlayUI", "${server.name}: 返回 ${response.animes.size} 个结果")
-                                                    // 合并结果，按 animeId 去重
                                                     for (anime in response.animes) {
                                                         if (allResults.none { it.animeId == anime.animeId }) {
                                                             allResults.add(anime)
+                                                            serverMap[anime.animeId] = serverUrl
                                                         }
                                                     }
                                                 },
@@ -259,6 +253,7 @@ private fun DanDanPlaySearchContent(
                                     }
                                     
                                     searchResults = allResults
+                                    animeServerMap = serverMap
                                     if (allResults.isEmpty()) {
                                         errorMessage = if (errors.isNotEmpty()) {
                                             "Search failed:\n${errors.joinToString("\n")}"
@@ -273,20 +268,31 @@ private fun DanDanPlaySearchContent(
                                     isSearching = false
                                 }
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "搜索",
+                                tint = Color(0xFF64B5F6),
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
-                    },
-                    enabled = searchText.isNotBlank() && !isSearching,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF64B5F6),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Search", fontSize = 15.sp)
-                }
-            }
-
+                    } else if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color(0xFF64B5F6),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color(0xFF64B5F6),
+                    unfocusedBorderColor = Color(0xFF555555),
+                    cursorColor = Color(0xFF64B5F6)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
             Spacer(modifier = Modifier.height(12.dp))
         }
 
@@ -343,7 +349,10 @@ private fun DanDanPlaySearchContent(
                     onEpisodeSelected(
                         episode.episodeId,
                         selectedAnime!!.animeTitle,
-                        episode.episodeTitle
+                        episode.episodeTitle,
+                        selectedAnime!!.animeId,
+                        selectedAnimeServerUrl,
+                        selectedAnime!!.episodes
                     )
                     onDismiss()
                 }
@@ -354,29 +363,9 @@ private fun DanDanPlaySearchContent(
                 results = searchResults,
                 onAnimeSelected = { anime ->
                     selectedAnime = anime
+                    selectedAnimeServerUrl = animeServerMap[anime.animeId]
                 }
             )
-        } else {
-            // 空状态提示
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🔍",
-                        fontSize = 48.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Enter anime title to search",
-                        fontSize = 16.sp,
-                        color = Color(0xFF888888)
-                    )
-                }
-            }
         }
     }
 }
@@ -405,59 +394,34 @@ private fun AnimeCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1A2332)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // 标题行
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = anime.animeTitle,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
                     color = Color.White,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                // 类型标签
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = Color(0xFF64B5F6),
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = anime.typeDescription,
-                        fontSize = 11.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                Text(
+                    text = "${anime.typeDescription} · ${anime.episodes.size} 集",
+                    fontSize = 12.sp,
+                    color = Color(0xFF9E9E9E)
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 剧集数量
-            Text(
-                text = "${anime.episodes.size} episodes",
-                fontSize = 13.sp,
-                color = Color(0xFF9E9E9E)
-            )
         }
     }
 }
@@ -473,29 +437,34 @@ private fun EpisodeList(
         // 番剧信息卡片
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xFF1A2332)
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = anime.animeTitle,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${anime.typeDescription} · ${anime.episodes.size} episodes",
-                    fontSize = 13.sp,
-                    color = Color(0xFF9E9E9E)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = anime.animeTitle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${anime.typeDescription} · ${anime.episodes.size} 集",
+                        fontSize = 12.sp,
+                        color = Color(0xFF9E9E9E)
+                    )
+                }
             }
         }
 

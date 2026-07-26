@@ -220,7 +220,7 @@ class ComposeOverlayManager(
      * 显示DanDanPlay网络弹幕搜索对话框
      */
     fun showDanDanPlaySearchDialog(
-        onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String) -> Unit
+        onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String, animeId: Int, serverUrl: String?, episodes: List<com.fam4k007.videoplayer.dandanplay.EpisodeInfo>) -> Unit
     ) {
         setContent {
             com.fam4k007.videoplayer.ui.components.DanDanPlaySearchDialog(

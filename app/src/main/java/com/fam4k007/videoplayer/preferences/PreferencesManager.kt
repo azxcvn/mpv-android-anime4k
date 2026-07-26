@@ -1384,6 +1384,17 @@ class PreferencesManager private constructor(context: Context) {
     fun setAutoLoadDanmakuEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("auto_load_danmaku_enabled", enabled).apply()
     }
+
+    /**
+     * 切集时自动匹配弹幕（仅建议配合自建服务器使用，弹弹Play有配额限制）
+     */
+    fun isDanmakuAutoMatchEnabled(): Boolean {
+        return sharedPreferences.getBoolean("danmaku_auto_match_enabled", false)
+    }
+
+    fun setDanmakuAutoMatchEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("danmaku_auto_match_enabled", enabled).apply()
+    }
     
     /**
      * 自定义弹幕服务器地址（旧接口，保留兼容）

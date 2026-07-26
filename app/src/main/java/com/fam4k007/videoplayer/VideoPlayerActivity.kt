@@ -704,11 +704,10 @@ class VideoPlayerActivity : AppCompatActivity(),
     }
     
     override fun onSearchNetworkDanmaku() {
-        // 显示网络弹幕搜索对话框
         composeOverlayManager.showDanDanPlaySearchDialog(
-            onEpisodeSelected = { episodeId, animeTitle, episodeTitle ->
-                // 下载并加载弹幕
-                loadNetworkDanmaku(episodeId, animeTitle, episodeTitle)
+            onEpisodeSelected = { episodeId, animeTitle, episodeTitle, animeId, serverUrl, episodes ->
+                saveDanmakuAutoMatchCache(animeId, animeTitle, serverUrl, episodes)
+                loadNetworkDanmaku(episodeId, animeTitle, episodeTitle, serverUrl)
             }
         )
     }
@@ -828,6 +827,18 @@ class VideoPlayerActivity : AppCompatActivity(),
                 if (allMatchResults.size == 1) {
                     val result = allMatchResults[0]
                     loadNetworkDanmaku(result.matchInfo.episodeId, result.matchInfo.animeTitle, result.matchInfo.episodeTitle, result.serverUrl)
+                    // 匹配弹幕没有集列表，需异步获取后缓存
+                    lifecycleScope.launch {
+                        val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(result.serverUrl)
+                        api.searchAnime(result.matchInfo.animeTitle).fold(
+                            onSuccess = { response ->
+                                response.animes.firstOrNull { it.animeId == result.matchInfo.animeId }?.let {
+                                    saveDanmakuAutoMatchCache(result.matchInfo.animeId, result.matchInfo.animeTitle, result.serverUrl, it.episodes)
+                                }
+                            },
+                            onFailure = { Logger.w(TAG, "Match cache: search failed ${it.message}") }
+                        )
+                    }
                 } else {
                     withContext(Dispatchers.Main) {
                         showMatchSelectionDialog(allMatchResults)

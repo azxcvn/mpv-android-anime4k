@@ -333,6 +333,14 @@ class PlayerRepository(
     fun setAutoLoadDanmakuEnabled(enabled: Boolean) {
         preferencesManager.setAutoLoadDanmakuEnabled(enabled)
     }
+
+    fun isDanmakuAutoMatchEnabled(): Boolean {
+        return preferencesManager.isDanmakuAutoMatchEnabled()
+    }
+
+    fun setDanmakuAutoMatchEnabled(enabled: Boolean) {
+        preferencesManager.setDanmakuAutoMatchEnabled(enabled)
+    }
     
     /**
      * 是否启用硬件解码

@@ -30,7 +30,14 @@ class DanDanPlayApi(private val customBaseUrl: String? = null) {
     }
 
     private val baseUrl: String
-        get() = customBaseUrl?.takeIf { it.isNotBlank() }?.trimEnd('/') ?: DEFAULT_BASE_URL
+        get() {
+            val url = customBaseUrl?.takeIf { it.isNotBlank() }?.trimEnd('/')
+            if (url != null && !url.startsWith("http://") && !url.startsWith("https://")) {
+                Log.w(TAG, "Invalid customBaseUrl (no scheme): $url, falling back to default")
+                return DEFAULT_BASE_URL
+            }
+            return url ?: DEFAULT_BASE_URL
+        }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

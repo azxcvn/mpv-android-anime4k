@@ -12,11 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fam4k007.videoplayer.dandanplay.DanmakuServer
 import com.fam4k007.videoplayer.preferences.PreferencesManager
+import com.fam4k007.videoplayer.ui.components.SwitchItem
 import org.koin.compose.koinInject
 
 /**
@@ -30,6 +32,16 @@ fun DanmakuServerScreen(
     val preferencesManager: PreferencesManager = koinInject()
     var servers by remember { mutableStateOf(preferencesManager.getDanmakuServers()) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var autoMatchEnabled by remember { mutableStateOf(preferencesManager.isDanmakuAutoMatchEnabled()) }
+    val hasDefaultServer = servers.any { it.isEnabled && it.isDefault }
+
+    // 如果有默认弹弹Play服务器启用，强制关闭自动匹配
+    LaunchedEffect(hasDefaultServer) {
+        if (hasDefaultServer && autoMatchEnabled) {
+            autoMatchEnabled = false
+            preferencesManager.setDanmakuAutoMatchEnabled(false)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -68,6 +80,32 @@ fun DanmakuServerScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column {
+                        SwitchItem(
+                            title = "切集自动匹配弹幕",
+                            checked = autoMatchEnabled,
+                            enabled = !hasDefaultServer,
+                            onCheckedChange = { enabled ->
+                                autoMatchEnabled = enabled
+                                preferencesManager.setDanmakuAutoMatchEnabled(enabled)
+                            }
+                        )
+                        if (hasDefaultServer) {
+                            Text(
+                                text = "由于弹弹 Play 有配额限制，禁止使用该功能\n想要使用该功能，请停用弹弹Play服务器",
+                                fontSize = 13.sp,
+                                color = Color(0xFFEF5350),
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             items(servers, key = { it.id }) { server ->
