@@ -614,7 +614,9 @@ internal fun VideoPlayerActivity.initializeManagers() {
         danmakuManager,
         historyManager,
         WeakReference(playbackEngine),
-        preferencesManager
+        preferencesManager,
+        subtitleSystemPickerLauncher = subtitlePickerLauncher,
+        danmakuSystemPickerLauncher = danmakuPickerLauncher
     )
     filePickerManager.initialize()
     // 设置ComposeOverlayManager供文件选择器使用

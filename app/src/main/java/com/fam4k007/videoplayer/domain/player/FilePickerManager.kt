@@ -1,6 +1,7 @@
 package com.fam4k007.videoplayer.domain.player
 
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,10 +30,20 @@ class FilePickerManager(
     private val danmakuManager: DanmakuManager,
     private val historyManager: PlaybackHistoryManager,
     private val playbackEngineRef: WeakReference<PlaybackEngine>,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val subtitleSystemPickerLauncher: ActivityResultLauncher<Array<String>>? = null,
+    private val danmakuSystemPickerLauncher: ActivityResultLauncher<Array<String>>? = null
 ) {
     companion object {
         private const val TAG = "FilePickerManager"
+        
+        /**
+         * Android 10 (API 29) 及以下使用系统文件选择器（SAF），
+         * 因为在这些版本上自定义 Compose 文件选择器无法正确识别外挂字幕/弹幕文件。
+         * Android 11 (API 30) 及以上使用内置 Compose 文件选择器。
+         */
+        val isAndroid10OrBelow: Boolean
+            get() = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
     }
 
     // 移除系统字幕和弹幕文件选择器，全面改用Compose UI选择器
@@ -70,53 +81,86 @@ class FilePickerManager(
     }
 
     /**
-     * 导入字幕文件（使用Compose UI选择器）
+     * 导入字幕文件
+     * - Android 10 及以下：使用系统 SAF 文件选择器
+     * - Android 11 及以上：使用内置 Compose 文件选择器
      */
     fun importSubtitle(isPlaying: Boolean) {
-        // 不再暂停视频，让选择器不影响播放状态
-        
-        // 获取上次选择的路径
-        val lastPath = preferencesManager.getLastSubtitlePickerPath()
-        
-        // 显示Compose文件选择器
-        composeOverlayManager?.showSubtitleFilePicker(
-            initialPath = lastPath,
-            onFileSelected = { filePath ->
-                // 保存选择的路径
-                val parentPath = File(filePath).parent
-                if (parentPath != null) {
-                    preferencesManager.setLastSubtitlePickerPath(parentPath)
-                }
-                
-                // 处理选择的文件
-                handleSubtitleFileSelected(filePath)
+        if (isAndroid10OrBelow) {
+            // Android 10 及以下：使用系统文件选择器
+            val launcher = subtitleSystemPickerLauncher
+            if (launcher == null) {
+                Log.e(TAG, "importSubtitle: system picker launcher is null on Android 10-")
+                return
             }
-        )
+            val mimeTypes = arrayOf(
+                "text/*",           // .srt, .ass, .ssa, .vtt, .sbv, .json
+                "application/*",    // 某些设备上的 .ass/.ssa
+                "*/*"               // 兜底
+            )
+            try {
+                launcher.launch(mimeTypes)
+                Log.d(TAG, "importSubtitle: system file picker launched (Android 10-)")
+            } catch (e: Exception) {
+                Log.e(TAG, "importSubtitle: failed to launch system picker", e)
+                activityRef.get()?.let { DialogUtils.showToastShort(it, "无法打开文件选择器") }
+            }
+        } else {
+            // Android 11 及以上：使用内置 Compose 文件选择器
+            val lastPath = preferencesManager.getLastSubtitlePickerPath()
+            composeOverlayManager?.showSubtitleFilePicker(
+                initialPath = lastPath,
+                onFileSelected = { filePath ->
+                    val parentPath = File(filePath).parent
+                    if (parentPath != null) {
+                        preferencesManager.setLastSubtitlePickerPath(parentPath)
+                    }
+                    handleSubtitleFileSelected(filePath)
+                }
+            )
+        }
     }
 
     /**
-     * 导入弹幕文件（使用Compose UI选择器）
+     * 导入弹幕文件
+     * - Android 10 及以下：使用系统 SAF 文件选择器
+     * - Android 11 及以上：使用内置 Compose 文件选择器
      */
     fun importDanmaku(isPlaying: Boolean) {
-        // 不再暂停视频，让选择器不影响播放状态
-        
-        // 获取上次选择的路径
-        val lastPath = preferencesManager.getLastDanmakuPickerPath()
-        
-        // 显示Compose文件选择器
-        composeOverlayManager?.showDanmakuFilePicker(
-            initialPath = lastPath,
-            onFileSelected = { filePath ->
-                // 保存选择的路径
-                val parentPath = File(filePath).parent
-                if (parentPath != null) {
-                    preferencesManager.setLastDanmakuPickerPath(parentPath)
-                }
-                
-                // 处理选择的文件
-                handleDanmakuFileSelected(filePath)
+        if (isAndroid10OrBelow) {
+            // Android 10 及以下：使用系统文件选择器
+            val launcher = danmakuSystemPickerLauncher
+            if (launcher == null) {
+                Log.e(TAG, "importDanmaku: system picker launcher is null on Android 10-")
+                return
             }
-        )
+            val mimeTypes = arrayOf(
+                "text/xml",         // .xml
+                "application/xml",  // .xml (部分设备)
+                "text/*",
+                "*/*"               // 兜底
+            )
+            try {
+                launcher.launch(mimeTypes)
+                Log.d(TAG, "importDanmaku: system file picker launched (Android 10-)")
+            } catch (e: Exception) {
+                Log.e(TAG, "importDanmaku: failed to launch system picker", e)
+                activityRef.get()?.let { DialogUtils.showToastShort(it, "无法打开文件选择器") }
+            }
+        } else {
+            // Android 11 及以上：使用内置 Compose 文件选择器
+            val lastPath = preferencesManager.getLastDanmakuPickerPath()
+            composeOverlayManager?.showDanmakuFilePicker(
+                initialPath = lastPath,
+                onFileSelected = { filePath ->
+                    val parentPath = File(filePath).parent
+                    if (parentPath != null) {
+                        preferencesManager.setLastDanmakuPickerPath(parentPath)
+                    }
+                    handleDanmakuFileSelected(filePath)
+                }
+            )
+        }
     }
 
     /**
@@ -306,6 +350,82 @@ class FilePickerManager(
             if (wasPlayingBeforeDanmakuPicker) {
                 playbackEngineRef.get()?.play()
             }
+        }
+    }
+
+    /**
+     * 处理系统文件选择器返回的字幕 URI（Android 10 及以下使用）
+     * 由 VideoPlayerActivity 中的 ActivityResultLauncher 回调调用
+     */
+    fun handleSubtitleFromSystemPicker(uri: Uri?) {
+        val activity = activityRef.get() ?: return
+
+        if (uri != null) {
+            Log.d(TAG, "System subtitle picker returned: $uri")
+            val success = subtitleManager.addExternalSubtitle(activity, uri)
+            if (success) {
+                DialogUtils.showToastShort(activity, "字幕导入成功")
+
+                // 保存外挂字幕路径到历史记录
+                currentVideoUri?.let { videoUri ->
+                    val subtitlePath = subtitleManager.getLastAddedSubtitlePath()
+                    if (subtitlePath != null) {
+                        preferencesManager.setExternalSubtitle(videoUri.toString(), subtitlePath)
+                        Log.d(TAG, "Saved external subtitle path: $subtitlePath")
+                    }
+                }
+            } else {
+                DialogUtils.showToastLong(activity, "字幕导入失败")
+            }
+        } else {
+            Log.d(TAG, "System subtitle picker cancelled")
+        }
+    }
+
+    /**
+     * 处理系统文件选择器返回的弹幕 URI（Android 10 及以下使用）
+     * 由 VideoPlayerActivity 中的 ActivityResultLauncher 回调调用
+     */
+    fun handleDanmakuFromSystemPicker(uri: Uri?) {
+        val activity = activityRef.get() ?: return
+        val playbackEngine = playbackEngineRef.get() ?: return
+
+        if (uri != null) {
+            Log.d(TAG, "System danmaku picker returned: $uri")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val danmakuPath = danmakuManager.importDanmakuFile(activity, uri)
+
+                    withContext(Dispatchers.Main) {
+                        if (danmakuPath != null) {
+                            DialogUtils.showToastShort(activity, "弹幕导入成功")
+                            val currentPosition = (playbackEngine.currentPosition * 1000).toLong()
+                            danmakuManager.seekTo(currentPosition)
+                            Log.d(TAG, "Danmaku loaded and synced to position: $currentPosition")
+
+                            currentVideoUri?.let { videoUri ->
+                                historyManager.updateDanmu(
+                                    uri = videoUri,
+                                    danmuPath = danmakuPath,
+                                    danmuVisible = danmakuManager.isVisible(),
+                                    danmuOffsetTime = 0L
+                                )
+                                Log.d(TAG, "Danmu info updated in history")
+                            }
+                        } else {
+                            DialogUtils.showToastLong(activity, "弹幕导入失败")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to import danmaku from system picker", e)
+                    withContext(Dispatchers.Main) {
+                        DialogUtils.showToastLong(activity, "弹幕导入失败: ${e.message}")
+                    }
+                }
+            }
+        } else {
+            Log.d(TAG, "System danmaku picker cancelled")
         }
     }
 

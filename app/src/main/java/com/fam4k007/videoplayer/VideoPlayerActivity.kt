@@ -263,6 +263,28 @@ class VideoPlayerActivity : AppCompatActivity(),
             }
         }
         
+        // 注册系统字幕文件选择器（Android 10 及以下使用）
+        subtitlePickerLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (::filePickerManager.isInitialized) {
+                filePickerManager.handleSubtitleFromSystemPicker(uri)
+            } else {
+                Log.w(TAG, "subtitlePickerLauncher: filePickerManager not initialized yet")
+            }
+        }
+        
+        // 注册系统弹幕文件选择器（Android 10 及以下使用）
+        danmakuPickerLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (::filePickerManager.isInitialized) {
+                filePickerManager.handleDanmakuFromSystemPicker(uri)
+            } else {
+                Log.w(TAG, "danmakuPickerLauncher: filePickerManager not initialized yet")
+            }
+        }
+        
         loadUserSettings()
         remotePlaybackRequest = intent.getParcelableExtra(RemotePlaybackLauncher.EXTRA_REMOTE_REQUEST)
 
