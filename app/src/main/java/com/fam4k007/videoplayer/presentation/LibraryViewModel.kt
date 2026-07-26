@@ -370,9 +370,9 @@ class LibraryViewModel(
         viewModelScope.launch {
 
             try {
-
-                if (!silent) {
-
+                // silent 模式：有缓存时静默刷新，无缓存时显示加载指示器
+                val showLoading = !silent || _folderListState.value.folders.isEmpty()
+                if (showLoading) {
                     _folderListState.value = _folderListState.value.copy(isLoading = true, error = null)
 
                 }
@@ -398,11 +398,8 @@ class LibraryViewModel(
                 Logger.d(TAG, "Scanned ${allFolders.size} video folders, filtered ${allFolders.size - folders.size} blacklisted")
 
             } catch (e: Exception) {
-
-                Logger.e(TAG, "Failed to scan video folders", e)
-
-                if (!silent) {
-
+                Logger.e(TAG, "扫描文件夹失败", e)
+                if (!silent || _folderListState.value.folders.isEmpty()) {
                     _folderListState.value = _folderListState.value.copy(
 
                         isLoading = false,

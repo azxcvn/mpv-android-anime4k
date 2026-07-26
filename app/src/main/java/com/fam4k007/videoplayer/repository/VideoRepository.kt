@@ -319,21 +319,40 @@ class VideoRepository(
         try {
             val folderMap = mutableMapOf<String, MutableList<com.fam4k007.videoplayer.VideoFile>>()
 
+            // 增量扫描：获取上次全量扫描时间和已缓存文件信息
+            val lastScanTime = prefs.getLastFullScanTime()
+            val isIncremental = lastScanTime > 0L && videoCacheDao.getVideoCount() > 0
+            val cachedModTimeMap: Map<String, Long> = if (isIncremental) {
+                videoCacheDao.getCachedPathModTimeMap().associate { it.path to it.dateModified }
+            } else {
+                emptyMap()
+            }
+
+            if (isIncremental) {
+                Logger.d(TAG, "增量扫描模式：上次扫描时间=$lastScanTime, 缓存文件数=${cachedModTimeMap.size}")
+            } else {
+                Logger.d(TAG, "全量扫描模式（首次或无缓存）")
+            }
+
             if (includeNoMedia || includeHidden) {
                 // ──────────────────────────────────────────────
                 // 方案 A：包含 .nomedia 或隐藏文件夹
                 // 用 File API 直接从存储根目录扫描（不走 MediaStore）
-                // 因为 MediaStore 内建过滤，无法拿到 .nomedia 中的文件
                 // ──────────────────────────────────────────────
                 ScanFilter.clearCache()
-                scanFromStorageRoots(folderMap, context, prefs)
+                scanFromStorageRoots(folderMap, context, prefs, cachedModTimeMap)
                 Logger.d(TAG, "File API 扫描完成，共 ${folderMap.size} 个文件夹")
             } else {
                 // ──────────────────────────────────────────────
                 // 方案 B：默认路径 — 使用 MediaStore（快）
                 // ──────────────────────────────────────────────
-                scanFromMediaStore(folderMap)
+                scanFromMediaStore(folderMap, if (isIncremental) lastScanTime else 0L)
                 Logger.d(TAG, "MediaStore 扫描完成，共 ${folderMap.size} 个文件夹")
+            }
+
+            // 增量模式下合并缓存中的 duration
+            if (isIncremental && cachedModTimeMap.isNotEmpty()) {
+                mergeCachedDurations(folderMap, cachedModTimeMap)
             }
 
             val folders = folderMap.map { (folderPath, videos) ->
@@ -346,19 +365,46 @@ class VideoRepository(
                 )
             }.sortedByDescending { it.videoCount }
             
-            // 写入内存缓存（不缓存空结果，避免授权前空扫描污染缓存）
+            // 写入内存缓存
             if (folders.isNotEmpty()) {
                 scanResultCache = folders
                 cacheOptionsTag = currentTag
             }
 
-            Logger.d(TAG, "Scanned ${folders.size} video folders")
+            // 记录本次扫描时间
+            prefs.setLastFullScanTime(System.currentTimeMillis())
+
+            Logger.d(TAG, "Scanned ${folders.size} video folders (mode=${if (isIncremental) "incremental" else "full"})")
             folders
 
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to scan video folders: ${e.message}", e)
             emptyList()
         }
+    }
+
+    /**
+     * 增量扫描时，为从缓存跳过的文件填充 duration
+     */
+    private suspend fun mergeCachedDurations(
+        folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>,
+        cachedModTimeMap: Map<String, Long>
+    ) {
+        val cachedEntities = videoCacheDao.getAllVideos()
+        val durationMap = cachedEntities.associate { it.path to it.duration }
+
+        for ((_, videos) in folderMap) {
+            for (video in videos) {
+                if (video.duration == 0L && video.path in cachedModTimeMap) {
+                    val cachedDuration = durationMap[video.path] ?: continue
+                    val index = videos.indexOf(video)
+                    if (index >= 0) {
+                        videos[index] = video.copy(duration = cachedDuration)
+                    }
+                }
+            }
+        }
+        Logger.d(TAG, "增量扫描：合并了缓存 duration")
     }
 
     /**
@@ -526,9 +572,11 @@ class VideoRepository(
 
     /**
      * 从 MediaStore 扫描所有视频文件（快速路径）
+     * @param lastScanTimeMs 上次全量扫描时间，>0 时启用增量模式（仅查询变更文件）
      */
     private fun scanFromMediaStore(
-        folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>
+        folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>,
+        lastScanTimeMs: Long = 0L
     ) {
         val projection = arrayOf(
             MediaStore.Video.Media.DATA,
@@ -536,14 +584,22 @@ class VideoRepository(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.SIZE,
             MediaStore.Video.Media.DURATION,
-            MediaStore.Video.Media.DATE_ADDED
+            MediaStore.Video.Media.DATE_ADDED,
+            MediaStore.Video.Media.DATE_MODIFIED
         )
+
+        // 增量模式：仅查询上次扫描后修改过的文件
+        val (selection, selectionArgs) = if (lastScanTimeMs > 0L) {
+            "${MediaStore.Video.Media.DATE_MODIFIED} > ?" to arrayOf((lastScanTimeMs / 1000).toString())
+        } else {
+            null to null
+        }
 
         context.contentResolver.query(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             projection,
-            null,
-            null,
+            selection,
+            selectionArgs,
             "${MediaStore.Video.Media.DATE_ADDED} DESC"
         )?.use { cursor ->
             val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
@@ -594,7 +650,8 @@ class VideoRepository(
     private fun scanFromStorageRoots(
         folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>,
         context: android.content.Context,
-        prefs: com.fam4k007.videoplayer.preferences.PreferencesManager
+        prefs: com.fam4k007.videoplayer.preferences.PreferencesManager,
+        cachedModTimeMap: Map<String, Long> = emptyMap()
     ) {
         val knownPaths = mutableSetOf<String>()
         val visitedDirs = mutableSetOf<String>()  // 防止符号链接循环
@@ -614,7 +671,7 @@ class VideoRepository(
                 // 跳过系统关键目录
                 if (name.equals("Android", ignoreCase = true)) return@forEach
                 if (name.equals("obb", ignoreCase = true)) return@forEach
-                scanDirectoryRecursive(subDir, knownPaths, visitedDirs, folderMap, context, prefs)
+                scanDirectoryRecursive(subDir, knownPaths, visitedDirs, folderMap, context, prefs, cachedModTimeMap)
             }
         }
 
@@ -623,6 +680,7 @@ class VideoRepository(
 
     /**
      * 递归扫描目录（visitedDirs 防止符号链接循环）
+     * @param cachedModTimeMap 已缓存文件的路径→修改时间映射，用于增量跳过 queryDuration
      */
     private fun scanDirectoryRecursive(
         dir: File,
@@ -630,7 +688,8 @@ class VideoRepository(
         visitedDirs: MutableSet<String>,
         folderMap: MutableMap<String, MutableList<com.fam4k007.videoplayer.VideoFile>>,
         context: android.content.Context,
-        prefs: com.fam4k007.videoplayer.preferences.PreferencesManager
+        prefs: com.fam4k007.videoplayer.preferences.PreferencesManager,
+        cachedModTimeMap: Map<String, Long> = emptyMap()
     ) {
         if (knownPaths.size >= MAX_SCAN_FILES) return
         if (!dir.exists() || !dir.isDirectory || !dir.canRead()) return
@@ -654,7 +713,13 @@ class VideoRepository(
             val extension = entry.extension.lowercase()
             if (extension in com.fam4k007.videoplayer.AppConstants.Files.SUPPORTED_VIDEO_EXTENSIONS) {
                 val folderPath = path.substringBeforeLast("/")
-                val msDuration = com.fam4k007.videoplayer.utils.ScanFilter.queryDuration(context, path)
+                // 增量优化：如果文件在缓存中且修改时间未变，跳过耗时的 queryDuration
+                val cachedModTime = cachedModTimeMap[path]
+                val msDuration = if (cachedModTime != null && cachedModTime == entry.lastModified() / 1000) {
+                    0L  // 使用 0 标记来自缓存，实际 duration 由上层合并时填充
+                } else {
+                    com.fam4k007.videoplayer.utils.ScanFilter.queryDuration(context, path)
+                }
                 val videoFile = com.fam4k007.videoplayer.VideoFile(
                     uri = android.net.Uri.fromFile(entry).toString(),
                     name = entry.name,
@@ -672,7 +737,7 @@ class VideoRepository(
         for (entry in entries) {
             if (!entry.isDirectory || !entry.canRead()) continue
             if (entry.name.startsWith(".") && !prefs.isScanHiddenFoldersEnabled()) continue
-            scanDirectoryRecursive(entry, knownPaths, visitedDirs, folderMap, context, prefs)
+            scanDirectoryRecursive(entry, knownPaths, visitedDirs, folderMap, context, prefs, cachedModTimeMap)
         }
     }
 

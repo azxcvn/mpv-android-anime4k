@@ -1650,6 +1650,18 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putString("rotation_lock_mode", mode).apply()
     }
 
+    /**
+     * 获取上次全量扫描时间戳（毫秒）
+     * 用于增量扫描：文件修改时间晚于此时间才需要重新解析时长
+     */
+    fun getLastFullScanTime(): Long {
+        return sharedPreferences.getLong("last_full_scan_time", 0L)
+    }
+
+    fun setLastFullScanTime(timestamp: Long) {
+        sharedPreferences.edit().putLong("last_full_scan_time", timestamp).apply()
+    }
+
     // ==================== 文件扫描 ====================
 
     /**

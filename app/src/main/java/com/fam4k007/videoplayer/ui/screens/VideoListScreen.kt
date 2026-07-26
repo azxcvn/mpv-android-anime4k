@@ -169,8 +169,15 @@ fun VideoListScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (videoListState.filteredVideos.isEmpty()) {
-                EmptyState(if (videoListState.searchQuery.isEmpty()) "No videos in this folder" else "No matching videos")
+            if (videoListState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (videoListState.filteredVideos.isEmpty()) {
+                EmptyState(if (videoListState.searchQuery.isEmpty()) "此文件夹中没有视频" else "未找到匹配的视频")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
