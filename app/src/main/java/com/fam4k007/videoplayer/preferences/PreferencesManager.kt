@@ -1638,6 +1638,18 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean("close_after_eof", enabled).apply()
     }
 
+    /**
+     * 获取画面旋转锁定模式
+     * AUTO=跟随视频宽高比, PORTRAIT=强制竖屏, LANDSCAPE=强制横屏
+     */
+    fun getRotationLockMode(): String {
+        return sharedPreferences.getString("rotation_lock_mode", "AUTO") ?: "AUTO"
+    }
+
+    fun setRotationLockMode(mode: String) {
+        sharedPreferences.edit().putString("rotation_lock_mode", mode).apply()
+    }
+
     // ==================== 文件扫描 ====================
 
     /**

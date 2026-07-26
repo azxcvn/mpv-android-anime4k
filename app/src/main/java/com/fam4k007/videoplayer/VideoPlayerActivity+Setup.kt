@@ -283,21 +283,46 @@ internal fun VideoPlayerActivity.initializeManagers() {
                 if (!intent.getBooleanExtra(EXTRA_AUTO_ROTATE, false)) {
                     Handler(Looper.getMainLooper()).postDelayed({
                         try {
-                            val rawAspect = MPVLib.getPropertyDouble("video-params/aspect")
-                            val rotate = MPVLib.getPropertyInt("video-params/rotate") ?: 0
-                            var aspect = if (rawAspect == null || rawAspect < 0.001) {
-                                val w = (MPVLib.getPropertyInt("video-params/w") ?: 0).toDouble()
-                                val h = (MPVLib.getPropertyInt("video-params/h") ?: 0).toDouble()
-                                if (w > 0 && h > 0) w / h else null
-                            } else rawAspect
-                            // 考虑旋转：90° 或 270° 时反转宽高比
-                            if (aspect != null && rotate % 180 == 90) {
-                                aspect = 1.0 / aspect
+                            // 读取全局旋转锁定设置
+                            val rotationLockMode = preferencesManager.getRotationLockMode()
+                            val forcePortrait: Boolean
+                            when (rotationLockMode) {
+                                "PORTRAIT" -> {
+                                    // 强制竖屏
+                                    forcePortrait = true
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Rotation lock: forcing portrait mode")
+                                }
+                                "LANDSCAPE" -> {
+                                    // 强制横屏
+                                    forcePortrait = false
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Rotation lock: forcing landscape mode")
+                                }
+                                else -> {
+                                    // AUTO: 跟随视频宽高比检测
+                                    val rawAspect = MPVLib.getPropertyDouble("video-params/aspect")
+                                    val rotate = MPVLib.getPropertyInt("video-params/rotate") ?: 0
+                                    var aspect = if (rawAspect == null || rawAspect < 0.001) {
+                                        val w = (MPVLib.getPropertyInt("video-params/w") ?: 0).toDouble()
+                                        val h = (MPVLib.getPropertyInt("video-params/h") ?: 0).toDouble()
+                                        if (w > 0 && h > 0) w / h else null
+                                    } else rawAspect
+                                    if (aspect != null && rotate % 180 == 90) {
+                                        aspect = 1.0 / aspect
+                                    }
+                                    forcePortrait = aspect != null && aspect <= 1.0
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Detected video aspect=$aspect, rotate=$rotate, forcePortrait=$forcePortrait")
+                                }
                             }
-                            if (aspect != null && aspect <= 1.0) {
-                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Detected portrait video (aspect=$aspect, rotate=$rotate), switching to portrait mode")
+                            if (forcePortrait) {
+                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Switching to portrait mode (lock=$rotationLockMode)")
                                 intent.putExtra(EXTRA_PORTRAIT_UI, true)
                                 applyPortraitUiEnabled(true)
+                                refreshVideoLayoutAfterOrientationToggle()
+                            } else if (rotationLockMode != "AUTO") {
+                                // 锁定模式下也要应用横屏
+                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Switching to landscape mode (lock=$rotationLockMode)")
+                                intent.putExtra(EXTRA_PORTRAIT_UI, false)
+                                applyPortraitUiEnabled(false)
                                 refreshVideoLayoutAfterOrientationToggle()
                             }
                         } catch (e: Exception) {
