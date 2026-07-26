@@ -844,4 +844,14 @@ class PlayerRepository(
     fun setCloseAfterEndOfVideo(enabled: Boolean) {
         preferencesManager.setCloseAfterEndOfVideo(enabled)
     }
+
+    // ==================== 画面方向锁定 ====================
+
+    fun getRotationLockMode(): String {
+        return preferencesManager.getRotationLockMode()
+    }
+
+    fun setRotationLockMode(mode: String) {
+        preferencesManager.setRotationLockMode(mode)
+    }
 }

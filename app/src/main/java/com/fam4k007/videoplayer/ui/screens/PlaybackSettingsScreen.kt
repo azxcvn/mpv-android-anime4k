@@ -252,6 +252,20 @@ fun PlaybackSettingsScreen(
                 }
             }
 
+            // 画面方向
+            item {
+                PreferenceSectionHeader("画面方向")
+            }
+
+            item {
+                PreferenceCard {
+                    RotationLockSelector(
+                        currentMode = settings.rotationLockMode,
+                        onModeChange = { viewModel.setRotationLockMode(it) }
+                    )
+                }
+            }
+
             // 章节控制
             item {
                 PreferenceSectionHeader("Chapters & Thumbnails")
@@ -1005,6 +1019,48 @@ private fun SeekbarStyleCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RotationLockSelector(
+    currentMode: String,
+    onModeChange: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = MaterialTheme.spacing.medium,
+                vertical = MaterialTheme.spacing.small
+            )
+    ) {
+        Text(
+            "画面方向",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.small))
+
+        QualityOption(
+            label = "自动",
+            subtitle = "跟随视频原始宽高比自适应",
+            isSelected = currentMode == "AUTO",
+            onClick = { onModeChange("AUTO") }
+        )
+        QualityOption(
+            label = "锁定纵向",
+            subtitle = "所有视频强制竖屏播放",
+            isSelected = currentMode == "PORTRAIT",
+            onClick = { onModeChange("PORTRAIT") }
+        )
+        QualityOption(
+            label = "锁定横向",
+            subtitle = "所有视频强制横屏播放",
+            isSelected = currentMode == "LANDSCAPE",
+            onClick = { onModeChange("LANDSCAPE") }
+        )
     }
 }
 

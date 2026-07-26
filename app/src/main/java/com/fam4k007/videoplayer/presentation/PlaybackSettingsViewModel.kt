@@ -93,7 +93,10 @@ class PlaybackSettingsViewModel(
                     controlsAnimationEnabled = playerRepository.isControlsAnimationEnabled(),
 
                     // 抽屉界面动画
-                    drawerAnimationEnabled = playerRepository.isDrawerAnimationEnabled()
+                    drawerAnimationEnabled = playerRepository.isDrawerAnimationEnabled(),
+
+                    // 画面方向锁定
+                    rotationLockMode = playerRepository.getRotationLockMode()
                 )
                 _playbackSettings.value = settings
                 Logger.d(TAG, "Loaded playback settings")
@@ -484,6 +487,20 @@ class PlaybackSettingsViewModel(
             }
         }
     }
+
+    // ==================== 画面方向锁定 ====================
+
+    fun setRotationLockMode(mode: String) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setRotationLockMode(mode)
+                _playbackSettings.value = _playbackSettings.value.copy(rotationLockMode = mode)
+                Logger.d(TAG, "Set rotation lock mode: $mode")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set rotation lock mode", e)
+            }
+        }
+    }
 }
 
 /**
@@ -537,5 +554,8 @@ data class PlaybackSettings(
     val controlsAnimationEnabled: Boolean = false,
 
     // 抽屉界面动画
-    val drawerAnimationEnabled: Boolean = false
+    val drawerAnimationEnabled: Boolean = false,
+
+    // 画面方向锁定
+    val rotationLockMode: String = "AUTO"
 )
