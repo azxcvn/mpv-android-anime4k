@@ -85,4 +85,14 @@ interface VideoCacheDao {
     
     @Query("SELECT COUNT(*) FROM video_cache")
     fun getVideoCount(): Int
+
+    /** 获取所有缓存路径及修改时间，用于增量扫描对比 */
+    @Query("SELECT path, dateModified FROM video_cache")
+    fun getCachedPathModTimeMap(): List<CachedPathModTime>
 }
+
+/** 缓存路径与修改时间的简单映射，用于增量扫描 */
+data class CachedPathModTime(
+    val path: String,
+    val dateModified: Long
+)

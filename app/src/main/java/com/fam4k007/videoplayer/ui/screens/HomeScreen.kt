@@ -76,6 +76,8 @@ fun HomeScreen(
     var isExpanded by remember { mutableStateOf(false) }
     var showRemoteUrlDialog by remember { mutableStateOf(false) }
     var resumeRefreshKey by remember { mutableLongStateOf(0L) }
+    var isScanningFlat by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     
     // 监听生命周期，返回时自动收起
     DisposableEffect(lifecycleOwner) {
@@ -124,9 +126,29 @@ fun HomeScreen(
             // 播放本地视频按钮（给文本留出空间）
             GradientButton(
                 text = "播放本地视频",
+                isLoading = isScanningFlat,
                 onClick = {
                     if (preferencesManager.getVideoDisplayMode() == "flat") {
-                        flatScanAndPlayAllVideos(context)
+                        isScanningFlat = true
+                        scope.launch {
+                            val videos = withContext(Dispatchers.IO) {
+                                scanAllVideosFlat(context)
+                            }
+                            isScanningFlat = false
+                            if (videos.isEmpty()) {
+                                android.widget.Toast.makeText(context, "未找到视频文件", android.widget.Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            val intent = Intent(context, com.fam4k007.videoplayer.VideoListComposeActivity::class.java)
+                            intent.putExtra("folder_name", "所有视频")
+                            intent.putExtra("folder_path", "所有视频")
+                            intent.putParcelableArrayListExtra("video_list", ArrayList(videos))
+                            context.startActivity(intent)
+                            (context as? android.app.Activity)?.overridePendingTransition(
+                                com.fam4k007.videoplayer.R.anim.slide_in_right,
+                                com.fam4k007.videoplayer.R.anim.slide_out_left
+                            )
+                        }
                     } else {
                         onNavigateToVideoBrowser()
                     }
@@ -289,16 +311,20 @@ fun LogoSection(
 @Composable
 fun GradientButton(
     text: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLoading: Boolean = false,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled && !isLoading,
         modifier = Modifier
             .width(280.dp)
             .height(60.dp),
         shape = RoundedCornerShape(30.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.primary,
+            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
         ),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = 8.dp,
@@ -306,8 +332,16 @@ fun GradientButton(
             hoveredElevation = 10.dp
         )
     ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+        }
         Text(
-            text = text,
+            text = if (isLoading) "正在扫描视频..." else text,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onPrimary
@@ -857,35 +891,6 @@ private fun scanVideosInFolder(context: android.content.Context, folderPath: Str
     }
     
     return videos
-}
-
-/**
- * 平铺模式：扫描所有视频并直接跳转到视频列表
- */
-private fun flatScanAndPlayAllVideos(context: android.content.Context) {
-    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
-        val toast = android.widget.Toast.makeText(context, "正在扫描视频...", android.widget.Toast.LENGTH_SHORT)
-        toast.show()
-        
-        val videos = withContext(kotlinx.coroutines.Dispatchers.IO) {
-            scanAllVideosFlat(context)
-        }
-        
-        if (videos.isEmpty()) {
-            android.widget.Toast.makeText(context, "未找到视频文件", android.widget.Toast.LENGTH_SHORT).show()
-            return@launch
-        }
-        
-        val intent = Intent(context, com.fam4k007.videoplayer.VideoListComposeActivity::class.java)
-        intent.putExtra("folder_name", "所有视频")
-        intent.putExtra("folder_path", "所有视频")
-        intent.putParcelableArrayListExtra("video_list", ArrayList(videos))
-        context.startActivity(intent)
-        (context as? android.app.Activity)?.overridePendingTransition(
-            com.fam4k007.videoplayer.R.anim.slide_in_right,
-            com.fam4k007.videoplayer.R.anim.slide_out_left
-        )
-    }
 }
 
 /**
