@@ -38,9 +38,6 @@ class BiliBiliAuthManager(private val context: Context) {
         private const val KEY_COOKIES = "cookies"
         private const val KEY_USER_INFO = "user_info"
         
-        // 模拟 Chrome 浏览器 UA，让 B站 安全中心显示正常设备信息
-        private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        
         @Volatile
         private var instance: BiliBiliAuthManager? = null
         
@@ -58,7 +55,6 @@ class BiliBiliAuthManager(private val context: Context) {
         try {
             val request = Request.Builder()
                 .url("$PASSPORT_URL/x/passport-login/web/qrcode/generate")
-                .header("User-Agent", USER_AGENT)
                 .get()
                 .build()
             
@@ -94,7 +90,6 @@ class BiliBiliAuthManager(private val context: Context) {
             
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", USER_AGENT)
                 .get()
                 .build()
             
@@ -122,7 +117,6 @@ class BiliBiliAuthManager(private val context: Context) {
                             com.fam4k007.videoplayer.utils.Logger.d("BiliAuth", "Accessing login URL to get cookies...")
                             val followRequest = Request.Builder()
                                 .url(loginUrl)
-                                .header("User-Agent", USER_AGENT)
                                 .get()
                                 .build()
                             val followResponse = client.newCall(followRequest).execute()
@@ -191,8 +185,6 @@ class BiliBiliAuthManager(private val context: Context) {
             android.util.Log.d("BiliAuth", "Starting to fetch user info...")
             val request = Request.Builder()
                 .url("$BASE_URL/x/web-interface/nav")
-                .header("User-Agent", USER_AGENT)
-                .header("Referer", "https://www.bilibili.com")
                 .get()
                 .build()
             

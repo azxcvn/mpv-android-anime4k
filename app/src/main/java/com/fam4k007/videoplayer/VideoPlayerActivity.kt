@@ -124,6 +124,7 @@ class VideoPlayerActivity : AppCompatActivity(),
     internal var remotePlaybackRequest: RemotePlaybackRequest? = null
     internal var remoteResolveJob: Job? = null
     internal var remoteResolveSequence = 0L
+    internal var proxyAudioUrl: String? = null
     internal var themeRevision by mutableIntStateOf(0)
     internal val preferencesManager: PreferencesManager by inject()
     internal val historyManager: PlaybackHistoryManager by inject()
@@ -422,19 +423,6 @@ class VideoPlayerActivity : AppCompatActivity(),
             mpvView.postDelayed({
                 com.fam4k007.videoplayer.utils.Logger.d(TAG, "Loading video after MPV init")
                 loadVideo()
-                // DASH格式：视频加载后动态添加外部音频轨
-                val audioUrl = intent.getStringExtra("audio_url")
-                if (!audioUrl.isNullOrEmpty()) {
-                    mpvView.postDelayed({
-                        try {
-                            MPVLib.command("audio-add", audioUrl)
-                            MPVLib.setPropertyString("vid", "auto")
-                            com.fam4k007.videoplayer.utils.Logger.d(TAG, "Added external audio: $audioUrl")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to add audio: ${e.message}")
-                        }
-                    }, 500) // 视频加载后尽快添加音频轨
-                }
             }, 100)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize MPV", e)
@@ -673,6 +661,9 @@ class VideoPlayerActivity : AppCompatActivity(),
                 Logger.w(TAG, "Failed to unregister WebDAV proxy stream", e)
             }
         }
+
+        // 清理 Bilibili 流代理
+        com.fam4k007.videoplayer.remote.StreamProxy.stop()
         
         // 后台播放模式：不解绑 Service，不销毁 MPV，让 Service 继续运行
         if (isManualBackgroundPlayback) {
