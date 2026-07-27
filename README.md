@@ -216,18 +216,7 @@
 
 ## 技术文档
 
-- **[项目架构与技术栈](docs/project_architecture.md)** - 项目架构与技术栈说明
-- **[项目构建引导](docs/development_guide.md)** - 项目构建和 DanDanPlay API 配置教程
-- **[.nomedia 支持说明](docs/nomedia_support.md)** - .nomedia 文件处理机制
-- **[WebDAV 使用说明](docs/webdav使用说明.md)** - WebDAV 配置和使用教程
-- **[第三方 API 使用说明](docs/third_party_api.md)** - 使用的第三方API详细列表
-- **[数据安全文档](docs/data_security.md)** - 数据加密和安全机制说明
-- **[B站登录机制](docs/bilibili_login.md)** - B站登录流程和实现原理
-- **[B站番剧解析](docs/bilibili_bangumi.md)** - 番剧解析和播放实现
-- **[B站弹幕下载](docs/bilibili_danmaku_download.md)** - 弹幕下载算法和优化策略
-- **[B站下载原理](docs/bilibili_download_principle.md)** - 视频/番剧下载实现原理
-- **[B站安全分析](docs/bilibili_security_analysis.md)** - 反爬虫和安全机制分析
-- **[设备信息获取](docs/device_info_detection.md)** - 设备硬件检测原理和 API 参考
+完整的技术文档可前往 [docs](docs/) 文件夹下查看。
 
 ---
 
