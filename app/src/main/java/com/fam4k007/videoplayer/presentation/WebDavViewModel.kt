@@ -56,12 +56,19 @@ class WebDavViewModel(
     }
 
     fun showEditDialog(account: WebDavAccount) {
+        val url = account.serverUrl.orEmpty()
+        val useHttps = url.startsWith("https://")
+        val (host, port, path) = AddAccountState.parseServerUrl(url)
         _addAccountState.value = AddAccountState(
             displayName = account.displayName.orEmpty(),
             serverUrl = account.serverUrl.orEmpty(),
             account = account.account.orEmpty(),
             password = account.password.orEmpty(),
-            isAnonymous = account.isAnonymous
+            isAnonymous = account.isAnonymous,
+            useHttps = useHttps,
+            host = host,
+            port = port,
+            path = path
         )
         _accountListState.value = _accountListState.value.copy(showAddDialog = true, editingAccountId = account.id)
     }
@@ -103,8 +110,56 @@ class WebDavViewModel(
         val passwordVisible: Boolean = false,
         val isTesting: Boolean = false,
         val testResult: String? = null,
-        val saveError: String? = null
-    )
+        val testResultIsSuccess: Boolean? = null,  // null=无结果, true=成功, false=失败
+        val saveError: String? = null,
+        // 拆分后的服务器地址字段（UI 层面使用）
+        val useHttps: Boolean = false,
+        val host: String = "",
+        val port: String = "",
+        val path: String = ""
+    ) {
+        /**
+         * 根据拆分字段自动构建完整 serverUrl
+         */
+        fun buildServerUrl(): String {
+            if (host.isEmpty()) return ""
+            val protocol = if (useHttps) "https" else "http"
+            val portPart = if (port.isNotEmpty()) ":$port" else ""
+            val pathPart = if (path.isNotEmpty()) {
+                val p = if (path.startsWith("/")) path else "/$path"
+                if (p.endsWith("/")) p else "$p/"
+            } else {
+                "/"
+            }
+            return "$protocol://$host$portPart$pathPart"
+        }
+        
+        companion object {
+            /**
+             * 将完整 serverUrl 解析为拆分字段
+             */
+            fun parseServerUrl(url: String): Triple<String, String, String> {
+                if (url.isBlank()) return Triple("", "", "")
+                try {
+                    val withoutProtocol = url.removePrefix("https://").removePrefix("http://")
+                    val hostPart = withoutProtocol.substringBefore("/")
+                    val pathPart = withoutProtocol.substringAfter("/", "")
+                    
+                    val host = hostPart.substringBefore(":")
+                    val port = hostPart.substringAfter(":", "")
+                    
+                    val path = if (pathPart.isNotEmpty()) {
+                        val trimmed = pathPart.trimEnd('/')
+                        "/$trimmed"
+                    } else ""
+                    
+                    return Triple(host, port, path)
+                } catch (e: Exception) {
+                    return Triple("", "", "")
+                }
+            }
+        }
+    }
 
     private val _addAccountState = MutableStateFlow(AddAccountState())
     val addAccountState: StateFlow<AddAccountState> = _addAccountState.asStateFlow()
@@ -115,6 +170,37 @@ class WebDavViewModel(
 
     fun updateServerUrl(value: String) {
         _addAccountState.value = _addAccountState.value.copy(serverUrl = value, testResult = null, saveError = null)
+    }
+    
+    /**
+     * 通过拆分字段自动构建 serverUrl
+     */
+    private fun updateServerUrlFromParts() {
+        val state = _addAccountState.value
+        val newUrl = state.buildServerUrl()
+        _addAccountState.value = state.copy(serverUrl = newUrl, testResult = null, saveError = null)
+    }
+
+    fun setUseHttps(value: Boolean) {
+        _addAccountState.value = _addAccountState.value.copy(useHttps = value)
+        updateServerUrlFromParts()
+    }
+
+    fun updateHost(value: String) {
+        _addAccountState.value = _addAccountState.value.copy(host = value)
+        updateServerUrlFromParts()
+    }
+
+    fun updatePort(value: String) {
+        // 只允许数字
+        val filtered = value.filter { it.isDigit() }
+        _addAccountState.value = _addAccountState.value.copy(port = filtered)
+        updateServerUrlFromParts()
+    }
+
+    fun updatePath(value: String) {
+        _addAccountState.value = _addAccountState.value.copy(path = value)
+        updateServerUrlFromParts()
     }
 
     fun updateAccount(value: String) {
@@ -140,21 +226,37 @@ class WebDavViewModel(
         val serverUrl = state.serverUrl
 
         when {
+            state.host.isEmpty() -> {
+                _addAccountState.value = state.copy(
+                    testResult = "请填写主机地址",
+                    testResultIsSuccess = false
+                )
+                return
+            }
             serverUrl.isEmpty() -> {
-                _addAccountState.value = state.copy(testResult = "❌ 请填写服务器地址")
+                _addAccountState.value = state.copy(
+                    testResult = "请填写服务器地址",
+                    testResultIsSuccess = false
+                )
                 return
             }
             !serverUrl.startsWith("http://") && !serverUrl.startsWith("https://") -> {
-                _addAccountState.value = state.copy(testResult = "❌ 服务器地址必须以 http:// 或 https:// 开头")
+                _addAccountState.value = state.copy(
+                    testResult = "服务器地址必须以 http:// 或 https:// 开头",
+                    testResultIsSuccess = false
+                )
                 return
             }
             !state.isAnonymous && (state.account.isEmpty() || state.password.isEmpty()) -> {
-                _addAccountState.value = state.copy(testResult = "❌ 请填写账号和密码")
+                _addAccountState.value = state.copy(
+                    testResult = "请填写账号和密码",
+                    testResultIsSuccess = false
+                )
                 return
             }
         }
 
-        _addAccountState.value = state.copy(isTesting = true, testResult = null)
+        _addAccountState.value = state.copy(isTesting = true, testResult = null, testResultIsSuccess = null)
 
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -176,7 +278,8 @@ class WebDavViewModel(
 
             _addAccountState.value = _addAccountState.value.copy(
                 isTesting = false,
-                testResult = if (result) "✅ 连接成功" else "❌ 连接失败，请检查配置"
+                testResult = if (result) "连接成功" else "连接失败，请检查配置",
+                testResultIsSuccess = result
             )
         }
     }
@@ -187,19 +290,23 @@ class WebDavViewModel(
 
         when {
             state.displayName.isEmpty() -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写显示名称")
+                _addAccountState.value = state.copy(saveError = "请填写显示名称")
+                return
+            }
+            state.host.isEmpty() -> {
+                _addAccountState.value = state.copy(saveError = "请填写主机地址")
                 return
             }
             state.serverUrl.isEmpty() -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写服务器地址")
+                _addAccountState.value = state.copy(saveError = "请填写服务器地址")
                 return
             }
             !state.serverUrl.startsWith("http://") && !state.serverUrl.startsWith("https://") -> {
-                _addAccountState.value = state.copy(saveError = "❌ 服务器地址必须以 http:// 或 https:// 开头")
+                _addAccountState.value = state.copy(saveError = "服务器地址必须以 http:// 或 https:// 开头")
                 return
             }
             !state.isAnonymous && (state.account.isEmpty() || state.password.isEmpty()) -> {
-                _addAccountState.value = state.copy(saveError = "❌ 请填写账号和密码")
+                _addAccountState.value = state.copy(saveError = "请填写账号和密码")
                 return
             }
         }
@@ -220,7 +327,7 @@ class WebDavViewModel(
                 onAccountAdded()
                 resetAddAccountState()
             } else {
-                _addAccountState.value = state.copy(saveError = "❌ 更新失败，账户不存在")
+                _addAccountState.value = state.copy(saveError = "更新失败，账户不存在")
             }
         } else {
             // 新增模式
@@ -235,7 +342,7 @@ class WebDavViewModel(
                 onAccountAdded()
                 resetAddAccountState()
             } else {
-                _addAccountState.value = state.copy(saveError = "❌ 该账户已存在")
+                _addAccountState.value = state.copy(saveError = "该账户已存在")
             }
         }
     }
