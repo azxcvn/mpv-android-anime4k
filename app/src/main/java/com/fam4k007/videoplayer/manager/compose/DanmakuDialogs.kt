@@ -43,6 +43,7 @@ fun DanmakuSettingsDrawer(
     currentShowBottom: Boolean,
     currentDisplayArea: Int,
     currentMaxScreenNum: Int,
+    currentRandomColor: Boolean,
     onSizeChange: (Int) -> Unit,
     onSpeedChange: (Int) -> Unit,
     onAlphaChange: (Int) -> Unit,
@@ -52,6 +53,7 @@ fun DanmakuSettingsDrawer(
     onShowBottomChange: (Boolean) -> Unit,
     onDisplayAreaChange: (Int) -> Unit,
     onMaxScreenNumChange: (Int) -> Unit,
+    onRandomColorChange: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     var expandedSection by remember { mutableStateOf<String?>(null) }
@@ -209,10 +211,12 @@ fun DanmakuSettingsDrawer(
                                     currentSpeed = currentSpeed,
                                     currentAlpha = currentAlpha,
                                     currentStroke = currentStroke,
+                                    currentRandomColor = currentRandomColor,
                                     onSizeChange = onSizeChange,
                                     onSpeedChange = onSpeedChange,
                                     onAlphaChange = onAlphaChange,
-                                    onStrokeChange = onStrokeChange
+                                    onStrokeChange = onStrokeChange,
+                                    onRandomColorChange = onRandomColorChange
                                 )
                             }
                         }
@@ -256,16 +260,19 @@ fun DanmakuStyleContent(
     currentSpeed: Int,
     currentAlpha: Int,
     currentStroke: Int,
+    currentRandomColor: Boolean,
     onSizeChange: (Int) -> Unit,
     onSpeedChange: (Int) -> Unit,
     onAlphaChange: (Int) -> Unit,
-    onStrokeChange: (Int) -> Unit
+    onStrokeChange: (Int) -> Unit,
+    onRandomColorChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     var size by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.size.toFloat()) }
     var speed by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.speed.toFloat()) }
     var alpha by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.alpha.toFloat()) }
     var stroke by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.stroke.toFloat()) }
+    var randomColor by remember { mutableStateOf(currentRandomColor) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -369,6 +376,43 @@ fun DanmakuStyleContent(
                 inactiveTrackColor = Color(0xFF555555)
             )
         )
+
+        // 弹幕颜色随机渐变开关
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "弹幕颜色修改为随机含渐变颜色",
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "开启后忽略文件内颜色，使用随机渐变色",
+                    fontSize = 11.sp,
+                    color = Color(0x99FFFFFF),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Switch(
+                checked = randomColor,
+                onCheckedChange = {
+                    randomColor = it
+                    onRandomColorChange(it)
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color(0xFF64B5F6),
+                    checkedTrackColor = Color(0xFF448AFF).copy(alpha = 0.5f),
+                    uncheckedThumbColor = Color(0xFF888888),
+                    uncheckedTrackColor = Color(0xFF555555)
+                )
+            )
+        }
 
         // 重置按钮
         TextButton(
