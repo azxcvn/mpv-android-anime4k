@@ -699,30 +699,74 @@ fun WebDavBrowserScreen(
 
                 else -> {
                     val context = LocalContext.current
+                    val folders = state.files.filter { it.isDirectory }
+                    val videos = state.files.filter { !it.isDirectory && WebDavClient.isVideoFile(it.name) }
+                    
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)
                     ) {
-                        items(state.files, key = { it.path }) { file ->
-                            WebDavFileCard(
-                                file = file,
-                                onClick = {
-                                    if (file.isDirectory) {
-                                        viewModel.navigateToFolder(file.path)
-                                    } else if (WebDavClient.isVideoFile(file.name)) {
-                                        state.client?.let { client ->
-                                            onPlayVideo(file, client)
-                                        }
-                                    } else {
+                        // 文件夹区域
+                        if (folders.isNotEmpty()) {
+                            item(key = "folders_header") {
+                                Text(
+                                    text = "文件夹",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
+                                )
+                            }
+                            items(folders, key = { "folder_${it.path}" }) { file ->
+                                WebDavFolderRow(
+                                    file = file,
+                                    onClick = { viewModel.navigateToFolder(file.path) }
+                                )
+                            }
+                        }
+                        
+                        // 视频区域
+                        if (videos.isNotEmpty()) {
+                            item(key = "videos_header") {
+                                Text(
+                                    text = "视频",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 16.dp, top = if (folders.isNotEmpty()) 16.dp else 8.dp, bottom = 8.dp)
+                                )
+                            }
+                            items(videos, key = { "video_${it.path}" }) { file ->
+                                WebDavVideoRow(
+                                    file = file,
+                                    onClick = {
+                                        state.client?.let { client -> onPlayVideo(file, client) }
+                                    }
+                                )
+                            }
+                        }
+                        
+                        // 其他非视频非文件夹文件
+                        val others = state.files.filter { !it.isDirectory && !WebDavClient.isVideoFile(it.name) }
+                        if (others.isNotEmpty()) {
+                            item(key = "others_header") {
+                                Text(
+                                    text = "其他文件",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                                )
+                            }
+                            items(others, key = { "other_${it.path}" }) { file ->
+                                WebDavFileRow(
+                                    file = file,
+                                    onClick = {
                                         android.widget.Toast.makeText(
                                             context,
                                             "不支持的文件类型",
                                             android.widget.Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -788,84 +832,207 @@ private fun WebDavSortDialog(
     )
 }
 
+// ==================== 文件/文件夹行组件（参考 mpvEx 设计） ====================
+
 /**
- * WebDAV 文件卡片
+ * 文件夹行 - 无卡片包裹，透明背景
  */
 @Composable
-private fun WebDavFileCard(
+private fun WebDavFolderRow(
     file: WebDavClient.WebDavFile,
     onClick: () -> Unit
 ) {
-    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
-
-    // 非目录文件：根据类别获取图标和颜色
-    val fileIcon = if (!file.isDirectory) {
-        getFileIcon(file.name)
-    } else null
-    val fileColor = if (!file.isDirectory) {
-        getFileColor(file.name)
-    } else Color.Unspecified
-    val isPlayable = !file.isDirectory && (fileIcon == Icons.Default.VideoFile || fileIcon == Icons.Default.AudioFile)
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (file.isDirectory) Icons.Default.Folder else fileIcon!!,
-                contentDescription = null,
-                tint = if (file.isDirectory) Color(0xFFFFB74D) else fileColor,
-                modifier = Modifier.size(40.dp)
+            // 图标容器
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Folder,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = file.name.ifEmpty { "(无名称)" },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * 视频文件行 - 带日期和大小标签
+ */
+@Composable
+private fun WebDavVideoRow(
+    file: WebDavClient.WebDavFile,
+    onClick: () -> Unit
+) {
+    val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 缩略图容器
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = file.name.ifEmpty { "(无名称)" },
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee(
-                        iterations = Int.MAX_VALUE,
-                        velocity = 30.dp
-                    )
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                if (file.isDirectory) {
-                    Text(
-                        text = "文件夹",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    val sizeStr = WebDavViewModel.formatFileSize(file.size)
-                    val dateStr = if (file.modifiedTime > 0) {
-                        dateFormat.format(Date(file.modifiedTime))
-                    } else ""
-                    Text(
-                        text = if (dateStr.isNotEmpty()) "$sizeStr · $dateStr" else sizeStr,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // 文件大小标签
+                    if (file.size > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            Text(
+                                text = formatFileSizeLabel(file.size),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    // 日期标签
+                    if (file.modifiedTime > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            Text(
+                                text = dateFormat.format(Date(file.modifiedTime)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
-            if (file.isDirectory || isPlayable) {
+        }
+    }
+}
+
+/**
+ * 其他文件行（非视频/非文件夹）
+ */
+@Composable
+private fun WebDavFileRow(
+    file: WebDavClient.WebDavFile,
+    onClick: () -> Unit
+) {
+    val fileIcon = getFileIcon(file.name)
+    val fileColor = getFileColor(file.name)
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = if (file.isDirectory) Icons.Default.ChevronRight else Icons.Default.PlayArrow,
+                    imageVector = fileIcon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier = Modifier.size(48.dp),
+                    tint = fileColor
                 )
             }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = file.name.ifEmpty { "(无名称)" },
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
         }
+    }
+}
+
+/**
+ * 格式化文件大小（用于标签显示）
+ */
+private fun formatFileSizeLabel(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
+        else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
     }
 }
 

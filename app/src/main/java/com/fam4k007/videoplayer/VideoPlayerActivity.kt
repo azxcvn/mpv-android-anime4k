@@ -662,6 +662,18 @@ class VideoPlayerActivity : AppCompatActivity(),
         
         savePlaybackState()
         
+        // 清理 WebDAV 代理流
+        val webdavStreamId = intent.getStringExtra("webdav_stream_id")
+        if (webdavStreamId != null) {
+            try {
+                com.fam4k007.videoplayer.domain.webdav.WebDavStreamingProxy.getInstance()
+                    .unregisterStream(webdavStreamId)
+                Logger.d(TAG, "Unregistered WebDAV proxy stream: $webdavStreamId")
+            } catch (e: Exception) {
+                Logger.w(TAG, "Failed to unregister WebDAV proxy stream", e)
+            }
+        }
+        
         // 后台播放模式：不解绑 Service，不销毁 MPV，让 Service 继续运行
         if (isManualBackgroundPlayback) {
             Log.d(TAG, "Background playback active, keeping service alive")

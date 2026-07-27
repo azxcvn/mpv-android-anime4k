@@ -239,32 +239,31 @@ fun AppNavGraph(
                     account = account,
                     onNavigateBack = { navController.popBackStack() },
                     onPlayVideo = { file, client ->
-                        // 构建包含认证信息的 URL
-                        val fileUrl = if (client.config.isAnonymous || client.config.account.isNullOrEmpty()) {
-                            client.getFileUrl(file.path)
-                        } else {
-                            val uri = Uri.parse(client.config.serverUrl)
-                            val scheme = uri.scheme
-                            val host = uri.host
-                            if (scheme.isNullOrEmpty() || host.isNullOrEmpty()) {
-                                // URL 解析失败，降级使用普通 URL
-                                client.getFileUrl(file.path)
-                            } else {
-                                val port = if (uri.port != -1) ":${uri.port}" else ""
-                                val username = Uri.encode(client.config.account.orEmpty())
-                                val password = Uri.encode(client.config.password.orEmpty())
-                                val basePath = uri.path ?: "/"
-                                val encodedPath = file.path.split("/").joinToString("/") { Uri.encode(it) }
-                                "$scheme://$username:$password@$host$port$basePath$encodedPath"
-                            }
+                        val config = client.config
+                        // 通过本地 HTTP 代理播放，解决直接嵌入凭据 URL 的兼容性问题
+                        val proxy = com.fam4k007.videoplayer.domain.webdav.WebDavStreamingProxy.getInstance()
+                        val streamId = "${account.id}_${System.currentTimeMillis()}"
+                        val mimeType = when {
+                            file.name.endsWith(".mkv", true) -> "video/x-matroska"
+                            file.name.endsWith(".webm", true) -> "video/webm"
+                            file.name.endsWith(".ts", true) -> "video/mp2t"
+                            else -> "video/mp4"
                         }
+                        val proxyUrl = proxy.registerStream(
+                            streamId = streamId,
+                            config = config,
+                            filePath = file.path,
+                            fileSize = file.size,
+                            mimeType = mimeType
+                        )
 
                         val intent = Intent(context, VideoPlayerActivity::class.java).apply {
-                            data = Uri.parse(fileUrl)
+                            data = Uri.parse(proxyUrl)
                             putExtra("video_title", file.name)
                             putExtra("is_webdav", true)
                             putExtra("webdav_account_id", account.id)
                             putExtra("webdav_file_path", file.path)
+                            putExtra("webdav_stream_id", streamId)
                         }
                         context.startActivity(intent)
                         (context as? android.app.Activity)?.overridePendingTransition(

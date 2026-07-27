@@ -400,30 +400,22 @@ internal suspend fun VideoPlayerActivity.autoLoadWebDavSubtitle(
 
         Logger.d(TAG, "Best matching subtitle: $bestName")
 
-        // 构建字幕文件的完整 URL（需包含认证信息）
+        // 通过本地代理加载字幕（与视频使用相同的代理架构）
         val bestFile = subtitleCandidates.first { it.name == bestName }
         val config = client.config
-        val subtitleUrl = if (config.isAnonymous || config.account.isNullOrEmpty()) {
-            client.getFileUrl(bestFile.path)
-        } else {
-            val uri = Uri.parse(config.serverUrl)
-            val scheme = uri.scheme
-            val host = uri.host
-            if (scheme.isNullOrEmpty() || host.isNullOrEmpty()) {
-                client.getFileUrl(bestFile.path)
-            } else {
-                val port = if (uri.port != -1) ":${uri.port}" else ""
-                val username = Uri.encode(config.account.orEmpty())
-                val password = Uri.encode(config.password.orEmpty())
-                val basePath = uri.path ?: "/"
-                val encodedPath = bestFile.path.split("/").joinToString("/") { Uri.encode(it) }
-                "$scheme://$username:$password@$host$port$basePath$encodedPath"
-            }
-        }
+        val proxy = com.fam4k007.videoplayer.domain.webdav.WebDavStreamingProxy.getInstance()
+        val subtitleStreamId = "subtitle_${System.currentTimeMillis()}_${bestFile.path.hashCode()}"
+        val subtitleUrl = proxy.registerStream(
+            streamId = subtitleStreamId,
+            config = config,
+            filePath = bestFile.path,
+            fileSize = bestFile.size,
+            mimeType = "text/plain"
+        )
 
-        Logger.d(TAG, "Subtitle URL: $subtitleUrl")
+        Logger.d(TAG, "Subtitle proxy URL: $subtitleUrl")
 
-        // 通过 MPV 加载远程字幕
+        // 通过 MPV 加载代理 URL 字幕
         MPVLib.command("sub-add", subtitleUrl, "select")
         Logger.d(TAG, "Successfully loaded WebDAV subtitle: $bestName")
 
