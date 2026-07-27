@@ -75,6 +75,10 @@ object DanmakuConfig {
     var isDebug: Boolean = false
         private set
     
+    // 弹幕随机渐变色（覆盖文件中的颜色）
+    var randomGradientColor: Boolean = false
+        private set
+    
     fun init(context: Context) {
         preferencesManager = PreferencesManager.getInstance(context)
         loadConfig()
@@ -99,6 +103,7 @@ object DanmakuConfig {
         displayAreaPercent = preferencesManager.getDanmakuDisplayArea()
         updateInChoreographer = preferencesManager.getDanmakuUseChoreographer()
         isDebug = preferencesManager.getDanmakuDebug()
+        randomGradientColor = preferencesManager.getDanmakuRandomColorEnabled()
     }
     
     fun setEnabled(enabled: Boolean) {
@@ -230,6 +235,13 @@ object DanmakuConfig {
         updateInChoreographer = use
         if (::preferencesManager.isInitialized) {
             preferencesManager.setDanmakuUseChoreographer(use)
+        }
+    }
+    
+    fun setRandomGradientColor(enabled: Boolean) {
+        randomGradientColor = enabled
+        if (::preferencesManager.isInitialized) {
+            preferencesManager.setDanmakuRandomColorEnabled(enabled)
         }
     }
     

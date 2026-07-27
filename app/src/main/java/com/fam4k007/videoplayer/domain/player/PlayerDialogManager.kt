@@ -1145,6 +1145,7 @@ class PlayerDialogManager(
         val currentShowBottom = com.fam4k007.videoplayer.danmaku.DanmakuConfig.showBottomDanmaku
         val currentDisplayArea = com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent
         val currentMaxScreenNum = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum
+        val currentRandomColor = com.fam4k007.videoplayer.danmaku.DanmakuConfig.randomGradientColor
         
         composeOverlayManager.showDanmakuSettingsDrawer(
             hasDanmakuLoaded = hasDanmaku,
@@ -1157,6 +1158,7 @@ class PlayerDialogManager(
             currentShowBottom = currentShowBottom,
             currentDisplayArea = currentDisplayArea,
             currentMaxScreenNum = currentMaxScreenNum,
+            currentRandomColor = currentRandomColor,
             onSizeChange = { size ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setSize(size)
                 danmakuManager.updateSize()
@@ -1192,6 +1194,17 @@ class PlayerDialogManager(
             onMaxScreenNumChange = { num ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setMaxScreenNum(num)
                 danmakuManager.updateMaxScreenNum()
+            },
+            onRandomColorChange = { enabled ->
+                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setRandomGradientColor(enabled)
+                // 颜色变更需要重启播放界面才能生效
+                val activity = activityRef.get()
+                if (activity != null && hasDanmaku) {
+                    com.fam4k007.videoplayer.utils.DialogUtils.showToastShort(
+                        activity,
+                        if (enabled) "已开启随机渐变色，重启播放界面即可生效" else "已关闭随机渐变色，重启播放界面即可生效"
+                    )
+                }
             }
         )
     }

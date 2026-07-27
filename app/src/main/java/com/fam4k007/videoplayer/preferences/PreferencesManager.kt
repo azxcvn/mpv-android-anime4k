@@ -806,6 +806,14 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putInt("danmaku_stroke", stroke).apply()
     }
     
+    fun getDanmakuRandomColorEnabled(): Boolean {
+        return sharedPreferences.getBoolean("danmaku_random_color", false)
+    }
+    
+    fun setDanmakuRandomColorEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("danmaku_random_color", enabled).apply()
+    }
+    
     fun getDanmakuOffsetTime(): Long {
         return sharedPreferences.getLong("danmaku_offset_time", 0L)
     }

@@ -173,6 +173,9 @@ class DanmakuPlayerView @JvmOverloads constructor(
 
             currentDanmakuPath = filePath
 
+            // 设置随机渐变色开关（在解析前设置，解析时自动覆盖颜色）
+            BiliDanmakuParser.setRandomColorEnabled(DanmakuConfig.randomGradientColor)
+            
             // 创建解析器并准备
             val danmuParser = BiliDanmakuParser().apply {
                 load(dataSource)

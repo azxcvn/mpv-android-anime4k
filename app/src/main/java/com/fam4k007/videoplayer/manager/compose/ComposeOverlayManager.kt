@@ -180,6 +180,7 @@ class ComposeOverlayManager(
         currentShowBottom: Boolean,
         currentDisplayArea: Int,
         currentMaxScreenNum: Int,
+        currentRandomColor: Boolean,
         onSizeChange: (Int) -> Unit,
         onSpeedChange: (Int) -> Unit,
         onAlphaChange: (Int) -> Unit,
@@ -188,7 +189,8 @@ class ComposeOverlayManager(
         onShowTopChange: (Boolean) -> Unit,
         onShowBottomChange: (Boolean) -> Unit,
         onDisplayAreaChange: (Int) -> Unit,
-        onMaxScreenNumChange: (Int) -> Unit
+        onMaxScreenNumChange: (Int) -> Unit,
+        onRandomColorChange: (Boolean) -> Unit
     ) {
         setContent {
             DanmakuSettingsDrawer(
@@ -202,6 +204,7 @@ class ComposeOverlayManager(
                 currentShowBottom = currentShowBottom,
                 currentDisplayArea = currentDisplayArea,
                 currentMaxScreenNum = currentMaxScreenNum,
+                currentRandomColor = currentRandomColor,
                 onSizeChange = onSizeChange,
                 onSpeedChange = onSpeedChange,
                 onAlphaChange = onAlphaChange,
@@ -211,6 +214,7 @@ class ComposeOverlayManager(
                 onShowBottomChange = onShowBottomChange,
                 onDisplayAreaChange = onDisplayAreaChange,
                 onMaxScreenNumChange = onMaxScreenNumChange,
+                onRandomColorChange = onRandomColorChange,
                 onDismiss = { clearContent() }
             )
         }
