@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
+import `is`.xyz.mpv.MPVLib
 import com.fam4k007.videoplayer.remote.RemotePlaybackHeaders
 import com.fam4k007.videoplayer.remote.RemotePlaybackRequest
 import com.fam4k007.videoplayer.remote.RemotePlaybackResolver
@@ -141,20 +142,47 @@ internal fun VideoPlayerActivity.loadResolvedRemoteVideo(
             return@launch
         }
 
+        // Bilibili 源：通过本地 OkHttp 代理播放，绕过 mpv 内置 mbedTLS
+        val finalRequest: RemotePlaybackRequest
+        if (request.source == RemotePlaybackRequest.Source.BILIBILI) {
+            val headers = RemotePlaybackHeaders.enrich(request.headers, request.sourcePageUrl)
+            val normalizedHeaders = RemotePlaybackHeaders.normalize(headers)
+            val (localVideo, localAudio) = com.fam4k007.videoplayer.remote.StreamProxy.registerStreams(
+                videoUrl = request.url,
+                audioUrl = request.audioUrl,
+                headers = normalizedHeaders
+            )
+            if (localVideo != null) {
+                proxyAudioUrl = localAudio
+                finalRequest = request.copy(url = localVideo)
+                Logger.d(TAG, "Bilibili proxy: $localVideo audio=$localAudio")
+            } else {
+                Logger.w(TAG, "StreamProxy failed to start, falling back to direct playback")
+                finalRequest = when (result) {
+                    is RemotePlaybackResolver.ResolveResult.Success -> result.request
+                    is RemotePlaybackResolver.ResolveResult.Failed -> result.request
+                }
+            }
+        } else {
+            finalRequest = when (result) {
+                is RemotePlaybackResolver.ResolveResult.Success -> result.request
+                is RemotePlaybackResolver.ResolveResult.Failed -> result.request
+            }
+        }
+
         when (result) {
             is RemotePlaybackResolver.ResolveResult.Success -> {
-                remotePlaybackRequest = result.request
-                videoUri = Uri.parse(result.request.url)
+                remotePlaybackRequest = finalRequest
+                videoUri = Uri.parse(finalRequest.url)
                 Logger.d(
                     TAG,
-                    "Remote request resolved via ${result.probeMethod}: ${request.url} -> ${result.request.url}"
+                    "Remote request resolved via ${result.probeMethod}: ${request.url} -> ${finalRequest.url}"
                 )
-                playbackEngine.loadRemote(result.request, position)
+                playbackEngine.loadRemote(finalRequest, position)
             }
             is RemotePlaybackResolver.ResolveResult.Failed -> {
-                remotePlaybackRequest = result.request
+                remotePlaybackRequest = finalRequest
                 Logger.w(TAG, "Remote resolve fallback: reason=${result.reason}, message=${result.message}", result.cause)
-                // B站源跳过探测失败的Toast提示
                 if (request.source != RemotePlaybackRequest.Source.BILIBILI) {
                     val suggestion = RemotePlaybackResolver.buildFailureSuggestion(result.reason)
                     DialogUtils.showToastLong(
@@ -162,9 +190,24 @@ internal fun VideoPlayerActivity.loadResolvedRemoteVideo(
                         "${result.message}，继续尝试直接播放\n$suggestion"
                     )
                 }
-                playbackEngine.loadRemote(result.request, position)
+                playbackEngine.loadRemote(finalRequest, position)
             }
         }
+
+        // DASH 音频轨：解析完成后添加（Bilibili 代理已在上面就绪）
+        val audioToAdd = proxyAudioUrl ?: finalRequest.audioUrl
+        if (!audioToAdd.isNullOrEmpty()) {
+            mpvView.postDelayed({
+                try {
+                    MPVLib.command("audio-add", audioToAdd)
+                    MPVLib.setPropertyString("vid", "auto")
+                    Logger.d(TAG, "Added external audio: $audioToAdd")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to add audio: ${e.message}")
+                }
+            }, 300)
+        }
+
         applyRememberedSpeed()
     }
 }
