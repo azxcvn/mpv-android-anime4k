@@ -12,7 +12,8 @@ data class RemotePlaybackRequest(
     val detectedContentType: String? = null,
     val isStream: Boolean = false,
     val source: Source = Source.UNKNOWN,
-    val audioUrl: String? = null  // DASH格式音频流URL
+    val audioUrl: String? = null,  // DASH格式音频流URL
+    val bilibiliCid: Long = 0  // B站视频cid，用于原生弹幕加载
 ) : Parcelable {
 
     enum class Source {
