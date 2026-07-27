@@ -212,7 +212,7 @@ fun PlayerControls(
         // 暂停指示器（暂停时在屏幕中央短暂显示后淡出）
         PauseIndicator(viewModel = viewModel)
 
-        // 实时网速显示（仅在线播放时显示，屏幕右侧中间位置）
+        // 实时网速显示（仅在线播放时显示，位于截图按钮上方）
         DownloadSpeedOverlay(viewModel = viewModel)
 
         // 加载动画（在线视频缓冲/加载时显示，覆盖在所有控件之上）
@@ -1479,7 +1479,7 @@ fun DownloadSpeedOverlay(
             fontSize = 11.sp,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 12.dp)
+                .padding(end = 12.dp, bottom = 160.dp)
                 .background(
                     color = Color.Black.copy(alpha = 0.35f),
                     shape = RoundedCornerShape(6.dp)
