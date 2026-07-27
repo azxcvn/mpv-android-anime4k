@@ -132,7 +132,8 @@ class BangumiDetailViewModel(
                         headers = requestHeaders,
                         sourcePageUrl = "https://www.bilibili.com",
                         source = RemotePlaybackRequest.Source.BILIBILI,
-                        audioUrl = audioUrl
+                        audioUrl = audioUrl,
+                        bilibiliCid = episode.cid
                     )
                     RemotePlaybackLauncher.start(context, request)
                 },
