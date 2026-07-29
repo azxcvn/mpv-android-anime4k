@@ -1738,6 +1738,14 @@ class PlayerViewModel(
     }
 
     /**
+     * 直接设置重复模式
+     */
+    fun setRepeatMode(mode: RepeatMode) {
+        _repeatMode.value = mode
+        Logger.d(TAG, "Repeat mode set to: $mode")
+    }
+
+    /**
      * 设置自动连播开关（百分百复用 mpvEx autoplayNextVideo 算法）
      */
     fun setAutoPlayNextEnabled(enabled: Boolean) {
