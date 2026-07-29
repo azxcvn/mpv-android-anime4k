@@ -487,7 +487,8 @@ class PlayerDialogManager(
             useFixedHeight = false,
             showScrollHint = false,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = false
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
         ) { position ->
             val newDecoder = (position == 0)
             preferencesManager.setHardwareDecoder(newDecoder)
