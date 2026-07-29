@@ -62,6 +62,7 @@ import com.fam4k007.videoplayer.utils.UriUtils.getFolderName
 import com.fam4k007.videoplayer.utils.DialogUtils
 import com.fam4k007.videoplayer.utils.Logger
 import com.fam4k007.videoplayer.presentation.PlayerViewModel
+import com.fam4k007.videoplayer.presentation.RepeatMode
 import com.fam4k007.videoplayer.presentation.PlayerStateHolder
 import `is`.xyz.mpv.MPVLib
 import kotlinx.coroutines.delay
@@ -547,6 +548,15 @@ class VideoPlayerActivity : AppCompatActivity(),
 
     override fun isAutoRotateEnabled(): Boolean {
         return intent.getBooleanExtra(EXTRA_AUTO_ROTATE, false)
+    }
+
+    override fun onRepeatModeSelected(mode: RepeatMode) {
+        viewModel.setRepeatMode(mode)
+        Log.d(TAG, "Repeat mode changed to: $mode")
+    }
+
+    override fun getRepeatMode(): RepeatMode {
+        return viewModel.repeatMode.value
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -1427,20 +1437,27 @@ class VideoPlayerActivity : AppCompatActivity(),
                 Log.d(TAG, "handleEndOfFile: repeating current file")
                 MPVLib.command("seek", "0", "absolute")
                 MPVLib.setPropertyBoolean("pause", false)
+                // 重置 EOF 检测标志，确保下次到达末尾时能再次触发
+                if (::playbackEngine.isInitialized) {
+                    playbackEngine.resetEofDetection()
+                }
                 return
             }
 
             // 处理播放列表播放
             if (playlist.isNotEmpty()) {
-                val hasNextItem = if (viewModel.shuffleEnabled.value) {
+                // RepeatMode.ALL 时始终视为有下一个
+                val hasNextItem = if (viewModel.shouldRepeatPlaylist()) {
+                    playlist.isNotEmpty()
+                } else if (viewModel.shuffleEnabled.value) {
                     shuffledPosition < shuffledIndices.size - 1
                 } else {
                     playlistIndex < playlist.size - 1
                 }
                 Log.d(TAG, "handleEndOfFile: hasNextItem=$hasNextItem")
 
-                // 检查是否启用自动连播
-                val autoplayEnabled = preferencesManager.isAutoPlayNextEnabled()
+                // RepeatMode.ALL 时强制启用自动连播，不受用户设置影响
+                val autoplayEnabled = preferencesManager.isAutoPlayNextEnabled() || viewModel.shouldRepeatPlaylist()
 
                 if (hasNextItem && autoplayEnabled) {
                     Log.d(TAG, "handleEndOfFile: has next AND autoplay enabled -> playNext()")

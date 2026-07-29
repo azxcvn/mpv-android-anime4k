@@ -937,7 +937,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("Chapters")
         }
-        items.addAll(listOf("解码", "听视频", "片头片尾", "小窗播放", "音频均衡器", autoRotateText))
+        items.addAll(listOf("解码", "听视频", "片头片尾", "小窗播放", "重复播放", "音频均衡器", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration
@@ -956,8 +956,8 @@ class PlayerDialogManager(
             clampToScreen = false
         ) { position ->
             // 根据是否有章节项调整索引映射
-            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=小窗播放, 5=均衡器, 6=自动旋转
-            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=小窗播放, 4=均衡器, 5=自动旋转
+            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=小窗播放, 5=重复播放, 6=均衡器, 7=自动旋转
+            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=小窗播放, 4=重复播放, 5=均衡器, 6=自动旋转
             val actualAction = if (hasChapters) {
                 position
             } else {
@@ -970,9 +970,54 @@ class PlayerDialogManager(
                 2 -> (activity as? MoreOptionsCallback)?.onBackgroundPlayback()  // 听视频
                 3 -> (activity as? MoreOptionsCallback)?.onShowSkipSettings()  // 片头片尾设置
                 4 -> (activity as? MoreOptionsCallback)?.onFloatingWindow()  // 小窗播放
-                5 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
-                6 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
+                5 -> showRepeatModeDialog()  // 重复播放
+                6 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
+                7 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
             }
+        }
+    }
+
+    /**
+     * 显示重复播放模式选择子菜单
+     */
+    private fun showRepeatModeDialog() {
+        val activity = activityRef.get() ?: return
+        val callback = activity as? MoreOptionsCallback ?: return
+        val currentMode = callback.getRepeatMode()
+
+        val modeItems = listOf(
+            "关闭循环" to com.fam4k007.videoplayer.presentation.RepeatMode.OFF,
+            "单个循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ONE,
+            "列表循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ALL
+        )
+
+        val items = modeItems.map { it.first }
+        val selectedPosition = modeItems.indexOfFirst { it.second == currentMode }
+
+        // 与一级菜单使用相同的对齐方式
+        val configuration = activity.resources.configuration
+        val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+        val horizontalAlignment = if (isPortrait) PopupHorizontalAlignment.END else PopupHorizontalAlignment.CENTER
+
+        showPopupDialogAtLastAnchor(
+            items,
+            selectedPosition = selectedPosition,
+            title = "重复播放",
+            showAbove = false,
+            useFixedHeight = false,
+            showScrollHint = false,
+            horizontalAlignment = horizontalAlignment,
+            clampToScreen = false
+        ) { position ->
+            val selectedMode = modeItems[position].second
+            callback.onRepeatModeSelected(selectedMode)
+            val modeName = when (selectedMode) {
+                com.fam4k007.videoplayer.presentation.RepeatMode.OFF -> "关闭"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ONE -> "单集循环"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ALL -> "列表循环"
+                else -> ""
+            }
+            DialogUtils.showToastShort(activity, "重复播放：$modeName")
         }
     }
 
@@ -1308,6 +1353,8 @@ interface MoreOptionsCallback {
     fun isAutoRotateEnabled(): Boolean
     fun onBackgroundPlayback()
     fun onFloatingWindow()
+    fun onRepeatModeSelected(mode: com.fam4k007.videoplayer.presentation.RepeatMode)
+    fun getRepeatMode(): com.fam4k007.videoplayer.presentation.RepeatMode
 }
 
 interface AudioOptionsCallback {
