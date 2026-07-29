@@ -130,7 +130,8 @@ class PlayerDialogManager(
         popupHeight: Int,
         showAbove: Boolean,
         horizontalAlignment: PopupHorizontalAlignment = PopupHorizontalAlignment.CENTER,
-        clampToScreen: Boolean = true
+        clampToScreen: Boolean = true,
+        horizontalOffsetPx: Int = 0
     ): PopupPosition? {
         val activity = activityRef.get() ?: return null
         val screenWidth = activity.resources.displayMetrics.widthPixels
@@ -165,6 +166,8 @@ class PlayerDialogManager(
         Log.d(TAG, "calculatePopupPosition: initialX=$initialX, minX=$minX, maxX=$maxX, dialogWidth=$dialogWidth")
         // 将位置限制在屏幕可见范围内
         val popupX = if (clampToScreen) initialX.coerceIn(minX, maxX) else initialX
+        // 横屏（CENTER 对齐）下向右微调，竖屏（END）不受影响
+        val finalX = if (horizontalAlignment == PopupHorizontalAlignment.CENTER) popupX + horizontalOffsetPx else popupX
 
         val minY = margin
         val maxY = (screenHeight - dialogHeight - margin).coerceAtLeast(minY)
@@ -179,7 +182,7 @@ class PlayerDialogManager(
         }
 
         return PopupPosition(
-            x = popupX,
+            x = finalX,
             y = popupY,
             width = dialogWidth,
             height = dialogHeight
@@ -195,7 +198,8 @@ class PlayerDialogManager(
         clampToScreen: Boolean = true,
         widthOverride: Int? = null,
         heightOverride: Int? = null,
-        rootView: View
+        rootView: View,
+        horizontalOffsetPx: Int = 0
     ) {
         val measuredWidth: Int
         val measuredHeight: Int
@@ -218,7 +222,8 @@ class PlayerDialogManager(
             popupHeight = measuredHeight,
             showAbove = showAbove,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = clampToScreen
+            clampToScreen = clampToScreen,
+            horizontalOffsetPx = horizontalOffsetPx
         ) ?: return
 
         if (popupWindow.isShowing) {
@@ -257,6 +262,7 @@ class PlayerDialogManager(
         showScrollHint: Boolean = false,
         horizontalAlignment: PopupHorizontalAlignment = PopupHorizontalAlignment.CENTER,
         clampToScreen: Boolean = true,
+        horizontalOffsetPx: Int = 0,
         onItemClick: (Int) -> Unit
     ) {
         val activity = activityRef.get() ?: return
@@ -303,7 +309,8 @@ class PlayerDialogManager(
             showAbove = showAbove,
             horizontalAlignment = horizontalAlignment,
             clampToScreen = clampToScreen,
-            rootView = rootView
+            rootView = rootView,
+            horizontalOffsetPx = horizontalOffsetPx
         )
         
         controlsManagerRef.get()?.setPopupVisible(true)
@@ -321,7 +328,8 @@ class PlayerDialogManager(
                     clampToScreen = clampToScreen,
                     widthOverride = actualWidth,
                     heightOverride = actualHeight,
-                    rootView = rootView
+                    rootView = rootView,
+                    horizontalOffsetPx = horizontalOffsetPx
                 )
             }
         }
@@ -953,7 +961,8 @@ class PlayerDialogManager(
             useFixedHeight = true,
             showScrollHint = true,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = false
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
         ) { position ->
             // 根据是否有章节项调整索引映射
             // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=小窗播放, 5=重复播放, 6=均衡器, 7=自动旋转
@@ -1007,7 +1016,8 @@ class PlayerDialogManager(
             useFixedHeight = false,
             showScrollHint = false,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = false
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
         ) { position ->
             val selectedMode = modeItems[position].second
             callback.onRepeatModeSelected(selectedMode)
