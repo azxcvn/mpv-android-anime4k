@@ -48,6 +48,7 @@ import com.fam4k007.videoplayer.domain.player.PlaybackEngine
 import com.fam4k007.videoplayer.domain.player.PlayerControlsManager
 import com.fam4k007.videoplayer.domain.player.PlayerDialogManager
 import com.fam4k007.videoplayer.domain.player.FilePickerManager
+import com.fam4k007.videoplayer.domain.player.PipHelper
 import com.fam4k007.videoplayer.domain.player.SubtitleDialogCallback
 import com.fam4k007.videoplayer.domain.player.DanmakuDialogCallback
 import com.fam4k007.videoplayer.domain.player.MoreOptionsCallback
@@ -112,6 +113,9 @@ class VideoPlayerActivity : AppCompatActivity(),
     internal lateinit var screenshotManager: com.fam4k007.videoplayer.manager.ScreenshotManager
     internal lateinit var skipIntroOutroManager: com.fam4k007.videoplayer.manager.SkipIntroOutroManager
     internal var thumbnailManager: com.fam4k007.videoplayer.manager.VideoThumbnailManager? = null
+    internal lateinit var pipHelper: PipHelper
+    internal var controlsComposeView: ComposeView? = null
+    private var pipCloseRequested = false  // onStop 在 PiP 关闭时设置，回调中检查  // PiP 模式时隐藏
 
     internal lateinit var mpvView: CustomMPVView
     internal lateinit var danmakuView: com.fam4k007.videoplayer.danmaku.DanmakuPlayerView
@@ -568,21 +572,38 @@ class VideoPlayerActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
+        // PiP 模式下不暂停
+        if (isInPictureInPictureMode) return
+
+        // 关闭 PiP 或正常退出时暂停播放（参照 mpvEx）
+        if (isFinishing && !isManualBackgroundPlayback) {
+            if (::playbackEngine.isInitialized && isPlaying) {
+                playbackEngine.pause()
+                isPlaying = false
+            }
+        }
         savePlaybackState()
     }
     
     override fun onStop() {
         super.onStop()
         
-        // 后台播放模式：不暂停视频，让 Service 继续控制，但仍保存播放进度
+        // 后台播放模式：不暂停视频，让 Service 继续控制
         if (isManualBackgroundPlayback) {
             Log.d(TAG, "Background playback active, keeping video playing in background")
             savePlaybackState()
             return
         }
+
+        // PiP 模式：不暂停，画中画窗口继续播放
+        if (isInPictureInPictureMode) {
+            Log.d(TAG, "PiP mode active, keeping video playing")
+            pipCloseRequested = true  // PiP 中 onStop 表示用户关闭了 PiP
+            return
+        }
         
-        // 当Activity完全不可见时（Home键、锁屏等），自动暂停视频
-        // 不会影响文件选择器等操作，因为那些只触发onPause不触发onStop
+        // 当 Activity 完全不可见时（Home 键、锁屏等），自动暂停视频
+        // 不会影响文件选择器等操作，因为那些只触发 onPause 不触发 onStop
         if (::playbackEngine.isInitialized && isPlaying) {
             playbackEngine.pause()
             
@@ -676,6 +697,7 @@ class VideoPlayerActivity : AppCompatActivity(),
             }
             controlsManager?.cleanup()
             gestureHandler?.cleanup()
+            pipHelper.destroy()
             filePickerManager?.cleanup()
             // 注意：不调用 playbackEngine?.destroy()，保持 MPV 运行
             // 不调用 endBackgroundPlayback()，保持 Service 运行
@@ -1060,6 +1082,35 @@ class VideoPlayerActivity : AppCompatActivity(),
         stateHolder.syncFromViewModel(viewModel)
         startBackgroundPlayback()
         startActivity(Intent(this, AudioPlayerActivity::class.java))
+    }
+
+    // ==================== 小窗播放（PiP）====================
+
+    override fun onFloatingWindow() {
+        if (!::pipHelper.isInitialized) return
+        if (!::playbackEngine.isInitialized) {
+            DialogUtils.showToastShort(this, "请先开始播放视频")
+            return
+        }
+
+        // 隐藏控制 UI → 进入 PiP（参照 mpvEx enterPipModeHidingOverlay 模式）
+        controlsComposeView?.alpha = 0f
+        pipHelper.enterPipMode()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        if (::pipHelper.isInitialized) {
+            pipHelper.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        }
+        controlsComposeView?.alpha = if (isInPictureInPictureMode) 0f else 1f
+
+        if (!isInPictureInPictureMode && pipCloseRequested) {
+            // 关闭 PiP：onStop 先触发设了标志，立即 finish
+            pipCloseRequested = false
+            finish()
+        }
+        Log.d(TAG, "PiP mode changed: $isInPictureInPictureMode")
     }
 
     // ==================== 后台播放管理 ====================

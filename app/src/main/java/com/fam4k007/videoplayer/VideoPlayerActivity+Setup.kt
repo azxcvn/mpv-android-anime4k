@@ -17,6 +17,7 @@ import com.fam4k007.videoplayer.domain.player.Anime4KManager
 import com.fam4k007.videoplayer.domain.player.FilePickerManager
 import com.fam4k007.videoplayer.domain.player.GestureHandler
 import com.fam4k007.videoplayer.domain.player.PlaybackEngine
+import com.fam4k007.videoplayer.domain.player.PipHelper
 import `is`.xyz.mpv.MPVLib
 import com.fam4k007.videoplayer.domain.player.PlayerControlsManager
 import com.fam4k007.videoplayer.domain.player.PlayerDialogManager
@@ -186,6 +187,7 @@ internal fun VideoPlayerActivity.setupComposeTestLayer() {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
+        controlsComposeView = composeView
 
         Logger.d(TAG, "Compose test layer added successfully")
     } catch (e: Exception) {
@@ -635,6 +637,9 @@ internal fun VideoPlayerActivity.initializeManagers() {
     // 初始化缩略图管理器（使用 MPV 原生抓帧，无需 Context）
     thumbnailManager = com.fam4k007.videoplayer.manager.VideoThumbnailManager()
     viewModel.setThumbnailManager(thumbnailManager!!)
+
+    // 初始化画中画（PiP）小窗播放
+    pipHelper = PipHelper(this, mpvView)
 
     bindViewsToManagers()
 }
