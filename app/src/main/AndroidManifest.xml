@@ -85,7 +85,7 @@
             android:theme="@style/Theme.VideoPlayer" />
         <activity 
             android:name=".VideoPlayerActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode"
             android:launchMode="singleTop"
             android:supportsPictureInPicture="true"
             android:exported="true">

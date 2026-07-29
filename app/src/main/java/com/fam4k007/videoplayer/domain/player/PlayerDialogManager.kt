@@ -937,7 +937,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("章节")
         }
-        items.addAll(listOf("解码", "听视频", "片头片尾", "音频均衡器", autoRotateText))
+        items.addAll(listOf("解码", "听视频", "片头片尾", "小窗播放", "音频均衡器", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration
@@ -956,8 +956,8 @@ class PlayerDialogManager(
             clampToScreen = false
         ) { position ->
             // 根据是否有章节项调整索引映射
-            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=均衡器, 5=自动旋转
-            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=均衡器, 4=自动旋转
+            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=小窗播放, 5=均衡器, 6=自动旋转
+            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=小窗播放, 4=均衡器, 5=自动旋转
             val actualAction = if (hasChapters) {
                 position
             } else {
@@ -969,8 +969,9 @@ class PlayerDialogManager(
                 1 -> showDecoderDialog()  // 解码方式
                 2 -> (activity as? MoreOptionsCallback)?.onBackgroundPlayback()  // 听视频
                 3 -> (activity as? MoreOptionsCallback)?.onShowSkipSettings()  // 片头片尾设置
-                4 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
-                5 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
+                4 -> (activity as? MoreOptionsCallback)?.onFloatingWindow()  // 小窗播放
+                5 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
+                6 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
             }
         }
     }
@@ -1306,6 +1307,7 @@ interface MoreOptionsCallback {
     fun onToggleAutoRotate()
     fun isAutoRotateEnabled(): Boolean
     fun onBackgroundPlayback()
+    fun onFloatingWindow()
 }
 
 interface AudioOptionsCallback {
