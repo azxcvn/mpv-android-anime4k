@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.fam4k007.videoplayer.bilibili.auth.BiliBiliAuthManager
 import com.fam4k007.videoplayer.ui.components.ClickableItem
 import com.fam4k007.videoplayer.ui.components.PreferenceCard
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.theme.DarkMode
 import com.fam4k007.videoplayer.ui.theme.ThemeController
@@ -130,6 +131,8 @@ fun SettingsScreen(
                         onClick = { showThemeDialog = true }
                     )
                     
+                    PreferenceDivider()
+                    
                     val currentDarkMode = themeController.getDarkMode()
                     ClickableItem(
                         title = "Dark Mode",
@@ -158,6 +161,8 @@ fun SettingsScreen(
                         icon = Icons.Default.PlayCircle,
                         onClick = onNavigateToPlaybackSettings
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "Playback History",
@@ -198,6 +203,8 @@ fun SettingsScreen(
                         onClick = onNavigateToFolderBlacklist
                     )
                     
+                    PreferenceDivider()
+                    
                     ClickableItem(
                         title = "Other Media Settings",
                         subtitle = ".nomedia rules, hidden folder scanning, etc.",
@@ -231,6 +238,8 @@ fun SettingsScreen(
                         }
                     )
                     
+                    PreferenceDivider()
+                    
                     ClickableItem(
                         title = "Bilibili Video Download",
                         subtitle = "Download Bilibili videos/bangumi",
@@ -247,6 +256,8 @@ fun SettingsScreen(
                             }
                         }
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "Subtitle Search",
@@ -276,12 +287,16 @@ fun SettingsScreen(
                         }
                     )
 
+                    PreferenceDivider()
+
                     ClickableItem(
                         title = "Device Info",
                         subtitle = "View HDR support, codecs, and other hardware info",
                         icon = Icons.Default.Devices,
                         onClick = onNavigateToDeviceInfo
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "About",

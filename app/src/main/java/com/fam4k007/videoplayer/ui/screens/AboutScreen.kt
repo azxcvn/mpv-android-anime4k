@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fam4k007.videoplayer.R
 import com.fam4k007.videoplayer.ui.components.ClickableItem
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.SwitchItem
 import com.fam4k007.videoplayer.ui.theme.spacing
 import kotlinx.coroutines.launch
@@ -175,6 +176,8 @@ fun AboutScreen(
                     onClick = onNavigateToLicense
                 )
 
+                PreferenceDivider()
+
                 ClickableItem(
                     title = "User Agreement",
                     subtitle = "View user agreement & privacy policy",
@@ -205,6 +208,8 @@ fun AboutScreen(
                     icon = Icons.Default.BugReport,
                     onClick = onNavigateToLogs
                 )
+
+                PreferenceDivider()
 
                 ClickableItem(
                     title = "Cache Management",
@@ -254,6 +259,8 @@ fun AboutScreen(
                         }
                     }
                 )
+
+                PreferenceDivider()
 
                 val prefs = remember { com.fam4k007.videoplayer.preferences.PreferencesManager.getInstance(context) }
                 var autoCheck by remember { mutableStateOf(prefs.isAutoCheckUpdateEnabled()) }
