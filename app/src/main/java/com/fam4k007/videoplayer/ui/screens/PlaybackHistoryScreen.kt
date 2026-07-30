@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fam4k007.videoplayer.database.PlaybackHistoryEntity
 import com.fam4k007.videoplayer.presentation.PlaybackHistoryViewModel
+import com.fam4k007.videoplayer.preferences.PreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -43,7 +44,13 @@ fun PlaybackHistoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showClearDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showHistoryOffDialog by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<PlaybackHistoryEntity?>(null) }
+
+    val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
+    var historyRecordingEnabled by remember { mutableStateOf(prefs.isHistoryRecordingEnabled()) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
 
@@ -66,9 +73,53 @@ fun PlaybackHistoryScreen(
                     }
                 },
                 actions = {
-                    if (uiState.historyList.isNotEmpty()) {
-                        IconButton(onClick = { showClearDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "清空全部")
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("清除历史记录") },
+                                onClick = {
+                                    showMenu = false
+                                    showClearDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Delete, contentDescription = null)
+                                }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("记录播放历史") },
+                                onClick = {
+                                    if (historyRecordingEnabled) {
+                                        showHistoryOffDialog = true
+                                    } else {
+                                        historyRecordingEnabled = true
+                                        prefs.setHistoryRecordingEnabled(true)
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.History, contentDescription = null)
+                                },
+                                trailingIcon = {
+                                    Switch(
+                                        checked = historyRecordingEnabled,
+                                        onCheckedChange = { checked ->
+                                            if (!checked) {
+                                                showHistoryOffDialog = true
+                                            } else {
+                                                historyRecordingEnabled = true
+                                                prefs.setHistoryRecordingEnabled(true)
+                                            }
+                                        }
+                                    )
+                                }
+                            )
                         }
                     }
                 },
@@ -180,6 +231,48 @@ fun PlaybackHistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
+                    Text("取消")
+                }
+            },
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
+    }
+
+    // 关闭记录播放历史确认对话框
+    if (showHistoryOffDialog) {
+        AlertDialog(
+            onDismissRequest = { showHistoryOffDialog = false },
+            title = {
+                Text(
+                    text = "关闭记录播放历史",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "若关闭记录播放历史，则会直接影响到视频列表的进度记录，使得此功能失效（哪怕已经在设置中打开了该功能也会失效）",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        historyRecordingEnabled = false
+                        prefs.setHistoryRecordingEnabled(false)
+                        showHistoryOffDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("确认关闭")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showHistoryOffDialog = false }) {
                     Text("取消")
                 }
             },

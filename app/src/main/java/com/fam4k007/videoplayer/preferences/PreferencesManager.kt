@@ -262,6 +262,22 @@ class PreferencesManager private constructor(context: Context) {
     fun setWhitelistModeEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.WHITELIST_MODE_ENABLED, enabled).apply()
     }
+
+    // ==================== 播放历史记录开关 ====================
+
+    /**
+     * 获取是否启用播放历史记录
+     */
+    fun isHistoryRecordingEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.HISTORY_RECORDING_ENABLED, true)
+    }
+
+    /**
+     * 设置是否启用播放历史记录
+     */
+    fun setHistoryRecordingEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.HISTORY_RECORDING_ENABLED, enabled).apply()
+    }
     
     // ==================== 精确进度定位 ====================
     
