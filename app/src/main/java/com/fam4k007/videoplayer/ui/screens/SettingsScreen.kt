@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -197,8 +198,8 @@ fun SettingsScreen(
             item {
                 PreferenceCard {
                     ClickableItem(
-                        title = "Folder Blacklist",
-                        subtitle = "Exclude folders from video scanning",
+                        title = "文件夹黑白名单",
+                        subtitle = "屏蔽或指定文件夹，控制视频扫描范围",
                         icon = Icons.Default.Warning,
                         onClick = onNavigateToFolderBlacklist
                     )

@@ -186,9 +186,9 @@ class LibraryViewModel(
             val cached = videoRepository.loadFolderCache()
 
             if (cached != null && cached.isNotEmpty()) {
-
-                val sorted = filterBlacklistedFolders(cached)
-
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(cached)
+                )
                 if (_viewMode.value == "TREE_VIEW") {
 
                     // 用缓存数据构建树状视图根级别
@@ -376,19 +376,12 @@ class LibraryViewModel(
                     _folderListState.value = _folderListState.value.copy(isLoading = true, error = null)
 
                 }
-
-                val allFolders = videoRepository.scanAllVideoFolders()
-
-                val folders = filterBlacklistedFolders(allFolders)
-
-                val sortedFolders = sortFolders(folders, _folderListState.value.sortType, _folderListState.value.sortOrder)
-
-                _folderListState.value = _folderListState.value.copy(
-
-                    folders = sortedFolders,
-
-                    isLoading = false
-
+                val allFolders = mediaScanManager.scanAllFolders()
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
+                val sorted = folderBrowserManager.sort(
+                    filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
                 )
 
                 // 缓存扫描结果到 SharedPreferences，下次秒开
@@ -449,15 +442,16 @@ class LibraryViewModel(
             try {
 
                 _folderListState.value = _folderListState.value.copy(isRefreshing = true, error = null)
-
-
-
-                val allFolders = videoRepository.forceRefreshScan()
-
-                val folders = filterBlacklistedFolders(allFolders)
-
-                val sortedFolders = sortFolders(folders, _folderListState.value.sortType, _folderListState.value.sortOrder)
-
+                val allFolders = mediaScanManager.forceRefreshAllFolders()
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
+                val sorted = folderBrowserManager.sort(
+                    filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
+                )
+                _folderListState.value = _folderListState.value.copy(folders = sorted, isRefreshing = false)
+            } catch (e: Exception) {
+                Logger.e(TAG, "刷新文件夹失败", e)
                 _folderListState.value = _folderListState.value.copy(
 
                     folders = sortedFolders,
@@ -1271,13 +1265,10 @@ class LibraryViewModel(
     private suspend fun getOrRefreshAllFolders(): List<VideoFolder> {
 
         allFoldersCache?.let { return it }
-
-        val folders = videoRepository.scanAllVideoFolders()
-
-        val filtered = filterBlacklistedFolders(folders)
-
-        // 不缓存空结果，避免无权限时空扫描污染缓存
-
+        val folders = mediaScanManager.scanAllFolders()
+        val filtered = folderBrowserManager.filterWhitelisted(
+            folderBrowserManager.filterBlacklisted(folders)
+        )
         if (filtered.isNotEmpty()) {
 
             allFoldersCache = filtered

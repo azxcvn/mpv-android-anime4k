@@ -224,6 +224,45 @@ class PreferencesManager private constructor(context: Context) {
         return getBlacklistedFolders().contains(folderPath)
     }
     
+    // ==================== 文件夹白名单 ====================
+    
+    /**
+     * 获取白名单文件夹路径集合
+     * @return 只扫描的文件夹路径 Set
+     */
+    fun getWhitelistedFolders(): Set<String> {
+        return sharedPreferences.getStringSet(AppConstants.Preferences.FOLDER_WHITELIST, emptySet())
+            ?: emptySet()
+    }
+    
+    /**
+     * 保存白名单文件夹路径集合
+     */
+    fun setWhitelistedFolders(folders: Set<String>) {
+        sharedPreferences.edit().putStringSet(AppConstants.Preferences.FOLDER_WHITELIST, folders).apply()
+    }
+    
+    /**
+     * 检查路径是否在白名单中
+     */
+    fun isFolderWhitelisted(folderPath: String): Boolean {
+        return getWhitelistedFolders().contains(folderPath)
+    }
+
+    /**
+     * 获取白名单模式是否启用
+     */
+    fun isWhitelistModeEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.WHITELIST_MODE_ENABLED, false)
+    }
+
+    /**
+     * 设置白名单模式是否启用
+     */
+    fun setWhitelistModeEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.WHITELIST_MODE_ENABLED, enabled).apply()
+    }
+    
     // ==================== 精确进度定位 ====================
     
     /**

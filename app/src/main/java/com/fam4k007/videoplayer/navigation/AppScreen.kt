@@ -28,6 +28,10 @@ sealed interface AppScreen {
     @Serializable
     data object FolderBlacklist : AppScreen
 
+    /** 文件夹白名单页 */
+    @Serializable
+    data object FolderWhitelist : AppScreen
+
     /** 其他媒体设置页 */
     @Serializable
     data object MediaSettings : AppScreen

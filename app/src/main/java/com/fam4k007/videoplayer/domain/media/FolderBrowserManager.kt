@@ -53,6 +53,18 @@ class FolderBrowserManager(
         return folders.filter { it.folderPath !in blacklisted }
     }
 
+    // ==================== 白名单过滤 ====================
+
+    /**
+     * 如果启用了白名单模式，只保留白名单中的文件夹
+     */
+    fun filterWhitelisted(folders: List<VideoFolder>): List<VideoFolder> {
+        if (!preferencesManager.isWhitelistModeEnabled()) return folders
+        val whitelisted = preferencesManager.getWhitelistedFolders()
+        if (whitelisted.isEmpty()) return folders
+        return folders.filter { it.folderPath in whitelisted }
+    }
+
     // ==================== 排序设置持久化 ====================
 
     /**
