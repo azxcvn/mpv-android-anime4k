@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.fam4k007.videoplayer.bilibili.auth.BiliBiliAuthManager
 import com.fam4k007.videoplayer.ui.components.ClickableItem
 import com.fam4k007.videoplayer.ui.components.PreferenceCard
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.theme.DarkMode
 import com.fam4k007.videoplayer.ui.theme.ThemeController
@@ -130,6 +131,8 @@ fun SettingsScreen(
                         onClick = { showThemeDialog = true }
                     )
                     
+                    PreferenceDivider()
+                    
                     val currentDarkMode = themeController.getDarkMode()
                     ClickableItem(
                         title = "暗色模式",
@@ -158,6 +161,8 @@ fun SettingsScreen(
                         icon = Icons.Default.PlayCircle,
                         onClick = onNavigateToPlaybackSettings
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "播放历史记录",
@@ -198,6 +203,8 @@ fun SettingsScreen(
                         onClick = onNavigateToFolderBlacklist
                     )
                     
+                    PreferenceDivider()
+                    
                     ClickableItem(
                         title = "其他媒体设置",
                         subtitle = ".nomedia 规则、隐藏文件夹扫描等",
@@ -231,6 +238,8 @@ fun SettingsScreen(
                         }
                     )
                     
+                    PreferenceDivider()
+                    
                     ClickableItem(
                         title = "哔哩哔哩视频下载",
                         subtitle = "下载B站视频/番剧",
@@ -247,6 +256,8 @@ fun SettingsScreen(
                             }
                         }
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "字幕搜索下载",
@@ -276,12 +287,16 @@ fun SettingsScreen(
                         }
                     )
 
+                    PreferenceDivider()
+
                     ClickableItem(
                         title = "设备信息",
                         subtitle = "查看HDR支持、编解码器等硬件信息",
                         icon = Icons.Default.Devices,
                         onClick = onNavigateToDeviceInfo
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "关于",
