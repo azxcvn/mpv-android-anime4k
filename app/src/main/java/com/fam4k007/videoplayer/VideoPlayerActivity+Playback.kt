@@ -434,7 +434,7 @@ internal fun VideoPlayerActivity.savePlaybackState() {
         }
 
         // 2. 添加到历史记录 - 只记录本地视频，不记录在线视频
-        if (duration > 0 && !isOnlineVideo) {  // 添加 !isOnlineVideo 判断
+        if (duration > 0 && !isOnlineVideo && preferencesManager.isHistoryRecordingEnabled()) {  // 添加 !isOnlineVideo 判断
             val fileName = getFileNameFromUri(uri)
             val folderName = uri.getFolderName()
 

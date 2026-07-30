@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fam4k007.videoplayer.preferences.PreferencesManager
 import com.fam4k007.videoplayer.ui.components.PreferenceCard
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.components.SwitchItem
 import com.fam4k007.videoplayer.ui.theme.spacing
@@ -134,6 +135,8 @@ fun MediaSettingsScreen(
                             if (enabled) checkShowWarning()
                         }
                     )
+
+                    PreferenceDivider()
 
                     SwitchItem(
                         title = "Scan Hidden Folders",
