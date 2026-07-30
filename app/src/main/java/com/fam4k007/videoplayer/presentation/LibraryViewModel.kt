@@ -101,7 +101,9 @@ class LibraryViewModel(
         viewModelScope.launch {
             val cached = mediaScanManager.loadFolderCache()
             if (cached != null && cached.isNotEmpty()) {
-                val filtered = folderBrowserManager.filterBlacklisted(cached)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(cached)
+                )
                 if (_viewMode.value == "TREE_VIEW") {
                     val treeFolders = treeNavigationManager.loadRoot(filtered)
                     val sorted = folderBrowserManager.sort(treeFolders, folderSortType, folderSortOrder)
@@ -145,7 +147,9 @@ class LibraryViewModel(
                     _folderListState.value = _folderListState.value.copy(isLoading = true, error = null)
                 }
                 val allFolders = mediaScanManager.scanAllFolders()
-                val filtered = folderBrowserManager.filterBlacklisted(allFolders)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
                 val sorted = folderBrowserManager.sort(
                     filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
                 )
@@ -168,7 +172,9 @@ class LibraryViewModel(
             try {
                 _folderListState.value = _folderListState.value.copy(isRefreshing = true, error = null)
                 val allFolders = mediaScanManager.forceRefreshAllFolders()
-                val filtered = folderBrowserManager.filterBlacklisted(allFolders)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
                 val sorted = folderBrowserManager.sort(
                     filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
                 )
@@ -383,7 +389,9 @@ class LibraryViewModel(
     private suspend fun getOrRefreshAllFolders(): List<VideoFolder> {
         allFoldersCache?.let { return it }
         val folders = mediaScanManager.scanAllFolders()
-        val filtered = folderBrowserManager.filterBlacklisted(folders)
+        val filtered = folderBrowserManager.filterWhitelisted(
+            folderBrowserManager.filterBlacklisted(folders)
+        )
         if (filtered.isNotEmpty()) {
             allFoldersCache = filtered
         }

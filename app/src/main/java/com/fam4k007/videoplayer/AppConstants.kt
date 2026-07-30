@@ -42,6 +42,12 @@ object AppConstants {
 
         // 文件夹黑名单 Key
         const val FOLDER_BLACKLIST = "folder_blacklist"
+
+        // 文件夹白名单 Key
+        const val FOLDER_WHITELIST = "folder_whitelist"
+
+        // 白名单模式开关 Key
+        const val WHITELIST_MODE_ENABLED = "whitelist_mode_enabled"
         
         // 双击手势设置 Key
         const val DOUBLE_TAP_MODE = "double_tap_mode"  // 0=暂停, 1=快进快退

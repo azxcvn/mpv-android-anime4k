@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fam4k007.videoplayer.preferences.PreferencesManager
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
+import com.fam4k007.videoplayer.ui.components.SwitchItem
 import com.fam4k007.videoplayer.ui.theme.spacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,8 +57,8 @@ import org.koin.compose.koinInject
 import java.io.File
 
 /**
- * 文件夹黑名单管理页面
- * 管理被屏蔽的文件夹列表，被屏蔽的文件夹不会被扫描到视频
+ * 文件夹黑白名单管理页面
+ * 支持黑名单模式（屏蔽指定文件夹）和白名单模式（只扫描指定文件夹）
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,19 +68,51 @@ fun FolderBlacklistScreen(
     val context = LocalContext.current
     val preferencesManager: PreferencesManager = koinInject()
 
-    var blacklistedFolders by remember { mutableStateOf(preferencesManager.getBlacklistedFolders()) }
+    var isWhitelistMode by remember {
+        mutableStateOf(preferencesManager.isWhitelistModeEnabled())
+    }
+    var folders by remember {
+        mutableStateOf(
+            if (preferencesManager.isWhitelistModeEnabled())
+                preferencesManager.getWhitelistedFolders()
+            else
+                preferencesManager.getBlacklistedFolders()
+        )
+    }
     var showAddDialog by remember { mutableStateOf(false) }
     var showClearAllDialog by remember { mutableStateOf(false) }
     var availableFolders by remember { mutableStateOf<List<FolderItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
+    val descriptionText = if (isWhitelistMode)
+        "指定文件夹后，APP将只扫描其中的视频"
+    else
+        "屏蔽文件夹后，APP将不再扫描其中的视频"
+    val emptyText = if (isWhitelistMode) "暂无白名单文件夹" else "暂无黑名单文件夹"
+    val sectionHeader = if (isWhitelistMode)
+        "已选择的文件夹 (${folders.size})"
+    else
+        "已屏蔽的文件夹 (${folders.size})"
+    val addButtonText = if (isWhitelistMode) "添加文件夹到白名单" else "添加文件夹到黑名单"
+    val clearButtonText = if (isWhitelistMode) "清除所有白名单文件夹" else "清除所有黑名单文件夹"
+    val dialogTitle = if (isWhitelistMode) "选择要添加的文件夹" else "选择要屏蔽的文件夹"
+    val dialogEmptyText = if (isWhitelistMode)
+        "没有可添加的文件夹（所有视频文件夹已在白名单中）"
+    else
+        "没有可添加的文件夹（所有视频文件夹已在黑名单中）"
+    val clearDialogTitle = if (isWhitelistMode) "清除所有白名单文件夹？" else "清除所有黑名单文件夹？"
+    val clearDialogText = if (isWhitelistMode)
+        "这将移除所有文件夹白名单，你可以稍后重新添加。"
+    else
+        "这将移除所有文件夹黑名单，你可以稍后重新添加。"
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "文件夹黑名单",
+                        text = "文件夹黑白名单",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -104,14 +137,40 @@ fun FolderBlacklistScreen(
                 .padding(paddingValues)
                 .padding(horizontal = MaterialTheme.spacing.medium)
         ) {
+            // 黑白名单切换开关
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                SwitchItem(
+                    title = "白名单模式",
+                    subtitle = if (isWhitelistMode) "启用白名单模式后，只扫描其中的视频" else "屏蔽已选择的文件夹，不扫描其中的视频",
+                    checked = isWhitelistMode,
+                    onCheckedChange = { enabled ->
+                        isWhitelistMode = enabled
+                        preferencesManager.setWhitelistModeEnabled(enabled)
+                        folders = if (enabled)
+                            preferencesManager.getWhitelistedFolders()
+                        else
+                            preferencesManager.getBlacklistedFolders()
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "屏蔽文件夹后，APP将不再扫描其中的视频",
+                text = descriptionText,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            if (blacklistedFolders.isEmpty()) {
+            if (folders.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -126,7 +185,7 @@ fun FolderBlacklistScreen(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "暂无黑名单文件夹",
+                            text = emptyText,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -138,10 +197,10 @@ fun FolderBlacklistScreen(
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     item {
-                        PreferenceSectionHeader("已屏蔽的文件夹 (${blacklistedFolders.size})")
+                        PreferenceSectionHeader(sectionHeader)
                     }
 
-                    items(blacklistedFolders.toList()) { folderPath ->
+                    items(folders.toList()) { folderPath ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -157,9 +216,10 @@ fun FolderBlacklistScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.FolderOff,
+                                    imageVector = if (isWhitelistMode) Icons.Default.Folder else Icons.Default.FolderOff,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
+                                    tint = if (isWhitelistMode) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(end = 12.dp)
                                 )
                                 Column(modifier = Modifier.weight(1f)) {
@@ -180,9 +240,12 @@ fun FolderBlacklistScreen(
                                 }
                                 IconButton(
                                     onClick = {
-                                        val updated = blacklistedFolders.toMutableSet().apply { remove(folderPath) }
-                                        blacklistedFolders = updated
-                                        preferencesManager.setBlacklistedFolders(updated)
+                                        val updated = folders.toMutableSet().apply { remove(folderPath) }
+                                        folders = updated
+                                        if (isWhitelistMode)
+                                            preferencesManager.setWhitelistedFolders(updated)
+                                        else
+                                            preferencesManager.setBlacklistedFolders(updated)
                                     }
                                 ) {
                                     Text(
@@ -209,8 +272,7 @@ fun FolderBlacklistScreen(
                         coroutineScope.launch {
                             try {
                                 availableFolders = scanVideoFolders(context)
-                                // 过滤掉已在黑名单中的
-                                availableFolders = availableFolders.filter { it.path !in blacklistedFolders }
+                                availableFolders = availableFolders.filter { it.path !in folders }
                             } catch (_: Exception) {
                             } finally {
                                 isLoading = false
@@ -235,14 +297,14 @@ fun FolderBlacklistScreen(
                     )
                     Spacer(modifier = Modifier.padding(8.dp))
                     Text(
-                        text = "添加文件夹到黑名单",
+                        text = addButtonText,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
 
-            if (blacklistedFolders.isNotEmpty()) {
+            if (folders.isNotEmpty()) {
                 TextButton(
                     onClick = { showClearAllDialog = true },
                     modifier = Modifier
@@ -250,7 +312,7 @@ fun FolderBlacklistScreen(
                         .padding(top = 8.dp)
                 ) {
                     Text(
-                        text = "清除所有黑名单文件夹",
+                        text = clearButtonText,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -261,14 +323,19 @@ fun FolderBlacklistScreen(
     }
 
     if (showAddDialog) {
-        AddFolderBlacklistDialog(
+        AddFolderListDialog(
             folders = availableFolders,
             isLoading = isLoading,
+            title = dialogTitle,
+            emptyText = dialogEmptyText,
             onDismiss = { showAddDialog = false },
             onAddFolders = { folderPaths ->
-                val updated = blacklistedFolders.toMutableSet().apply { addAll(folderPaths) }
-                blacklistedFolders = updated
-                preferencesManager.setBlacklistedFolders(updated)
+                val updated = folders.toMutableSet().apply { addAll(folderPaths) }
+                folders = updated
+                if (isWhitelistMode)
+                    preferencesManager.setWhitelistedFolders(updated)
+                else
+                    preferencesManager.setBlacklistedFolders(updated)
                 showAddDialog = false
             }
         )
@@ -277,13 +344,16 @@ fun FolderBlacklistScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("清除所有黑名单文件夹？") },
-            text = { Text("这将移除所有文件夹黑名单，你可以稍后重新添加。") },
+            title = { Text(clearDialogTitle) },
+            text = { Text(clearDialogText) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        blacklistedFolders = emptySet()
-                        preferencesManager.setBlacklistedFolders(emptySet())
+                        folders = emptySet()
+                        if (isWhitelistMode)
+                            preferencesManager.setWhitelistedFolders(emptySet())
+                        else
+                            preferencesManager.setBlacklistedFolders(emptySet())
                         showClearAllDialog = false
                     }
                 ) {
@@ -343,12 +413,14 @@ private suspend fun scanVideoFolders(context: android.content.Context): List<Fol
 }
 
 /**
- * 添加文件夹到黑名单的对话框
+ * 添加文件夹的通用对话框（黑名单/白名单共用）
  */
 @Composable
-private fun AddFolderBlacklistDialog(
+private fun AddFolderListDialog(
     folders: List<FolderItem>,
     isLoading: Boolean,
+    title: String,
+    emptyText: String,
     onDismiss: () -> Unit,
     onAddFolders: (Set<String>) -> Unit
 ) {
@@ -357,7 +429,7 @@ private fun AddFolderBlacklistDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("选择要屏蔽的文件夹")
+            Text(title)
         },
         text = {
             if (isLoading) {
@@ -370,7 +442,7 @@ private fun AddFolderBlacklistDialog(
                     Text("正在扫描文件夹...")
                 }
             } else if (folders.isEmpty()) {
-                Text("没有可添加的文件夹（所有视频文件夹已在黑名单中）")
+                Text(emptyText)
             } else {
                 LazyColumn(
                     modifier = Modifier
