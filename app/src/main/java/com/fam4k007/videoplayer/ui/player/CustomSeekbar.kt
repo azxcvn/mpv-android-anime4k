@@ -2,6 +2,8 @@ package com.fam4k007.videoplayer.ui.player
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -87,6 +89,136 @@ fun CustomSeekbar(
             chapters = chapters, onChapterClick = onChapterClick,
             skipSegments = skipSegments, modifier = modifier,
         )
+        SeekbarStyle.Slim -> SlimSeekbar(
+            progress = progress, duration = duration,
+            primaryColor = accentColor, paused = paused, isScrubbing = isDragging,
+            onSeek = onSeek, onSeekFinished = onSeekFinished,
+            chapters = chapters, modifier = modifier,
+        )
+    }
+}
+
+/**
+ * Slim 纤细进度条（移植自 mpvRx）
+ * 纤细分段式轨道：暂停时更薄、拖动时加粗，章节位置留出间隙
+ */
+@Composable
+private fun SlimSeekbar(
+    progress: Float,
+    duration: Float,
+    primaryColor: Color,
+    paused: Boolean,
+    isScrubbing: Boolean,
+    onSeek: (Float) -> Unit,
+    onSeekFinished: () -> Unit,
+    chapters: List<Float> = emptyList(),
+    modifier: Modifier = Modifier,
+) {
+    val trackHeight by animateDpAsState(
+        targetValue = when {
+            isScrubbing -> 15.dp
+            paused -> 6.dp
+            else -> 8.dp
+        },
+        animationSpec = if (isScrubbing) spring(stiffness = 500f, dampingRatio = 0.75f)
+        else spring(dampingRatio = 0.6f, stiffness = 200f),
+        label = "slim_seekbar_height",
+    )
+    val chapterGapHalfDp by animateDpAsState(
+        targetValue = if (isScrubbing) 2.dp else 1.5.dp,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 300f),
+        label = "slim_chapter_gap",
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val newPosition = (offset.x / size.width) * duration
+                    onSeek(newPosition.coerceIn(0f, duration))
+                    onSeekFinished()
+                }
+            }
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { },
+                    onDragEnd = { onSeekFinished() },
+                    onDragCancel = { onSeekFinished() },
+                ) { change, _ ->
+                    change.consume()
+                    val newPosition = (change.position.x / size.width) * duration
+                    onSeek(newPosition.coerceIn(0f, duration))
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(trackHeight),
+        ) {
+            val playedFraction = if (duration > 0f) (progress / duration).coerceIn(0f, 1f) else 0f
+            val totalWidth = size.width
+            val playedPx = totalWidth * playedFraction
+            val centerY = size.height / 2f
+            val height = size.height
+            val outerRadius = height / 2f
+            val innerRadius = 2.dp.toPx()
+            val gapHalf = chapterGapHalfDp.toPx()
+
+            // 章节位置留出间隙，把轨道拆分为独立分段
+            val chapterXs = if (duration > 0f) {
+                chapters
+                    .map { (it / duration).coerceIn(0f, 1f) * totalWidth }
+                    .filter { it > gapHalf && it < totalWidth - gapHalf }
+                    .sorted()
+            } else emptyList()
+
+            val segments = mutableListOf<Pair<Float, Float>>()
+            var segCursor = 0f
+            for (chX in chapterXs) {
+                val gS = chX - gapHalf
+                val gE = chX + gapHalf
+                if (gS > segCursor) segments.add(segCursor to gS)
+                segCursor = gE
+            }
+            if (segCursor < totalWidth) segments.add(segCursor to totalWidth)
+
+            fun seg(startX: Float, endX: Float, color: Color, leftR: Float, rightR: Float) {
+                if (endX - startX < 0.5f) return
+                val path = Path().apply {
+                    addRoundRect(
+                        RoundRect(
+                            left = startX, top = centerY - outerRadius,
+                            right = endX, bottom = centerY + outerRadius,
+                            topLeftCornerRadius = CornerRadius(leftR),
+                            bottomLeftCornerRadius = CornerRadius(leftR),
+                            topRightCornerRadius = CornerRadius(rightR),
+                            bottomRightCornerRadius = CornerRadius(rightR),
+                        )
+                    )
+                }
+                drawPath(path, color)
+            }
+
+            val playedColor = primaryColor
+            val unplayedColor = primaryColor.copy(alpha = 0.3f)
+
+            for ((sS, sE) in segments) {
+                val lR = if (sS <= 0.5f) outerRadius else innerRadius
+                val rR = if (sE >= totalWidth - 0.5f) outerRadius else innerRadius
+                when {
+                    sE <= playedPx -> seg(sS, sE, playedColor, lR, rR)
+                    sS >= playedPx -> seg(sS, sE, unplayedColor, lR, rR)
+                    else -> {
+                        seg(sS, playedPx, playedColor, lR, 0f)
+                        seg(playedPx, sE, unplayedColor, 0f, rR)
+                    }
+                }
+            }
+        }
     }
 }
 

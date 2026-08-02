@@ -654,6 +654,8 @@ class VideoPlayerActivity : AppCompatActivity(),
         viewModel.setVolumeBoostEnabled(currentBoost)
         // 重新同步动画开关设置（用户可能在设置页面修改了）
         viewModel.syncAnimationSettings()
+        // 重新同步进度条样式（用户可能在设置页面修改了，避免重启才生效）
+        viewModel.syncSeekbarStyle()
         Logger.d(TAG, "Activity resumed, volume boost synced: $currentBoost")
         // 不自动恢复播放，让用户手动控制
         Logger.d(TAG, "Activity resumed")

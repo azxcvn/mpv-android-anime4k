@@ -559,6 +559,14 @@ class PlayerViewModel(
         updateGlobalAnimationFlag()
     }
 
+    /**
+     * 同步进度条样式（从 SharedPreferences 重新读取）
+     * 在 onResume 中调用，确保用户从设置页返回后进度条样式立即生效，无需重启
+     */
+    fun syncSeekbarStyle() {
+        _seekbarStyle.value = playerRepository.getSeekbarStyle()
+    }
+
     private val _chapterBarEnabled = MutableStateFlow(true)
     val chapterBarEnabled: StateFlow<Boolean> = _chapterBarEnabled.asStateFlow()
 
