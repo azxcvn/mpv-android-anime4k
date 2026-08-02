@@ -1101,15 +1101,17 @@ fun UnlockButtons(
         // 仅保留左侧解锁按钮（右侧锁已由 RightSideControls 接管）
         androidx.compose.animation.AnimatedVisibility(
             visible = unlockButtonsVisible,
-            enter = androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.fadeOut(),
+            enter = androidx.compose.animation.EnterTransition.None,
+            exit = androidx.compose.animation.ExitTransition.None,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(start = 56.dp)
         ) {
             IconButton(
                 onClick = { viewModel.toggleLock() },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0x60000000), RoundedCornerShape(8.dp))
             ) {
                 Icon(
                     painter = painterResource(R.drawable.lock_open_48_filled),
@@ -1163,7 +1165,9 @@ fun RightSideControls(
             if (areControlsLocked) {
                 IconButton(
                     onClick = { viewModel.toggleLock() },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Color(0x60000000), RoundedCornerShape(8.dp))
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.lock_open_48_filled),
@@ -1184,7 +1188,9 @@ fun RightSideControls(
                             onScreenshotClick()
                             viewModel.resetAutoHideTimer()
                         },
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0x60000000), RoundedCornerShape(8.dp))
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_screen_cut_20_regular),
@@ -1197,7 +1203,9 @@ fun RightSideControls(
                     // 锁定按钮
                     IconButton(
                         onClick = { viewModel.toggleLock() },
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0x60000000), RoundedCornerShape(8.dp))
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.lock_closed_48_filled),
@@ -1471,7 +1479,7 @@ fun DownloadSpeedOverlay(
             fontSize = 11.sp,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 12.dp)
+                .padding(end = 12.dp, bottom = 160.dp)
                 .background(
                     color = Color.Black.copy(alpha = 0.35f),
                     shape = RoundedCornerShape(6.dp)

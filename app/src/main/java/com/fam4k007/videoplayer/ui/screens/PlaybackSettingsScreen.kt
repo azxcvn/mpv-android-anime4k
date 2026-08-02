@@ -1,5 +1,11 @@
 ﻿package com.fam4k007.videoplayer.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,10 +27,12 @@ import android.content.Intent
 import android.widget.Toast
 import com.fam4k007.videoplayer.presentation.PlaybackSettingsViewModel
 import com.fam4k007.videoplayer.ui.components.PreferenceCard
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.components.SwitchItem
 import com.fam4k007.videoplayer.ui.components.SliderItem
 import com.fam4k007.videoplayer.ui.components.TextItem
+import com.fam4k007.videoplayer.ui.player.CustomSeekbar
 import com.fam4k007.videoplayer.ui.player.SeekbarStyle
 import com.fam4k007.videoplayer.ui.theme.spacing
 import com.fam4k007.videoplayer.domain.player.Anime4KManager
@@ -75,30 +83,9 @@ fun PlaybackSettingsScreen(
                 .padding(padding),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // 进度控制
+            // ===== 解码与画质 =====
             item {
-                PreferenceSectionHeader("进度控制")
-            }
-
-            item {
-                PreferenceCard {
-                    SwitchItem(
-                        title = "精确进度定位",
-                        subtitle = if (settings.preciseSeeking) "定位更准确但可能较慢" else "定位更快但使用关键帧",
-                        checked = settings.preciseSeeking,
-                        onCheckedChange = { viewModel.setPreciseSeeking(it) }
-                    )
-                    TextItem(
-                        title = "快进/快退时长",
-                        value = "${settings.seekTime}秒",
-                        onClick = { showSeekTimeDialog = true }
-                    )
-                }
-            }
-
-            // MPV 解码器预设
-            item {
-                PreferenceSectionHeader("MPV 解码器")
+                PreferenceSectionHeader("解码与画质")
             }
 
             item {
@@ -111,6 +98,7 @@ fun PlaybackSettingsScreen(
                             showRestartDialog = true
                         }
                     )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "GPU Next 渲染",
                         subtitle = if (settings.gpuNext) "配合软解可正确显示杜比视界，与 4K 超分不兼容" else "开启后可改善 HDR 渲染效果",
@@ -123,116 +111,31 @@ fun PlaybackSettingsScreen(
                             }
                         }
                     )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "Vulkan 渲染上下文",
                         subtitle = if (settings.useVulkan) "使用 Vulkan 驱动，性能会更好" else "使用 OpenGL ES 驱动",
                         checked = settings.useVulkan,
                         onCheckedChange = { viewModel.setUseVulkan(it) }
                     )
-                }
-            }
-
-            // 进度条样式
-            item {
-                PreferenceSectionHeader("进度条样式")
-            }
-
-            item {
-                PreferenceCard {
-                    SeekbarStyleCard(
-                        currentStyle = settings.seekbarStyle,
-                        onStyleChange = { viewModel.setSeekbarStyle(it) }
-                    )
-                }
-            }
-
-            // 手势控制
-            item {
-                PreferenceSectionHeader("手势控制")
-            }
-
-            item {
-                PreferenceCard {
-                    DoubleTapModeCard(
-                        currentMode = settings.doubleTapMode,
-                        onModeChange = { viewModel.setDoubleTapMode(it) }
-                    )
-                    // 只有在快进/快退模式时才显示秒数设置
-                    if (settings.doubleTapMode == 1) {
-                        TextItem(
-                            title = "双击跳转时长",
-                            value = "${settings.doubleTapSeekSeconds}秒",
-                            onClick = { showDoubleTapSeekDialog = true }
-                        )
-                    }
-                    SliderItem(
-                        title = "亮度灵敏度",
-                        value = settings.brightnessSensitivity,
-                        valueRange = 0.5f..5.0f,
-                        steps = 8,
-                        onValueChange = { viewModel.setBrightnessSensitivity(Math.round(it * 10f) / 10f) },
-                        valueFormatter = { String.format("%.1fx", it) }
-                    )
-                    SliderItem(
-                        title = "音量灵敏度",
-                        value = settings.volumeSensitivity,
-                        valueRange = 50f..300f,
-                        steps = 24,
-                        onValueChange = { viewModel.setVolumeSensitivity(Math.round(it).toFloat()) },
-                        valueFormatter = { "${Math.round(it)}" }
-                    )
-                }
-            }
-
-            // 音量控制
-            item {
-                PreferenceSectionHeader("音量控制")
-            }
-
-            item {
-                PreferenceCard {
+                    PreferenceDivider()
                     SwitchItem(
-                        title = "控制系统音量",
-                        subtitle = if (settings.controlSystemVolume) "播放中调节的音量退出后保留" else "退出播放后恢复进入前的音量",
-                        checked = settings.controlSystemVolume,
-                        onCheckedChange = { viewModel.setControlSystemVolume(it) }
+                        title = "记忆超分模式",
+                        subtitle = if (settings.anime4KMemory) "记住上次使用的Anime4K模式" else "每次播放都从关闭状态开始",
+                        checked = settings.anime4KMemory,
+                        onCheckedChange = { viewModel.setAnime4KMemory(it) }
                     )
-                    SwitchItem(
-                        title = "音量增强",
-                        subtitle = if (settings.volumeBoost) "音量可超过100%,最高300%" else "音量范围限制在1-100%",
-                        checked = settings.volumeBoost,
-                        onCheckedChange = { viewModel.setVolumeBoost(it) }
-                    )
-                }
-            }
-
-            // 倍速控制
-            item {
-                PreferenceSectionHeader("倍速控制")
-            }
-
-            item {
-                PreferenceCard {
-                    SwitchItem(
-                        title = "记忆播放倍速",
-                        subtitle = if (settings.rememberSpeed) "始终使用上次设置的播放倍速" else "每次切换视频恢复到1倍速",
-                        checked = settings.rememberSpeed,
-                        onCheckedChange = { viewModel.setRememberSpeed(it) }
-                    )
-                    SliderItem(
-                        title = "长按倍速",
-                        value = settings.longPressSpeed,
-                        valueRange = 1.0f..6.0f,
-                        steps = 49,
-                        onValueChange = { viewModel.setLongPressSpeed(Math.round(it * 10f) / 10f) },
-                        valueFormatter = { String.format("%.1fx", it) }
+                    PreferenceDivider()
+                    Anime4KQualitySelector(
+                        currentQuality = settings.anime4KQuality,
+                        onQualityChange = { viewModel.setAnime4KQuality(it) }
                     )
                 }
             }
 
-            // 自动连播
+            // ===== 播放控制 =====
             item {
-                PreferenceSectionHeader("自动连播")
+                PreferenceSectionHeader("播放控制")
             }
 
             item {
@@ -243,50 +146,132 @@ fun PlaybackSettingsScreen(
                         checked = settings.autoPlayNext,
                         onCheckedChange = { viewModel.setAutoPlayNext(it) }
                     )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "播完退出播放器",
                         subtitle = if (settings.closeAfterEOF) "播放完最后一个视频后自动关闭播放器" else "播完后停留在当前画面",
                         checked = settings.closeAfterEOF,
                         onCheckedChange = { viewModel.setCloseAfterEOF(it) }
                     )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "记忆播放倍速",
+                        subtitle = if (settings.rememberSpeed) "始终使用上次设置的播放倍速" else "每次切换视频恢复到1倍速",
+                        checked = settings.rememberSpeed,
+                        onCheckedChange = { viewModel.setRememberSpeed(it) }
+                    )
+                    PreferenceDivider()
+                    SliderItem(
+                        title = "长按倍速",
+                        value = settings.longPressSpeed,
+                        valueRange = 1.0f..6.0f,
+                        steps = 49,
+                        onValueChange = { viewModel.setLongPressSpeed(Math.round(it * 10f) / 10f) },
+                        valueFormatter = { String.format("%.1fx", it) }
+                    )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "精确进度定位",
+                        subtitle = if (settings.preciseSeeking) "定位更准确但可能较慢" else "定位更快但使用关键帧",
+                        checked = settings.preciseSeeking,
+                        onCheckedChange = { viewModel.setPreciseSeeking(it) }
+                    )
+                    PreferenceDivider()
+                    TextItem(
+                        title = "快进/快退时长",
+                        value = "${settings.seekTime}秒",
+                        onClick = { showSeekTimeDialog = true }
+                    )
                 }
             }
 
-            // 章节控制
+            // ===== 手势与灵敏度 =====
             item {
-                PreferenceSectionHeader("章节与缩略图")
+                PreferenceSectionHeader("手势与灵敏度")
             }
 
             item {
                 PreferenceCard {
+                    DoubleTapModeCard(
+                        currentMode = settings.doubleTapMode,
+                        onModeChange = { viewModel.setDoubleTapMode(it) }
+                    )
+                    if (settings.doubleTapMode == 1) {
+                        PreferenceDivider()
+                        TextItem(
+                            title = "双击跳转时长",
+                            value = "${settings.doubleTapSeekSeconds}秒",
+                            onClick = { showDoubleTapSeekDialog = true }
+                        )
+                    }
+                    PreferenceDivider()
+                    SliderItem(
+                        title = "亮度灵敏度",
+                        value = settings.brightnessSensitivity,
+                        valueRange = 0.5f..5.0f,
+                        steps = 8,
+                        onValueChange = { viewModel.setBrightnessSensitivity(Math.round(it * 10f) / 10f) },
+                        valueFormatter = { String.format("%.1fx", it) }
+                    )
+                    PreferenceDivider()
+                    SliderItem(
+                        title = "音量灵敏度",
+                        value = settings.volumeSensitivity,
+                        valueRange = 50f..300f,
+                        steps = 24,
+                        onValueChange = { viewModel.setVolumeSensitivity(Math.round(it).toFloat()) },
+                        valueFormatter = { "${Math.round(it)}" }
+                    )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "控制系统音量",
+                        subtitle = if (settings.controlSystemVolume) "播放中调节的音量退出后保留" else "退出播放后恢复进入前的音量",
+                        checked = settings.controlSystemVolume,
+                        onCheckedChange = { viewModel.setControlSystemVolume(it) }
+                    )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "音量增强",
+                        subtitle = if (settings.volumeBoost) "音量可超过100%,最高300%" else "音量范围限制在1-100%",
+                        checked = settings.volumeBoost,
+                        onCheckedChange = { viewModel.setVolumeBoost(it) }
+                    )
+                }
+            }
+
+            // ===== 界面与显示 =====
+            item {
+                PreferenceSectionHeader("界面与显示")
+            }
+
+            item {
+                PreferenceCard {
+                    SeekbarStyleCard(
+                        currentStyle = settings.seekbarStyle,
+                        onStyleChange = { viewModel.setSeekbarStyle(it) }
+                    )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "显示章节进度条",
                         subtitle = if (settings.chapterBarEnabled) "进度条显示章节节点和当前章节名称" else "隐藏章节相关信息",
                         checked = settings.chapterBarEnabled,
                         onCheckedChange = { viewModel.setChapterBarEnabled(it) }
                     )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "进度条缩略图预览",
                         subtitle = if (settings.seekbarThumbnailEnabled) "拖动进度条时显示视频画面预览" else "拖动进度条时不显示缩略图",
                         checked = settings.seekbarThumbnailEnabled,
                         onCheckedChange = { viewModel.setSeekbarThumbnailEnabled(it) }
                     )
-                }
-            }
-
-            // 观看进度
-            item {
-                PreferenceSectionHeader("观看进度")
-            }
-
-            item {
-                PreferenceCard {
+                    PreferenceDivider()
                     SwitchItem(
                         title = "显示播放进度条",
                         subtitle = if (settings.showVideoProgressBar) "视频列表缩略图上显示观看进度" else "隐藏进度条，仅通过标签显示状态",
                         checked = settings.showVideoProgressBar,
                         onCheckedChange = { viewModel.setShowVideoProgressBar(it) }
                     )
+                    PreferenceDivider()
                     SliderItem(
                         title = "已观看阈值",
                         value = settings.watchedThreshold.toFloat(),
@@ -296,42 +281,19 @@ fun PlaybackSettingsScreen(
                         valueFormatter = { "${it.roundToInt()}%" },
                         subtitle = "播放进度超过此值即标记为已观看"
                     )
-                }
-            }
-
-            // 画质增强
-            item {
-                PreferenceSectionHeader("画质增强")
-            }
-
-            item {
-                PreferenceCard {
-                    SwitchItem(
-                        title = "记忆超分模式",
-                        subtitle = if (settings.anime4KMemory) "记住上次使用的Anime4K模式" else "每次播放都从关闭状态开始",
-                        checked = settings.anime4KMemory,
-                        onCheckedChange = { viewModel.setAnime4KMemory(it) }
+                    PreferenceDivider()
+                    RotationLockSelector(
+                        currentMode = settings.rotationLockMode,
+                        onModeChange = { viewModel.setRotationLockMode(it) }
                     )
-                    Anime4KQualitySelector(
-                        currentQuality = settings.anime4KQuality,
-                        onQualityChange = { viewModel.setAnime4KQuality(it) }
-                    )
-                }
-            }
-
-            // 播放界面
-            item {
-                PreferenceSectionHeader("播放界面")
-            }
-
-            item {
-                PreferenceCard {
+                    PreferenceDivider()
                     SwitchItem(
                         title = "启用播放界面动画",
                         subtitle = if (settings.controlsAnimationEnabled) "控制栏显示/隐藏时带有滑动动画" else "控制栏直接显示/隐藏，无动画",
                         checked = settings.controlsAnimationEnabled,
                         onCheckedChange = { viewModel.setControlsAnimationEnabled(it) }
                     )
+                    PreferenceDivider()
                     SwitchItem(
                         title = "启用抽屉界面动画",
                         subtitle = if (settings.drawerAnimationEnabled) "右侧抽屉式面板带有过渡动画" else "抽屉面板直接显示/隐藏，无动画",
@@ -984,7 +946,9 @@ private fun SeekbarStyleCard(
                     )
                 )
                 Spacer(Modifier.width(12.dp))
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         style.displayName,
                         style = MaterialTheme.typography.bodyMedium,
@@ -992,19 +956,93 @@ private fun SeekbarStyleCard(
                         else MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
-                    Text(
-                        when (style) {
-                            SeekbarStyle.Standard -> "经典细轨，配合圆点指示器，简约清晰"
-                            SeekbarStyle.Wavy -> "动态波浪动画，播放时律动起伏，生动流畅"
-                            SeekbarStyle.Thick -> "宽幅轨道，便于触摸操作，沉稳醒目"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
+                    // 样式实时预览（与实际播放效果一致）
+                    SeekbarStylePreview(
+                        style = style,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp, bottom = 2.dp)
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * 进度条样式实时预览
+ * 复用播放器实际的 CustomSeekbar 组件，驱动 0→100 的往返动画，所见即所得
+ */
+@Composable
+private fun SeekbarStylePreview(
+    style: SeekbarStyle,
+    modifier: Modifier = Modifier,
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val infiniteTransition = rememberInfiniteTransition(label = "seekbar_style_preview")
+    val animatedProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "seekbar_style_preview_progress",
+    )
+    CustomSeekbar(
+        progress = animatedProgress,
+        duration = 100f,
+        seekbarStyle = style,
+        accentColor = primaryColor,
+        paused = false,
+        isDragging = false,
+        chapters = emptyList(),
+        skipSegments = emptyList(),
+        onSeek = {},
+        onSeekFinished = {},
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun RotationLockSelector(
+    currentMode: String,
+    onModeChange: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = MaterialTheme.spacing.medium,
+                vertical = MaterialTheme.spacing.small
+            )
+    ) {
+        Text(
+            "画面方向",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.small))
+
+        QualityOption(
+            label = "自动",
+            subtitle = "跟随视频原始宽高比自适应",
+            isSelected = currentMode == "AUTO",
+            onClick = { onModeChange("AUTO") }
+        )
+        QualityOption(
+            label = "锁定纵向",
+            subtitle = "所有视频强制竖屏播放",
+            isSelected = currentMode == "PORTRAIT",
+            onClick = { onModeChange("PORTRAIT") }
+        )
+        QualityOption(
+            label = "锁定横向",
+            subtitle = "所有视频强制横屏播放",
+            isSelected = currentMode == "LANDSCAPE",
+            onClick = { onModeChange("LANDSCAPE") }
+        )
     }
 }
 

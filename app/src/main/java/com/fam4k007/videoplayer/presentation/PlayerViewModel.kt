@@ -189,8 +189,10 @@ class PlayerViewModel(
     private val _playerUpdate = MutableStateFlow<PlayerUpdates>(PlayerUpdates.None)
     val playerUpdate: StateFlow<PlayerUpdates> = _playerUpdate.asStateFlow()
     
-    // 视频比例模式
-    private val _videoAspect = MutableStateFlow(VideoAspect.FIT)
+    // 视频比例模式（从持久化存储读取）
+    private val _videoAspect = MutableStateFlow(
+        try { VideoAspect.valueOf(playerRepository.getVideoAspect()) } catch (_: Exception) { VideoAspect.FIT }
+    )
     val videoAspect: StateFlow<VideoAspect> = _videoAspect.asStateFlow()
     
     // Anime4K 状态
@@ -388,6 +390,10 @@ class PlayerViewModel(
 
     fun setThumbnailManager(manager: com.fam4k007.videoplayer.manager.VideoThumbnailManager) {
         _thumbnailManager = manager
+        // 重置初始化标志，确保新 manager 在 Activity 重建后能被正确初始化
+        // PlayerViewModel 是 Koin 单例，Activity 销毁重建时复用同一实例
+        thumbnailInitialized = false
+        warmedThumbnailSource = null
     }
 
     fun initializeThumbnail(uri: Uri, durationMs: Long, isWebDav: Boolean = false) {
@@ -543,6 +549,24 @@ class PlayerViewModel(
     private val _drawerAnimationEnabled = MutableStateFlow(false)
     val drawerAnimationEnabled: StateFlow<Boolean> = _drawerAnimationEnabled.asStateFlow()
 
+    /**
+     * 同步动画设置（从 SharedPreferences 重新读取）
+     * 在 onResume 中调用，确保用户从设置页返回后动画开关立即生效
+     */
+    fun syncAnimationSettings() {
+        _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
+        _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
+        updateGlobalAnimationFlag()
+    }
+
+    /**
+     * 同步进度条样式（从 SharedPreferences 重新读取）
+     * 在 onResume 中调用，确保用户从设置页返回后进度条样式立即生效，无需重启
+     */
+    fun syncSeekbarStyle() {
+        _seekbarStyle.value = playerRepository.getSeekbarStyle()
+    }
+
     private val _chapterBarEnabled = MutableStateFlow(true)
     val chapterBarEnabled: StateFlow<Boolean> = _chapterBarEnabled.asStateFlow()
 
@@ -639,9 +663,13 @@ class PlayerViewModel(
         "制作", "スタッフ", "出演", "声の出演",
         "creditless", "クレジット",
     )
+    /** 片头前段（avant / アバンタイトル）关键词：正片开始、OP 之前的一小段正片内容，不是下集预告 */
+    private val coldOpenKeywords = listOf(
+        "avant", "アバン", "アバンタイトル", "冷开场", "正片前段", "片头前段",
+    )
     private val previewKeywords = listOf(
         "preview", "next episode", "次回予告", "予告",
-        "预告", "下集", "次回", "次巻", "avant", "preview",
+        "预告", "下集", "次回", "次巻", "preview",
         "次回预告", "先行", "trailer",
     )
 
@@ -664,6 +692,32 @@ class PlayerViewModel(
     private val _chapterSkipDetectionEnabled = MutableStateFlow(true)
     val chapterSkipDetectionEnabled: StateFlow<Boolean> = _chapterSkipDetectionEnabled.asStateFlow()
 
+    /** 番剧官方 OP/ED 片段（来自 bilibili playurl 的 clip_info_list，精确时间戳，优先级高于章节关键词检测） */
+    private var officialSkipSegments: List<com.fam4k007.videoplayer.player.SkipSegment> = emptyList()
+
+    /**
+     * 注入番剧官方 OP/ED 跳过片段（bilibili clip_info_list）
+     * 在线番剧播放时由播放器在视频加载后调用；传空列表表示清除（例如切回本地视频）
+     */
+    fun setOfficialSkipSegments(segments: List<com.fam4k007.videoplayer.player.SkipSegment>) {
+        officialSkipSegments = segments
+        refreshSkipSegments()
+        Logger.d(TAG, "Official OP/ED clips set: ${segments.size} segments")
+    }
+
+    /**
+     * 重新计算当前生效的跳过片段
+     * 番剧官方 OP/ED 优先，其次章节关键词检测
+     */
+    private fun refreshSkipSegments() {
+        if (officialSkipSegments.isNotEmpty()) {
+            _skipSegments.value = officialSkipSegments
+            skippedSegmentTypes.clear()
+        } else {
+            refreshChapterDerivedSegments()
+        }
+    }
+
     fun toggleChapterSkipDetection() {
         _chapterSkipDetectionEnabled.value = !_chapterSkipDetectionEnabled.value
         if (!_chapterSkipDetectionEnabled.value) {
@@ -679,6 +733,8 @@ class PlayerViewModel(
     /** 当章节列表更新后重新检测 OP/ED */
     fun refreshChapterDerivedSegments() {
         if (!_chapterSkipDetectionEnabled.value) return
+        // 番剧官方 OP/ED 片段优先，存在时不使用章节关键词检测覆盖
+        if (officialSkipSegments.isNotEmpty()) return
         val chapterList = _chapters.value
         val dur = _duration.value.toDouble()
         if (dur <= 0.0 || chapterList.isEmpty()) {
@@ -728,6 +784,8 @@ class PlayerViewModel(
 
         return when {
             hasKeyword(recapKeywords) -> com.fam4k007.videoplayer.player.SkipSegmentType.RECAP
+            hasKeyword(coldOpenKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.COLD_OPEN
             hasKeyword(creditsKeywords) && !introOk && !outroOk ->
                 com.fam4k007.videoplayer.player.SkipSegmentType.CREDITS
             hasKeyword(previewKeywords) && !introOk && !outroOk ->
@@ -1380,6 +1438,7 @@ class PlayerViewModel(
      */
     fun setVideoAspect(aspect: VideoAspect) {
         _videoAspect.value = aspect
+        playerRepository.setVideoAspect(aspect.name)
         Logger.d(TAG, "Video aspect changed to: ${aspect.displayName}")
     }
     
@@ -1718,6 +1777,14 @@ class PlayerViewModel(
             RepeatMode.ALL -> RepeatMode.OFF
         }
         Logger.d(TAG, "Repeat mode cycled to: ${_repeatMode.value}")
+    }
+
+    /**
+     * 直接设置重复模式
+     */
+    fun setRepeatMode(mode: RepeatMode) {
+        _repeatMode.value = mode
+        Logger.d(TAG, "Repeat mode set to: $mode")
     }
 
     /**

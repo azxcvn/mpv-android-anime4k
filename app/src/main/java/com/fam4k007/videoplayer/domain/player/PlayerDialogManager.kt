@@ -130,7 +130,8 @@ class PlayerDialogManager(
         popupHeight: Int,
         showAbove: Boolean,
         horizontalAlignment: PopupHorizontalAlignment = PopupHorizontalAlignment.CENTER,
-        clampToScreen: Boolean = true
+        clampToScreen: Boolean = true,
+        horizontalOffsetPx: Int = 0
     ): PopupPosition? {
         val activity = activityRef.get() ?: return null
         val screenWidth = activity.resources.displayMetrics.widthPixels
@@ -165,6 +166,8 @@ class PlayerDialogManager(
         Log.d(TAG, "calculatePopupPosition: initialX=$initialX, minX=$minX, maxX=$maxX, dialogWidth=$dialogWidth")
         // 将位置限制在屏幕可见范围内
         val popupX = if (clampToScreen) initialX.coerceIn(minX, maxX) else initialX
+        // 横屏（CENTER 对齐）下向右微调，竖屏（END）不受影响
+        val finalX = if (horizontalAlignment == PopupHorizontalAlignment.CENTER) popupX + horizontalOffsetPx else popupX
 
         val minY = margin
         val maxY = (screenHeight - dialogHeight - margin).coerceAtLeast(minY)
@@ -179,7 +182,7 @@ class PlayerDialogManager(
         }
 
         return PopupPosition(
-            x = popupX,
+            x = finalX,
             y = popupY,
             width = dialogWidth,
             height = dialogHeight
@@ -195,7 +198,8 @@ class PlayerDialogManager(
         clampToScreen: Boolean = true,
         widthOverride: Int? = null,
         heightOverride: Int? = null,
-        rootView: View
+        rootView: View,
+        horizontalOffsetPx: Int = 0
     ) {
         val measuredWidth: Int
         val measuredHeight: Int
@@ -218,7 +222,8 @@ class PlayerDialogManager(
             popupHeight = measuredHeight,
             showAbove = showAbove,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = clampToScreen
+            clampToScreen = clampToScreen,
+            horizontalOffsetPx = horizontalOffsetPx
         ) ?: return
 
         if (popupWindow.isShowing) {
@@ -257,6 +262,7 @@ class PlayerDialogManager(
         showScrollHint: Boolean = false,
         horizontalAlignment: PopupHorizontalAlignment = PopupHorizontalAlignment.CENTER,
         clampToScreen: Boolean = true,
+        horizontalOffsetPx: Int = 0,
         onItemClick: (Int) -> Unit
     ) {
         val activity = activityRef.get() ?: return
@@ -303,7 +309,8 @@ class PlayerDialogManager(
             showAbove = showAbove,
             horizontalAlignment = horizontalAlignment,
             clampToScreen = clampToScreen,
-            rootView = rootView
+            rootView = rootView,
+            horizontalOffsetPx = horizontalOffsetPx
         )
         
         controlsManagerRef.get()?.setPopupVisible(true)
@@ -321,7 +328,8 @@ class PlayerDialogManager(
                     clampToScreen = clampToScreen,
                     widthOverride = actualWidth,
                     heightOverride = actualHeight,
-                    rootView = rootView
+                    rootView = rootView,
+                    horizontalOffsetPx = horizontalOffsetPx
                 )
             }
         }
@@ -479,7 +487,8 @@ class PlayerDialogManager(
             useFixedHeight = false,
             showScrollHint = false,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = false
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
         ) { position ->
             val newDecoder = (position == 0)
             preferencesManager.setHardwareDecoder(newDecoder)
@@ -495,27 +504,23 @@ class PlayerDialogManager(
     fun showAspectRatioDialog(currentAspect: VideoAspect) {
         val activity = activityRef.get() ?: return
 
-        val items = listOf("适应屏幕", "拉伸", "裁剪")
-        val currentSelection = when (currentAspect) {
-            VideoAspect.FIT -> 0
-            VideoAspect.STRETCH -> 1
-            VideoAspect.CROP -> 2
-        }
+        val items = listOf("自动", "拉伸", "裁剪", "等宽", "等高", "原始", "4:3", "16:9")
+        val aspects = listOf(
+            VideoAspect.FIT, VideoAspect.STRETCH, VideoAspect.CROP,
+            VideoAspect.EQUAL_WIDTH, VideoAspect.EQUAL_HEIGHT, VideoAspect.ORIGINAL,
+            VideoAspect.RATIO_4_3, VideoAspect.RATIO_16_9
+        )
+        val currentSelection = aspects.indexOf(currentAspect).coerceAtLeast(0)
 
         showPopupDialogAtLastAnchor(
             items,
             currentSelection,
             title = "画面比例",
             showAbove = false,
-            useFixedHeight = false,
-            showScrollHint = false
+            useFixedHeight = true,
+            showScrollHint = true
         ) { position ->
-            val newAspect = when (position) {
-                0 -> VideoAspect.FIT
-                1 -> VideoAspect.STRETCH
-                2 -> VideoAspect.CROP
-                else -> VideoAspect.FIT
-            }
+            val newAspect = aspects.getOrElse(position) { VideoAspect.FIT }
             playbackEngine.changeVideoAspect(newAspect)
             (activity as? VideoAspectCallback)?.onVideoAspectChanged(newAspect)
             DialogUtils.showToastShort(activity, "画面比例：${items[position]}")
@@ -941,7 +946,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("章节")
         }
-        items.addAll(listOf("解码", "听视频", "片头片尾", "音频均衡器", autoRotateText))
+        items.addAll(listOf("解码", "听视频", "片头片尾", "小窗播放", "重复播放", "音频均衡器", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration
@@ -957,11 +962,12 @@ class PlayerDialogManager(
             useFixedHeight = true,
             showScrollHint = true,
             horizontalAlignment = horizontalAlignment,
-            clampToScreen = false
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
         ) { position ->
             // 根据是否有章节项调整索引映射
-            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=均衡器, 5=自动旋转
-            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=均衡器, 4=自动旋转
+            // 有章节时：0=章节, 1=解码, 2=听视频, 3=片头片尾, 4=小窗播放, 5=重复播放, 6=均衡器, 7=自动旋转
+            // 无章节时：0=解码, 1=听视频, 2=片头片尾, 3=小窗播放, 4=重复播放, 5=均衡器, 6=自动旋转
             val actualAction = if (hasChapters) {
                 position
             } else {
@@ -973,9 +979,56 @@ class PlayerDialogManager(
                 1 -> showDecoderDialog()  // 解码方式
                 2 -> (activity as? MoreOptionsCallback)?.onBackgroundPlayback()  // 听视频
                 3 -> (activity as? MoreOptionsCallback)?.onShowSkipSettings()  // 片头片尾设置
-                4 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
-                5 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
+                4 -> (activity as? MoreOptionsCallback)?.onFloatingWindow()  // 小窗播放
+                5 -> showRepeatModeDialog()  // 重复播放
+                6 -> (activity as? MoreOptionsCallback)?.onShowEqualizer()  // 音频均衡器
+                7 -> (activity as? MoreOptionsCallback)?.onToggleAutoRotate()
             }
+        }
+    }
+
+    /**
+     * 显示重复播放模式选择子菜单
+     */
+    private fun showRepeatModeDialog() {
+        val activity = activityRef.get() ?: return
+        val callback = activity as? MoreOptionsCallback ?: return
+        val currentMode = callback.getRepeatMode()
+
+        val modeItems = listOf(
+            "关闭循环" to com.fam4k007.videoplayer.presentation.RepeatMode.OFF,
+            "单个循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ONE,
+            "列表循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ALL
+        )
+
+        val items = modeItems.map { it.first }
+        val selectedPosition = modeItems.indexOfFirst { it.second == currentMode }
+
+        // 与一级菜单使用相同的对齐方式
+        val configuration = activity.resources.configuration
+        val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+        val horizontalAlignment = if (isPortrait) PopupHorizontalAlignment.END else PopupHorizontalAlignment.CENTER
+
+        showPopupDialogAtLastAnchor(
+            items,
+            selectedPosition = selectedPosition,
+            title = "重复播放",
+            showAbove = false,
+            useFixedHeight = false,
+            showScrollHint = false,
+            horizontalAlignment = horizontalAlignment,
+            clampToScreen = false,
+            horizontalOffsetPx = 12.dpToPx()
+        ) { position ->
+            val selectedMode = modeItems[position].second
+            callback.onRepeatModeSelected(selectedMode)
+            val modeName = when (selectedMode) {
+                com.fam4k007.videoplayer.presentation.RepeatMode.OFF -> "关闭"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ONE -> "单集循环"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ALL -> "列表循环"
+                else -> ""
+            }
+            DialogUtils.showToastShort(activity, "重复播放：$modeName")
         }
     }
 
@@ -1149,6 +1202,7 @@ class PlayerDialogManager(
         val currentShowBottom = com.fam4k007.videoplayer.danmaku.DanmakuConfig.showBottomDanmaku
         val currentDisplayArea = com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent
         val currentMaxScreenNum = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum
+        val currentRandomColor = com.fam4k007.videoplayer.danmaku.DanmakuConfig.randomGradientColor
         
         composeOverlayManager.showDanmakuSettingsDrawer(
             hasDanmakuLoaded = hasDanmaku,
@@ -1161,6 +1215,7 @@ class PlayerDialogManager(
             currentShowBottom = currentShowBottom,
             currentDisplayArea = currentDisplayArea,
             currentMaxScreenNum = currentMaxScreenNum,
+            currentRandomColor = currentRandomColor,
             onSizeChange = { size ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setSize(size)
                 danmakuManager.updateSize()
@@ -1196,6 +1251,17 @@ class PlayerDialogManager(
             onMaxScreenNumChange = { num ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setMaxScreenNum(num)
                 danmakuManager.updateMaxScreenNum()
+            },
+            onRandomColorChange = { enabled ->
+                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setRandomGradientColor(enabled)
+                // 颜色变更需要重启播放界面才能生效
+                val activity = activityRef.get()
+                if (activity != null && hasDanmaku) {
+                    com.fam4k007.videoplayer.utils.DialogUtils.showToastShort(
+                        activity,
+                        if (enabled) "已开启随机渐变色，重启播放界面即可生效" else "已关闭随机渐变色，重启播放界面即可生效"
+                    )
+                }
             }
         )
     }
@@ -1297,6 +1363,9 @@ interface MoreOptionsCallback {
     fun onToggleAutoRotate()
     fun isAutoRotateEnabled(): Boolean
     fun onBackgroundPlayback()
+    fun onFloatingWindow()
+    fun onRepeatModeSelected(mode: com.fam4k007.videoplayer.presentation.RepeatMode)
+    fun getRepeatMode(): com.fam4k007.videoplayer.presentation.RepeatMode
 }
 
 interface AudioOptionsCallback {

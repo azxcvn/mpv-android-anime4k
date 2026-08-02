@@ -224,6 +224,61 @@ class PreferencesManager private constructor(context: Context) {
         return getBlacklistedFolders().contains(folderPath)
     }
     
+    // ==================== 文件夹白名单 ====================
+    
+    /**
+     * 获取白名单文件夹路径集合
+     * @return 只扫描的文件夹路径 Set
+     */
+    fun getWhitelistedFolders(): Set<String> {
+        return sharedPreferences.getStringSet(AppConstants.Preferences.FOLDER_WHITELIST, emptySet())
+            ?: emptySet()
+    }
+    
+    /**
+     * 保存白名单文件夹路径集合
+     */
+    fun setWhitelistedFolders(folders: Set<String>) {
+        sharedPreferences.edit().putStringSet(AppConstants.Preferences.FOLDER_WHITELIST, folders).apply()
+    }
+    
+    /**
+     * 检查路径是否在白名单中
+     */
+    fun isFolderWhitelisted(folderPath: String): Boolean {
+        return getWhitelistedFolders().contains(folderPath)
+    }
+
+    /**
+     * 获取白名单模式是否启用
+     */
+    fun isWhitelistModeEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.WHITELIST_MODE_ENABLED, false)
+    }
+
+    /**
+     * 设置白名单模式是否启用
+     */
+    fun setWhitelistModeEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.WHITELIST_MODE_ENABLED, enabled).apply()
+    }
+
+    // ==================== 播放历史记录开关 ====================
+
+    /**
+     * 获取是否启用播放历史记录
+     */
+    fun isHistoryRecordingEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.HISTORY_RECORDING_ENABLED, true)
+    }
+
+    /**
+     * 设置是否启用播放历史记录
+     */
+    fun setHistoryRecordingEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.HISTORY_RECORDING_ENABLED, enabled).apply()
+    }
+    
     // ==================== 精确进度定位 ====================
     
     /**
@@ -568,6 +623,14 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, enabled).apply()
     }
 
+    fun getVideoAspect(): String {
+        return sharedPreferences.getString("video_aspect", "FIT") ?: "FIT"
+    }
+
+    fun setVideoAspect(aspect: String) {
+        sharedPreferences.edit().putString("video_aspect", aspect).apply()
+    }
+
     /**
      * 获取视频的字幕轨道ID
      */
@@ -798,6 +861,14 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putInt("danmaku_stroke", stroke).apply()
     }
     
+    fun getDanmakuRandomColorEnabled(): Boolean {
+        return sharedPreferences.getBoolean("danmaku_random_color", false)
+    }
+    
+    fun setDanmakuRandomColorEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("danmaku_random_color", enabled).apply()
+    }
+    
     fun getDanmakuOffsetTime(): Long {
         return sharedPreferences.getLong("danmaku_offset_time", 0L)
     }
@@ -962,6 +1033,44 @@ class PreferencesManager private constructor(context: Context) {
     
     // ==================== 片头片尾跳过 ====================
     
+    /**
+     * 全局开关：是否启用片头片尾跳过功能
+     * 关闭后即使设置了秒数也不会执行跳过
+     */
+    fun isSkipIntroOutroEnabled(): Boolean {
+        return sharedPreferences.getBoolean("skip_intro_outro_enabled", false)
+    }
+
+    fun setSkipIntroOutroEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("skip_intro_outro_enabled", enabled).apply()
+    }
+
+    /**
+     * 片头滑动条范围最大值（按文件夹存储），默认 180
+     */
+    fun getSkipIntroRangeSeconds(folderPath: String): Int {
+        val key = "skip_range_folder_${folderPath.hashCode()}"
+        return sharedPreferences.getInt(key, 180)
+    }
+
+    fun setSkipIntroRangeSeconds(folderPath: String, seconds: Int) {
+        val key = "skip_range_folder_${folderPath.hashCode()}"
+        sharedPreferences.edit().putInt(key, seconds.coerceIn(10, 600)).apply()
+    }
+
+    /**
+     * 片尾滑动条范围最大值（按文件夹存储），默认 180
+     */
+    fun getSkipOutroRangeSeconds(folderPath: String): Int {
+        val key = "skip_outro_range_folder_${folderPath.hashCode()}"
+        return sharedPreferences.getInt(key, 180)
+    }
+
+    fun setSkipOutroRangeSeconds(folderPath: String, seconds: Int) {
+        val key = "skip_outro_range_folder_${folderPath.hashCode()}"
+        sharedPreferences.edit().putInt(key, seconds.coerceIn(10, 600)).apply()
+    }
+
     /**
      * 获取片头跳过秒数（按文件夹存储）
      */
@@ -1338,6 +1447,17 @@ class PreferencesManager private constructor(context: Context) {
     fun setAutoLoadDanmakuEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("auto_load_danmaku_enabled", enabled).apply()
     }
+
+    /**
+     * 切集时自动匹配弹幕（仅建议配合自建服务器使用，弹弹Play有配额限制）
+     */
+    fun isDanmakuAutoMatchEnabled(): Boolean {
+        return sharedPreferences.getBoolean("danmaku_auto_match_enabled", false)
+    }
+
+    fun setDanmakuAutoMatchEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("danmaku_auto_match_enabled", enabled).apply()
+    }
     
     /**
      * 自定义弹幕服务器地址（旧接口，保留兼容）
@@ -1590,6 +1710,30 @@ class PreferencesManager private constructor(context: Context) {
 
     fun setCloseAfterEndOfVideo(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("close_after_eof", enabled).apply()
+    }
+
+    /**
+     * 获取画面旋转锁定模式
+     * AUTO=跟随视频宽高比, PORTRAIT=强制竖屏, LANDSCAPE=强制横屏
+     */
+    fun getRotationLockMode(): String {
+        return sharedPreferences.getString("rotation_lock_mode", "AUTO") ?: "AUTO"
+    }
+
+    fun setRotationLockMode(mode: String) {
+        sharedPreferences.edit().putString("rotation_lock_mode", mode).apply()
+    }
+
+    /**
+     * 获取上次全量扫描时间戳（毫秒）
+     * 用于增量扫描：文件修改时间晚于此时间才需要重新解析时长
+     */
+    fun getLastFullScanTime(): Long {
+        return sharedPreferences.getLong("last_full_scan_time", 0L)
+    }
+
+    fun setLastFullScanTime(timestamp: Long) {
+        sharedPreferences.edit().putLong("last_full_scan_time", timestamp).apply()
     }
 
     // ==================== 文件扫描 ====================

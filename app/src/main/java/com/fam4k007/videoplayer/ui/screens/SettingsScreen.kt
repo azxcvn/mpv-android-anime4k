@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.fam4k007.videoplayer.bilibili.auth.BiliBiliAuthManager
 import com.fam4k007.videoplayer.ui.components.ClickableItem
 import com.fam4k007.videoplayer.ui.components.PreferenceCard
+import com.fam4k007.videoplayer.ui.components.PreferenceDivider
 import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.theme.DarkMode
 import com.fam4k007.videoplayer.ui.theme.ThemeController
@@ -130,6 +132,8 @@ fun SettingsScreen(
                         onClick = { showThemeDialog = true }
                     )
                     
+                    PreferenceDivider()
+                    
                     val currentDarkMode = themeController.getDarkMode()
                     ClickableItem(
                         title = "暗色模式",
@@ -158,6 +162,8 @@ fun SettingsScreen(
                         icon = Icons.Default.PlayCircle,
                         onClick = onNavigateToPlaybackSettings
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "播放历史记录",
@@ -192,11 +198,13 @@ fun SettingsScreen(
             item {
                 PreferenceCard {
                     ClickableItem(
-                        title = "文件夹黑名单",
-                        subtitle = "屏蔽指定文件夹，不再扫描其中的视频",
+                        title = "文件夹黑白名单",
+                        subtitle = "屏蔽或指定文件夹，控制视频扫描范围",
                         icon = Icons.Default.Warning,
                         onClick = onNavigateToFolderBlacklist
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "其他媒体设置",
@@ -231,6 +239,8 @@ fun SettingsScreen(
                         }
                     )
                     
+                    PreferenceDivider()
+                    
                     ClickableItem(
                         title = "哔哩哔哩视频下载",
                         subtitle = "下载B站视频/番剧",
@@ -247,6 +257,8 @@ fun SettingsScreen(
                             }
                         }
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "字幕搜索下载",
@@ -276,12 +288,16 @@ fun SettingsScreen(
                         }
                     )
 
+                    PreferenceDivider()
+
                     ClickableItem(
                         title = "设备信息",
                         subtitle = "查看HDR支持、编解码器等硬件信息",
                         icon = Icons.Default.Devices,
                         onClick = onNavigateToDeviceInfo
                     )
+                    
+                    PreferenceDivider()
                     
                     ClickableItem(
                         title = "关于",

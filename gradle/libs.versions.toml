@@ -64,6 +64,9 @@ truetypeParser = "2.1.4"
 # Dependency Injection (未来使用)
 koin = "4.0.0"
 
+# WebDAV Proxy
+nanohttpd = "2.3.1"
+
 [libraries]
 # AndroidX Core
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
@@ -124,6 +127,9 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # FrameScout
 framescout = { module = "com.github.AKhalil609:FrameScout", version.ref = "framescout" }
+
+# WebDAV Proxy
+nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 
 # TrueType Parser
 truetype-parser = { module = "io.github.yubyf:truetypeparser-light", version.ref = "truetypeParser" }

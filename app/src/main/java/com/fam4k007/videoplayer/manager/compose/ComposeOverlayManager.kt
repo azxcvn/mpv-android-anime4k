@@ -180,6 +180,7 @@ class ComposeOverlayManager(
         currentShowBottom: Boolean,
         currentDisplayArea: Int,
         currentMaxScreenNum: Int,
+        currentRandomColor: Boolean,
         onSizeChange: (Int) -> Unit,
         onSpeedChange: (Int) -> Unit,
         onAlphaChange: (Int) -> Unit,
@@ -188,7 +189,8 @@ class ComposeOverlayManager(
         onShowTopChange: (Boolean) -> Unit,
         onShowBottomChange: (Boolean) -> Unit,
         onDisplayAreaChange: (Int) -> Unit,
-        onMaxScreenNumChange: (Int) -> Unit
+        onMaxScreenNumChange: (Int) -> Unit,
+        onRandomColorChange: (Boolean) -> Unit
     ) {
         setContent {
             DanmakuSettingsDrawer(
@@ -202,6 +204,7 @@ class ComposeOverlayManager(
                 currentShowBottom = currentShowBottom,
                 currentDisplayArea = currentDisplayArea,
                 currentMaxScreenNum = currentMaxScreenNum,
+                currentRandomColor = currentRandomColor,
                 onSizeChange = onSizeChange,
                 onSpeedChange = onSpeedChange,
                 onAlphaChange = onAlphaChange,
@@ -211,6 +214,7 @@ class ComposeOverlayManager(
                 onShowBottomChange = onShowBottomChange,
                 onDisplayAreaChange = onDisplayAreaChange,
                 onMaxScreenNumChange = onMaxScreenNumChange,
+                onRandomColorChange = onRandomColorChange,
                 onDismiss = { clearContent() }
             )
         }
@@ -220,7 +224,7 @@ class ComposeOverlayManager(
      * 显示DanDanPlay网络弹幕搜索对话框
      */
     fun showDanDanPlaySearchDialog(
-        onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String) -> Unit
+        onEpisodeSelected: (episodeId: Int, animeTitle: String, episodeTitle: String, animeId: Int, serverUrl: String?, episodes: List<com.fam4k007.videoplayer.dandanplay.EpisodeInfo>) -> Unit
     ) {
         setContent {
             com.fam4k007.videoplayer.ui.components.DanDanPlaySearchDialog(
@@ -326,22 +330,37 @@ class ComposeOverlayManager(
     }
 
     // ===== 片头片尾跳过设置 =====
-    
-    /**
-     * 显示片头片尾跳过设置抽屉
-     */
+
     fun showSkipSettingsDrawer(
+        enabled: Boolean,
         currentSkipIntro: Int,
         currentSkipOutro: Int,
+        currentIntroRange: Int,
+        currentOutroRange: Int,
+        getCurrentPosition: () -> Double = { 0.0 },
+        getDuration: () -> Double = { 0.0 },
+        onEnabledChange: (Boolean) -> Unit = {},
+        onIntroRangeChange: (Int) -> Unit = {},
+        onOutroRangeChange: (Int) -> Unit = {},
         onSkipIntroChange: (Int) -> Unit,
-        onSkipOutroChange: (Int) -> Unit
+        onSkipOutroChange: (Int) -> Unit,
+        onReset: () -> Unit = {}
     ) {
         setContent {
             SkipSettingsDrawer(
+                enabled = enabled,
                 currentSkipIntro = currentSkipIntro,
                 currentSkipOutro = currentSkipOutro,
+                currentIntroRange = currentIntroRange,
+                currentOutroRange = currentOutroRange,
+                getCurrentPosition = getCurrentPosition,
+                getDuration = getDuration,
+                onEnabledChange = onEnabledChange,
+                onIntroRangeChange = onIntroRangeChange,
+                onOutroRangeChange = onOutroRangeChange,
                 onSkipIntroChange = onSkipIntroChange,
                 onSkipOutroChange = onSkipOutroChange,
+                onReset = onReset,
                 onDismiss = { clearContent() }
             )
         }

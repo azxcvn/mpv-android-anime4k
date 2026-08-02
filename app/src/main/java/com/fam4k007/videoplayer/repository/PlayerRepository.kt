@@ -229,6 +229,14 @@ class PlayerRepository(
         preferencesManager.setDrawerAnimationEnabled(enabled)
     }
 
+    fun getVideoAspect(): String {
+        return preferencesManager.getVideoAspect()
+    }
+
+    fun setVideoAspect(aspect: String) {
+        preferencesManager.setVideoAspect(aspect)
+    }
+
     /**
      * 获取所有播放状态（用于视频列表快速查询进度）
      */
@@ -324,6 +332,14 @@ class PlayerRepository(
      */
     fun setAutoLoadDanmakuEnabled(enabled: Boolean) {
         preferencesManager.setAutoLoadDanmakuEnabled(enabled)
+    }
+
+    fun isDanmakuAutoMatchEnabled(): Boolean {
+        return preferencesManager.isDanmakuAutoMatchEnabled()
+    }
+
+    fun setDanmakuAutoMatchEnabled(enabled: Boolean) {
+        preferencesManager.setDanmakuAutoMatchEnabled(enabled)
     }
     
     /**
@@ -835,5 +851,15 @@ class PlayerRepository(
 
     fun setCloseAfterEndOfVideo(enabled: Boolean) {
         preferencesManager.setCloseAfterEndOfVideo(enabled)
+    }
+
+    // ==================== 画面方向锁定 ====================
+
+    fun getRotationLockMode(): String {
+        return preferencesManager.getRotationLockMode()
+    }
+
+    fun setRotationLockMode(mode: String) {
+        preferencesManager.setRotationLockMode(mode)
     }
 }

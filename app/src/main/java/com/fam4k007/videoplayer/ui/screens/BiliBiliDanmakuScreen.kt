@@ -32,7 +32,7 @@ fun BiliBiliDanmakuScreen(
     savedFolderUri: Uri?,
     downloadProgress: DownloadProgress,
     isDownloading: Boolean,
-    downloadWholeSeason: Boolean = true,
+    downloadWholeSeason: Boolean = false,
     onBack: () -> Unit,
     onFolderSelected: (Uri) -> Unit,
     onDownloadDanmaku: (String, Boolean) -> Unit,

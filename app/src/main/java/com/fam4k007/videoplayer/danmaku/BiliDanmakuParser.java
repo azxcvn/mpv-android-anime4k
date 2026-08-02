@@ -52,6 +52,18 @@ public class BiliDanmakuParser extends BaseDanmakuParser {
 
     protected float mDispScaleX;
     protected float mDispScaleY;
+    
+    /** 是否启用随机渐变色（解析时覆盖） */
+    private static volatile boolean sRandomColorEnabled = false;
+    private static final java.util.Random sColorRandom = new java.util.Random();
+    
+    public static void setRandomColorEnabled(boolean enabled) {
+        sRandomColorEnabled = enabled;
+    }
+    
+    public static boolean isRandomColorEnabled() {
+        return sRandomColorEnabled;
+    }
 
     @Override
     public Danmakus parse() {
@@ -129,6 +141,14 @@ public class BiliDanmakuParser extends BaseDanmakuParser {
                     if (item != null) {
                         item.setTime(time);
                         item.textSize = textSize * (mDispDensity - 0.6f);
+                        
+                        // 随机渐变色覆盖
+                        if (sRandomColorEnabled) {
+                            float hue = (sColorRandom.nextFloat() * 360f + index * 17f) % 360f;
+                            color = android.graphics.Color.HSVToColor(
+                                new float[]{hue, 0.8f, 1.0f});
+                        }
+                        
                         item.textColor = color;
                         item.textShadowColor = color <= Color.BLACK ? Color.WHITE : Color.BLACK;
                     }

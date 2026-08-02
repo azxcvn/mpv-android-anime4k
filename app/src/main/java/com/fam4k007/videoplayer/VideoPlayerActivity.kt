@@ -48,6 +48,7 @@ import com.fam4k007.videoplayer.domain.player.PlaybackEngine
 import com.fam4k007.videoplayer.domain.player.PlayerControlsManager
 import com.fam4k007.videoplayer.domain.player.PlayerDialogManager
 import com.fam4k007.videoplayer.domain.player.FilePickerManager
+import com.fam4k007.videoplayer.domain.player.PipHelper
 import com.fam4k007.videoplayer.domain.player.SubtitleDialogCallback
 import com.fam4k007.videoplayer.domain.player.DanmakuDialogCallback
 import com.fam4k007.videoplayer.domain.player.MoreOptionsCallback
@@ -61,6 +62,7 @@ import com.fam4k007.videoplayer.utils.UriUtils.getFolderName
 import com.fam4k007.videoplayer.utils.DialogUtils
 import com.fam4k007.videoplayer.utils.Logger
 import com.fam4k007.videoplayer.presentation.PlayerViewModel
+import com.fam4k007.videoplayer.presentation.RepeatMode
 import com.fam4k007.videoplayer.presentation.PlayerStateHolder
 import `is`.xyz.mpv.MPVLib
 import kotlinx.coroutines.delay
@@ -112,6 +114,9 @@ class VideoPlayerActivity : AppCompatActivity(),
     internal lateinit var screenshotManager: com.fam4k007.videoplayer.manager.ScreenshotManager
     internal lateinit var skipIntroOutroManager: com.fam4k007.videoplayer.manager.SkipIntroOutroManager
     internal var thumbnailManager: com.fam4k007.videoplayer.manager.VideoThumbnailManager? = null
+    internal lateinit var pipHelper: PipHelper
+    internal var controlsComposeView: ComposeView? = null
+    private var pipCloseRequested = false  // onStop 在 PiP 关闭时设置，回调中检查  // PiP 模式时隐藏
 
     internal lateinit var mpvView: CustomMPVView
     internal lateinit var danmakuView: com.fam4k007.videoplayer.danmaku.DanmakuPlayerView
@@ -124,6 +129,7 @@ class VideoPlayerActivity : AppCompatActivity(),
     internal var remotePlaybackRequest: RemotePlaybackRequest? = null
     internal var remoteResolveJob: Job? = null
     internal var remoteResolveSequence = 0L
+    internal var proxyAudioUrl: String? = null
     internal var themeRevision by mutableIntStateOf(0)
     internal val preferencesManager: PreferencesManager by inject()
     internal val historyManager: PlaybackHistoryManager by inject()
@@ -260,6 +266,28 @@ class VideoPlayerActivity : AppCompatActivity(),
         ) { uri ->
             if (uri != null) {
                 handleAddAudioTrack(uri)
+            }
+        }
+        
+        // 注册系统字幕文件选择器（Android 10 及以下使用）
+        subtitlePickerLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (::filePickerManager.isInitialized) {
+                filePickerManager.handleSubtitleFromSystemPicker(uri)
+            } else {
+                Log.w(TAG, "subtitlePickerLauncher: filePickerManager not initialized yet")
+            }
+        }
+        
+        // 注册系统弹幕文件选择器（Android 10 及以下使用）
+        danmakuPickerLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (::filePickerManager.isInitialized) {
+                filePickerManager.handleDanmakuFromSystemPicker(uri)
+            } else {
+                Log.w(TAG, "danmakuPickerLauncher: filePickerManager not initialized yet")
             }
         }
         
@@ -400,19 +428,6 @@ class VideoPlayerActivity : AppCompatActivity(),
             mpvView.postDelayed({
                 com.fam4k007.videoplayer.utils.Logger.d(TAG, "Loading video after MPV init")
                 loadVideo()
-                // DASH格式：视频加载后动态添加外部音频轨
-                val audioUrl = intent.getStringExtra("audio_url")
-                if (!audioUrl.isNullOrEmpty()) {
-                    mpvView.postDelayed({
-                        try {
-                            MPVLib.command("audio-add", audioUrl)
-                            MPVLib.setPropertyString("vid", "auto")
-                            com.fam4k007.videoplayer.utils.Logger.d(TAG, "Added external audio: $audioUrl")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed to add audio: ${e.message}")
-                        }
-                    }, 500) // 视频加载后尽快添加音频轨
-                }
             }, 100)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize MPV", e)
@@ -535,6 +550,15 @@ class VideoPlayerActivity : AppCompatActivity(),
         return intent.getBooleanExtra(EXTRA_AUTO_ROTATE, false)
     }
 
+    override fun onRepeatModeSelected(mode: RepeatMode) {
+        viewModel.setRepeatMode(mode)
+        Log.d(TAG, "Repeat mode changed to: $mode")
+    }
+
+    override fun getRepeatMode(): RepeatMode {
+        return viewModel.repeatMode.value
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
@@ -558,21 +582,38 @@ class VideoPlayerActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
+        // PiP 模式下不暂停
+        if (isInPictureInPictureMode) return
+
+        // 关闭 PiP 或正常退出时暂停播放（参照 mpvEx）
+        if (isFinishing && !isManualBackgroundPlayback) {
+            if (::playbackEngine.isInitialized && isPlaying) {
+                playbackEngine.pause()
+                isPlaying = false
+            }
+        }
         savePlaybackState()
     }
     
     override fun onStop() {
         super.onStop()
         
-        // 后台播放模式：不暂停视频，让 Service 继续控制，但仍保存播放进度
+        // 后台播放模式：不暂停视频，让 Service 继续控制
         if (isManualBackgroundPlayback) {
             Log.d(TAG, "Background playback active, keeping video playing in background")
             savePlaybackState()
             return
         }
+
+        // PiP 模式：不暂停，画中画窗口继续播放
+        if (isInPictureInPictureMode) {
+            Log.d(TAG, "PiP mode active, keeping video playing")
+            pipCloseRequested = true  // PiP 中 onStop 表示用户关闭了 PiP
+            return
+        }
         
-        // 当Activity完全不可见时（Home键、锁屏等），自动暂停视频
-        // 不会影响文件选择器等操作，因为那些只触发onPause不触发onStop
+        // 当 Activity 完全不可见时（Home 键、锁屏等），自动暂停视频
+        // 不会影响文件选择器等操作，因为那些只触发 onPause 不触发 onStop
         if (::playbackEngine.isInitialized && isPlaying) {
             playbackEngine.pause()
             
@@ -611,6 +652,10 @@ class VideoPlayerActivity : AppCompatActivity(),
         // 重新同步音量增强状态（用户可能在设置页面修改了）
         val currentBoost = preferencesManager.isVolumeBoostEnabled()
         viewModel.setVolumeBoostEnabled(currentBoost)
+        // 重新同步动画开关设置（用户可能在设置页面修改了）
+        viewModel.syncAnimationSettings()
+        // 重新同步进度条样式（用户可能在设置页面修改了，避免重启才生效）
+        viewModel.syncSeekbarStyle()
         Logger.d(TAG, "Activity resumed, volume boost synced: $currentBoost")
         // 不自动恢复播放，让用户手动控制
         Logger.d(TAG, "Activity resumed")
@@ -638,6 +683,21 @@ class VideoPlayerActivity : AppCompatActivity(),
         
         savePlaybackState()
         
+        // 清理 WebDAV 代理流
+        val webdavStreamId = intent.getStringExtra("webdav_stream_id")
+        if (webdavStreamId != null) {
+            try {
+                com.fam4k007.videoplayer.domain.webdav.WebDavStreamingProxy.getInstance()
+                    .unregisterStream(webdavStreamId)
+                Logger.d(TAG, "Unregistered WebDAV proxy stream: $webdavStreamId")
+            } catch (e: Exception) {
+                Logger.w(TAG, "Failed to unregister WebDAV proxy stream", e)
+            }
+        }
+
+        // 清理 Bilibili 流代理
+        com.fam4k007.videoplayer.remote.StreamProxy.stop()
+        
         // 后台播放模式：不解绑 Service，不销毁 MPV，让 Service 继续运行
         if (isManualBackgroundPlayback) {
             Log.d(TAG, "Background playback active, keeping service alive")
@@ -649,6 +709,7 @@ class VideoPlayerActivity : AppCompatActivity(),
             }
             controlsManager?.cleanup()
             gestureHandler?.cleanup()
+            pipHelper.destroy()
             filePickerManager?.cleanup()
             // 注意：不调用 playbackEngine?.destroy()，保持 MPV 运行
             // 不调用 endBackgroundPlayback()，保持 Service 运行
@@ -702,11 +763,10 @@ class VideoPlayerActivity : AppCompatActivity(),
     }
     
     override fun onSearchNetworkDanmaku() {
-        // 显示网络弹幕搜索对话框
         composeOverlayManager.showDanDanPlaySearchDialog(
-            onEpisodeSelected = { episodeId, animeTitle, episodeTitle ->
-                // 下载并加载弹幕
-                loadNetworkDanmaku(episodeId, animeTitle, episodeTitle)
+            onEpisodeSelected = { episodeId, animeTitle, episodeTitle, animeId, serverUrl, episodes ->
+                saveDanmakuAutoMatchCache(animeId, animeTitle, serverUrl, episodes)
+                loadNetworkDanmaku(episodeId, animeTitle, episodeTitle, serverUrl)
             }
         )
     }
@@ -826,6 +886,18 @@ class VideoPlayerActivity : AppCompatActivity(),
                 if (allMatchResults.size == 1) {
                     val result = allMatchResults[0]
                     loadNetworkDanmaku(result.matchInfo.episodeId, result.matchInfo.animeTitle, result.matchInfo.episodeTitle, result.serverUrl)
+                    // 匹配弹幕没有集列表，需异步获取后缓存
+                    lifecycleScope.launch {
+                        val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(result.serverUrl)
+                        api.searchAnime(result.matchInfo.animeTitle).fold(
+                            onSuccess = { response ->
+                                response.animes.firstOrNull { it.animeId == result.matchInfo.animeId }?.let {
+                                    saveDanmakuAutoMatchCache(result.matchInfo.animeId, result.matchInfo.animeTitle, result.serverUrl, it.episodes)
+                                }
+                            },
+                            onFailure = { Logger.w(TAG, "Match cache: search failed ${it.message}") }
+                        )
+                    }
                 } else {
                     withContext(Dispatchers.Main) {
                         showMatchSelectionDialog(allMatchResults)
@@ -924,7 +996,11 @@ class VideoPlayerActivity : AppCompatActivity(),
     }
     
     override fun onShowSkipSettings() {
-        skipIntroOutroManager.showSkipSettingsDrawer(viewModel.currentFolderPath.value)
+        skipIntroOutroManager.showSkipSettingsDrawer(
+            folderPath = viewModel.currentFolderPath.value,
+            getCurrentPosition = { viewModel.position.value.toDouble() },
+            getDuration = { viewModel.duration.value.toDouble() }
+        )
     }
 
     override fun onShowEqualizer() {
@@ -1018,6 +1094,35 @@ class VideoPlayerActivity : AppCompatActivity(),
         stateHolder.syncFromViewModel(viewModel)
         startBackgroundPlayback()
         startActivity(Intent(this, AudioPlayerActivity::class.java))
+    }
+
+    // ==================== 小窗播放（PiP）====================
+
+    override fun onFloatingWindow() {
+        if (!::pipHelper.isInitialized) return
+        if (!::playbackEngine.isInitialized) {
+            DialogUtils.showToastShort(this, "请先开始播放视频")
+            return
+        }
+
+        // 隐藏控制 UI → 进入 PiP（参照 mpvEx enterPipModeHidingOverlay 模式）
+        controlsComposeView?.alpha = 0f
+        pipHelper.enterPipMode()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        if (::pipHelper.isInitialized) {
+            pipHelper.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        }
+        controlsComposeView?.alpha = if (isInPictureInPictureMode) 0f else 1f
+
+        if (!isInPictureInPictureMode && pipCloseRequested) {
+            // 关闭 PiP：onStop 先触发设了标志，立即 finish
+            pipCloseRequested = false
+            finish()
+        }
+        Log.d(TAG, "PiP mode changed: $isInPictureInPictureMode")
     }
 
     // ==================== 后台播放管理 ====================
@@ -1334,20 +1439,27 @@ class VideoPlayerActivity : AppCompatActivity(),
                 Log.d(TAG, "handleEndOfFile: repeating current file")
                 MPVLib.command("seek", "0", "absolute")
                 MPVLib.setPropertyBoolean("pause", false)
+                // 重置 EOF 检测标志，确保下次到达末尾时能再次触发
+                if (::playbackEngine.isInitialized) {
+                    playbackEngine.resetEofDetection()
+                }
                 return
             }
 
             // 处理播放列表播放
             if (playlist.isNotEmpty()) {
-                val hasNextItem = if (viewModel.shuffleEnabled.value) {
+                // RepeatMode.ALL 时始终视为有下一个
+                val hasNextItem = if (viewModel.shouldRepeatPlaylist()) {
+                    playlist.isNotEmpty()
+                } else if (viewModel.shuffleEnabled.value) {
                     shuffledPosition < shuffledIndices.size - 1
                 } else {
                     playlistIndex < playlist.size - 1
                 }
                 Log.d(TAG, "handleEndOfFile: hasNextItem=$hasNextItem")
 
-                // 检查是否启用自动连播
-                val autoplayEnabled = preferencesManager.isAutoPlayNextEnabled()
+                // RepeatMode.ALL 时强制启用自动连播，不受用户设置影响
+                val autoplayEnabled = preferencesManager.isAutoPlayNextEnabled() || viewModel.shouldRepeatPlaylist()
 
                 if (hasNextItem && autoplayEnabled) {
                     Log.d(TAG, "handleEndOfFile: has next AND autoplay enabled -> playNext()")

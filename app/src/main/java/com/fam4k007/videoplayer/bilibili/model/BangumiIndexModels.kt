@@ -149,7 +149,19 @@ data class PlayUrlResult(
     val format: String?,
     val timelength: Long?,
     val durl: List<PlayUrlDurl>?,
-    val dash: PlayUrlDash?
+    val dash: PlayUrlDash?,
+    val clip_info_list: List<ClipInfo>? = null
+)
+
+/**
+ * 番剧剪辑信息（bilibili playurl 响应的 clip_info_list）
+ * 官方维护的片头/片尾时间段，start/end 单位秒
+ * clipType: CLIP_TYPE_OP = 片头, CLIP_TYPE_ED = 片尾
+ */
+data class ClipInfo(
+    val start: Double,
+    val end: Double,
+    val clipType: String?
 )
 
 data class PlayUrlDurl(

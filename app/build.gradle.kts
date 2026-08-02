@@ -37,8 +37,8 @@ android {
         applicationId = "com.fam4k007.videoplayer"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 30
-        versionName = "1.3.0"
+        versionCode = 31
+        versionName = "1.3.1"
 
         buildConfigField(
             "String",
@@ -151,7 +151,6 @@ dependencies {
     implementation(mapOf("name" to "mpvlib", "ext" to "aar"))
     implementation(mapOf("name" to "DanmakuFlameMaster", "ext" to "aar"))
     implementation(mapOf("name" to "mediainfoAndroid-v1.0.0-fix", "ext" to "aar"))
-    implementation(mapOf("name" to "seeker-2.0.1", "ext" to "aar"))
     implementation(files("libs/sardine-1.0.2.jar"))
     implementation(files("libs/simple-xml-2.7.1.jar"))
 
@@ -172,6 +171,7 @@ dependencies {
     // Network
     implementation(libs.okhttp)
     implementation(libs.jsoup)
+    implementation(libs.nanohttpd)
 
     // Database
     implementation(libs.bundles.room)

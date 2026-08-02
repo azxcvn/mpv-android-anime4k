@@ -17,6 +17,7 @@ import com.fam4k007.videoplayer.domain.player.Anime4KManager
 import com.fam4k007.videoplayer.domain.player.FilePickerManager
 import com.fam4k007.videoplayer.domain.player.GestureHandler
 import com.fam4k007.videoplayer.domain.player.PlaybackEngine
+import com.fam4k007.videoplayer.domain.player.PipHelper
 import `is`.xyz.mpv.MPVLib
 import com.fam4k007.videoplayer.domain.player.PlayerControlsManager
 import com.fam4k007.videoplayer.domain.player.PlayerDialogManager
@@ -186,6 +187,7 @@ internal fun VideoPlayerActivity.setupComposeTestLayer() {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
+        controlsComposeView = composeView
 
         Logger.d(TAG, "Compose test layer added successfully")
     } catch (e: Exception) {
@@ -267,6 +269,28 @@ internal fun VideoPlayerActivity.initializeManagers() {
                 // 重置切换标志，允许后续的 END_FILE 事件正常处理
                 isSwitchingVideo = false
 
+                // 注入番剧官方 OP/ED 片段（来自 bilibili playurl 的 clip_info_list）
+                // 在线番剧：进度条着色 + 胶囊跳过提示复用现有 skipSegments 机制
+                val officialClips = remotePlaybackRequest?.opEdClips
+                if (officialClips.isNullOrEmpty()) {
+                    viewModel.setOfficialSkipSegments(emptyList())
+                } else {
+                    val segments = officialClips.mapNotNull { clip ->
+                        val type = when (clip.type) {
+                            "OP" -> com.fam4k007.videoplayer.player.SkipSegmentType.INTRO
+                            "ED" -> com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO
+                            else -> return@mapNotNull null
+                        }
+                        com.fam4k007.videoplayer.player.SkipSegment(
+                            type = type,
+                            startSeconds = clip.startSeconds,
+                            endSeconds = clip.endSeconds,
+                            source = "official_clip"
+                        )
+                    }
+                    viewModel.setOfficialSkipSegments(segments)
+                }
+
                 // 预热当前位置缩略图，让拖动预览更快响应
                 viewModel.warmSeekThumbnailer()
 
@@ -283,21 +307,46 @@ internal fun VideoPlayerActivity.initializeManagers() {
                 if (!intent.getBooleanExtra(EXTRA_AUTO_ROTATE, false)) {
                     Handler(Looper.getMainLooper()).postDelayed({
                         try {
-                            val rawAspect = MPVLib.getPropertyDouble("video-params/aspect")
-                            val rotate = MPVLib.getPropertyInt("video-params/rotate") ?: 0
-                            var aspect = if (rawAspect == null || rawAspect < 0.001) {
-                                val w = (MPVLib.getPropertyInt("video-params/w") ?: 0).toDouble()
-                                val h = (MPVLib.getPropertyInt("video-params/h") ?: 0).toDouble()
-                                if (w > 0 && h > 0) w / h else null
-                            } else rawAspect
-                            // 考虑旋转：90° 或 270° 时反转宽高比
-                            if (aspect != null && rotate % 180 == 90) {
-                                aspect = 1.0 / aspect
+                            // 读取全局旋转锁定设置
+                            val rotationLockMode = preferencesManager.getRotationLockMode()
+                            val forcePortrait: Boolean
+                            when (rotationLockMode) {
+                                "PORTRAIT" -> {
+                                    // 强制竖屏
+                                    forcePortrait = true
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Rotation lock: forcing portrait mode")
+                                }
+                                "LANDSCAPE" -> {
+                                    // 强制横屏
+                                    forcePortrait = false
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Rotation lock: forcing landscape mode")
+                                }
+                                else -> {
+                                    // AUTO: 跟随视频宽高比检测
+                                    val rawAspect = MPVLib.getPropertyDouble("video-params/aspect")
+                                    val rotate = MPVLib.getPropertyInt("video-params/rotate") ?: 0
+                                    var aspect = if (rawAspect == null || rawAspect < 0.001) {
+                                        val w = (MPVLib.getPropertyInt("video-params/w") ?: 0).toDouble()
+                                        val h = (MPVLib.getPropertyInt("video-params/h") ?: 0).toDouble()
+                                        if (w > 0 && h > 0) w / h else null
+                                    } else rawAspect
+                                    if (aspect != null && rotate % 180 == 90) {
+                                        aspect = 1.0 / aspect
+                                    }
+                                    forcePortrait = aspect != null && aspect <= 1.0
+                                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Detected video aspect=$aspect, rotate=$rotate, forcePortrait=$forcePortrait")
+                                }
                             }
-                            if (aspect != null && aspect <= 1.0) {
-                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Detected portrait video (aspect=$aspect, rotate=$rotate), switching to portrait mode")
+                            if (forcePortrait) {
+                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Switching to portrait mode (lock=$rotationLockMode)")
                                 intent.putExtra(EXTRA_PORTRAIT_UI, true)
                                 applyPortraitUiEnabled(true)
+                                refreshVideoLayoutAfterOrientationToggle()
+                            } else if (rotationLockMode != "AUTO") {
+                                // 锁定模式下也要应用横屏
+                                com.fam4k007.videoplayer.utils.Logger.d(TAG, "Switching to landscape mode (lock=$rotationLockMode)")
+                                intent.putExtra(EXTRA_PORTRAIT_UI, false)
+                                applyPortraitUiEnabled(false)
                                 refreshVideoLayoutAfterOrientationToggle()
                             }
                         } catch (e: Exception) {
@@ -312,6 +361,12 @@ internal fun VideoPlayerActivity.initializeManagers() {
                     viewModel.updateChapters(chapters)
                     com.fam4k007.videoplayer.utils.Logger.d(TAG, "Loaded ${chapters.size} chapters")
                 }, 300)
+
+                // 恢复已保存的视频画面比例
+                Handler(Looper.getMainLooper()).postDelayed({
+                    playbackEngine.changeVideoAspect(currentVideoAspect)
+                    com.fam4k007.videoplayer.utils.Logger.d(TAG, "Restored video aspect: ${currentVideoAspect.displayName}")
+                }, 400)
 
                 // 延迟标记视频准备好，确保视频真正开始播放
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -583,7 +638,9 @@ internal fun VideoPlayerActivity.initializeManagers() {
         danmakuManager,
         historyManager,
         WeakReference(playbackEngine),
-        preferencesManager
+        preferencesManager,
+        subtitleSystemPickerLauncher = subtitlePickerLauncher,
+        danmakuSystemPickerLauncher = danmakuPickerLauncher
     )
     filePickerManager.initialize()
     // 设置ComposeOverlayManager供文件选择器使用
@@ -602,6 +659,9 @@ internal fun VideoPlayerActivity.initializeManagers() {
     // 初始化缩略图管理器（使用 MPV 原生抓帧，无需 Context）
     thumbnailManager = com.fam4k007.videoplayer.manager.VideoThumbnailManager()
     viewModel.setThumbnailManager(thumbnailManager!!)
+
+    // 初始化画中画（PiP）小窗播放
+    pipHelper = PipHelper(this, mpvView)
 
     bindViewsToManagers()
 }

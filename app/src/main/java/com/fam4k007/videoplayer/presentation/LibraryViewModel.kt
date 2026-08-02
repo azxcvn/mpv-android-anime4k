@@ -101,7 +101,9 @@ class LibraryViewModel(
         viewModelScope.launch {
             val cached = mediaScanManager.loadFolderCache()
             if (cached != null && cached.isNotEmpty()) {
-                val filtered = folderBrowserManager.filterBlacklisted(cached)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(cached)
+                )
                 if (_viewMode.value == "TREE_VIEW") {
                     val treeFolders = treeNavigationManager.loadRoot(filtered)
                     val sorted = folderBrowserManager.sort(treeFolders, folderSortType, folderSortOrder)
@@ -139,11 +141,15 @@ class LibraryViewModel(
     fun scanVideoFolders(silent: Boolean = false) {
         viewModelScope.launch {
             try {
-                if (!silent) {
+                // silent 模式：有缓存时静默刷新，无缓存时显示加载指示器
+                val showLoading = !silent || _folderListState.value.folders.isEmpty()
+                if (showLoading) {
                     _folderListState.value = _folderListState.value.copy(isLoading = true, error = null)
                 }
                 val allFolders = mediaScanManager.scanAllFolders()
-                val filtered = folderBrowserManager.filterBlacklisted(allFolders)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
                 val sorted = folderBrowserManager.sort(
                     filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
                 )
@@ -152,7 +158,7 @@ class LibraryViewModel(
                 Logger.d(TAG, "扫描完成：${allFolders.size} 个文件夹，过滤后 ${filtered.size}")
             } catch (e: Exception) {
                 Logger.e(TAG, "扫描文件夹失败", e)
-                if (!silent) {
+                if (!silent || _folderListState.value.folders.isEmpty()) {
                     _folderListState.value = _folderListState.value.copy(
                         isLoading = false, error = e.message ?: "Unknown error"
                     )
@@ -166,7 +172,9 @@ class LibraryViewModel(
             try {
                 _folderListState.value = _folderListState.value.copy(isRefreshing = true, error = null)
                 val allFolders = mediaScanManager.forceRefreshAllFolders()
-                val filtered = folderBrowserManager.filterBlacklisted(allFolders)
+                val filtered = folderBrowserManager.filterWhitelisted(
+                    folderBrowserManager.filterBlacklisted(allFolders)
+                )
                 val sorted = folderBrowserManager.sort(
                     filtered, _folderListState.value.sortType, _folderListState.value.sortOrder
                 )
@@ -381,7 +389,9 @@ class LibraryViewModel(
     private suspend fun getOrRefreshAllFolders(): List<VideoFolder> {
         allFoldersCache?.let { return it }
         val folders = mediaScanManager.scanAllFolders()
-        val filtered = folderBrowserManager.filterBlacklisted(folders)
+        val filtered = folderBrowserManager.filterWhitelisted(
+            folderBrowserManager.filterBlacklisted(folders)
+        )
         if (filtered.isNotEmpty()) {
             allFoldersCache = filtered
         }
