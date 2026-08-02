@@ -269,6 +269,28 @@ internal fun VideoPlayerActivity.initializeManagers() {
                 // 重置切换标志，允许后续的 END_FILE 事件正常处理
                 isSwitchingVideo = false
 
+                // 注入番剧官方 OP/ED 片段（来自 bilibili playurl 的 clip_info_list）
+                // 在线番剧：进度条着色 + 胶囊跳过提示复用现有 skipSegments 机制
+                val officialClips = remotePlaybackRequest?.opEdClips
+                if (officialClips.isNullOrEmpty()) {
+                    viewModel.setOfficialSkipSegments(emptyList())
+                } else {
+                    val segments = officialClips.mapNotNull { clip ->
+                        val type = when (clip.type) {
+                            "OP" -> com.fam4k007.videoplayer.player.SkipSegmentType.INTRO
+                            "ED" -> com.fam4k007.videoplayer.player.SkipSegmentType.OUTRO
+                            else -> return@mapNotNull null
+                        }
+                        com.fam4k007.videoplayer.player.SkipSegment(
+                            type = type,
+                            startSeconds = clip.startSeconds,
+                            endSeconds = clip.endSeconds,
+                            source = "official_clip"
+                        )
+                    }
+                    viewModel.setOfficialSkipSegments(segments)
+                }
+
                 // 预热当前位置缩略图，让拖动预览更快响应
                 viewModel.warmSeekThumbnailer()
 

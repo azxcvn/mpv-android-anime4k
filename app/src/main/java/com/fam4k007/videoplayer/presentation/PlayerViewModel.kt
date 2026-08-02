@@ -692,6 +692,32 @@ class PlayerViewModel(
     private val _chapterSkipDetectionEnabled = MutableStateFlow(true)
     val chapterSkipDetectionEnabled: StateFlow<Boolean> = _chapterSkipDetectionEnabled.asStateFlow()
 
+    /** 番剧官方 OP/ED 片段（来自 bilibili playurl 的 clip_info_list，精确时间戳，优先级高于章节关键词检测） */
+    private var officialSkipSegments: List<com.fam4k007.videoplayer.player.SkipSegment> = emptyList()
+
+    /**
+     * 注入番剧官方 OP/ED 跳过片段（bilibili clip_info_list）
+     * 在线番剧播放时由播放器在视频加载后调用；传空列表表示清除（例如切回本地视频）
+     */
+    fun setOfficialSkipSegments(segments: List<com.fam4k007.videoplayer.player.SkipSegment>) {
+        officialSkipSegments = segments
+        refreshSkipSegments()
+        Logger.d(TAG, "Official OP/ED clips set: ${segments.size} segments")
+    }
+
+    /**
+     * 重新计算当前生效的跳过片段
+     * 番剧官方 OP/ED 优先，其次章节关键词检测
+     */
+    private fun refreshSkipSegments() {
+        if (officialSkipSegments.isNotEmpty()) {
+            _skipSegments.value = officialSkipSegments
+            skippedSegmentTypes.clear()
+        } else {
+            refreshChapterDerivedSegments()
+        }
+    }
+
     fun toggleChapterSkipDetection() {
         _chapterSkipDetectionEnabled.value = !_chapterSkipDetectionEnabled.value
         if (!_chapterSkipDetectionEnabled.value) {
@@ -707,6 +733,8 @@ class PlayerViewModel(
     /** 当章节列表更新后重新检测 OP/ED */
     fun refreshChapterDerivedSegments() {
         if (!_chapterSkipDetectionEnabled.value) return
+        // 番剧官方 OP/ED 片段优先，存在时不使用章节关键词检测覆盖
+        if (officialSkipSegments.isNotEmpty()) return
         val chapterList = _chapters.value
         val dur = _duration.value.toDouble()
         if (dur <= 0.0 || chapterList.isEmpty()) {
