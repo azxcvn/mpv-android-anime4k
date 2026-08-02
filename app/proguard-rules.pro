@@ -311,3 +311,16 @@
 # 保护 SubtitleSearchActivity 和 SubtitleSearchScreen
 -keep class com.fam4k007.videoplayer.SubtitleSearchActivity { *; }
 -keep class com.fam4k007.videoplayer.ui.screens.SubtitleSearchScreen { *; }
+
+# ============================================
+# 番剧官方 OP/ED 跳过功能（playurl clip_info_list）
+# ============================================
+
+# 保护远程播放请求 Parcelable（Intent 传递，防止混淆导致反序列化异常）
+-keep class com.fam4k007.videoplayer.remote.RemotePlaybackRequest { *; }
+-keep class com.fam4k007.videoplayer.remote.RemotePlaybackRequest$** { *; }
+-keep class com.fam4k007.videoplayer.remote.OpEdClip { *; }
+
+# 保护跳过片段数据类与类型枚举（进度条着色 + 胶囊按钮读取 label）
+-keep class com.fam4k007.videoplayer.player.SkipSegment { *; }
+-keep enum com.fam4k007.videoplayer.player.SkipSegmentType { *; }

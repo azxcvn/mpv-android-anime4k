@@ -126,6 +126,18 @@ class BangumiDetailViewModel(
                         )
                     )
                     
+                    // 解析番剧官方 OP/ED 时间段（bilibili playurl 的 clip_info_list）
+                    val opEdClips = playUrlResult.clip_info_list
+                        ?.mapNotNull { clip ->
+                            when (clip.clipType) {
+                                "CLIP_TYPE_OP" -> com.fam4k007.videoplayer.remote.OpEdClip("OP", clip.start, clip.end)
+                                "CLIP_TYPE_ED" -> com.fam4k007.videoplayer.remote.OpEdClip("ED", clip.start, clip.end)
+                                else -> null
+                            }
+                        }
+                        ?.takeIf { it.isNotEmpty() }
+                    Logger.d(TAG, "Bangumi OP/ED clips: ${opEdClips?.size ?: 0}")
+
                     val request = RemotePlaybackRequest(
                         url = videoUrl,
                         title = title,
@@ -133,7 +145,8 @@ class BangumiDetailViewModel(
                         sourcePageUrl = "https://www.bilibili.com",
                         source = RemotePlaybackRequest.Source.BILIBILI,
                         audioUrl = audioUrl,
-                        bilibiliCid = episode.cid
+                        bilibiliCid = episode.cid,
+                        opEdClips = opEdClips
                     )
                     RemotePlaybackLauncher.start(context, request)
                 },
