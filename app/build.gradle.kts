@@ -151,7 +151,6 @@ dependencies {
     implementation(mapOf("name" to "mpvlib", "ext" to "aar"))
     implementation(mapOf("name" to "DanmakuFlameMaster", "ext" to "aar"))
     implementation(mapOf("name" to "mediainfoAndroid-v1.0.0-fix", "ext" to "aar"))
-    implementation(mapOf("name" to "seeker-2.0.1", "ext" to "aar"))
     implementation(files("libs/sardine-1.0.2.jar"))
     implementation(files("libs/simple-xml-2.7.1.jar"))
 

@@ -1,5 +1,11 @@
 ﻿package com.fam4k007.videoplayer.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +32,7 @@ import com.fam4k007.videoplayer.ui.components.PreferenceSectionHeader
 import com.fam4k007.videoplayer.ui.components.SwitchItem
 import com.fam4k007.videoplayer.ui.components.SliderItem
 import com.fam4k007.videoplayer.ui.components.TextItem
+import com.fam4k007.videoplayer.ui.player.CustomSeekbar
 import com.fam4k007.videoplayer.ui.player.SeekbarStyle
 import com.fam4k007.videoplayer.ui.theme.spacing
 import com.fam4k007.videoplayer.domain.player.Anime4KManager
@@ -939,7 +946,9 @@ private fun SeekbarStyleCard(
                     )
                 )
                 Spacer(Modifier.width(12.dp))
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         style.displayName,
                         style = MaterialTheme.typography.bodyMedium,
@@ -947,20 +956,52 @@ private fun SeekbarStyleCard(
                         else MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
-                    Text(
-                        when (style) {
-                            SeekbarStyle.Standard -> "经典细轨，配合圆点指示器，简约清晰"
-                            SeekbarStyle.Wavy -> "动态波浪动画，播放时律动起伏，生动流畅"
-                            SeekbarStyle.Thick -> "宽幅轨道，便于触摸操作，沉稳醒目"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
+                    // 样式实时预览（与实际播放效果一致）
+                    SeekbarStylePreview(
+                        style = style,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp, bottom = 2.dp)
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * 进度条样式实时预览
+ * 复用播放器实际的 CustomSeekbar 组件，驱动 0→100 的往返动画，所见即所得
+ */
+@Composable
+private fun SeekbarStylePreview(
+    style: SeekbarStyle,
+    modifier: Modifier = Modifier,
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val infiniteTransition = rememberInfiniteTransition(label = "seekbar_style_preview")
+    val animatedProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "seekbar_style_preview_progress",
+    )
+    CustomSeekbar(
+        progress = animatedProgress,
+        duration = 100f,
+        seekbarStyle = style,
+        accentColor = primaryColor,
+        paused = false,
+        isDragging = false,
+        chapters = emptyList(),
+        skipSegments = emptyList(),
+        onSeek = {},
+        onSeekFinished = {},
+        modifier = modifier,
+    )
 }
 
 @Composable
