@@ -13,6 +13,7 @@ enum class SkipSegmentType(
     RECAP("跳过前情提要", Color(0xFF2F80FF)),
     OUTRO("跳过片尾", Color(0xFFE05666)),
     CREDITS("跳过制作人员", Color(0xFFA64DFF)),
+    COLD_OPEN("跳过正片前段", Color(0xFFFFB300)),
     PREVIEW("跳过下集预告", Color(0xFF00D4C7)),
 }
 
