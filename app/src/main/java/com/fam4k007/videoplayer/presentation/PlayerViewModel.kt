@@ -663,9 +663,13 @@ class PlayerViewModel(
         "制作", "スタッフ", "出演", "声の出演",
         "creditless", "クレジット",
     )
+    /** 片头前段（avant / アバンタイトル）关键词：正片开始、OP 之前的一小段正片内容，不是下集预告 */
+    private val coldOpenKeywords = listOf(
+        "avant", "アバン", "アバンタイトル", "冷开场", "正片前段", "片头前段",
+    )
     private val previewKeywords = listOf(
         "preview", "next episode", "次回予告", "予告",
-        "预告", "下集", "次回", "次巻", "avant", "preview",
+        "预告", "下集", "次回", "次巻", "preview",
         "次回预告", "先行", "trailer",
     )
 
@@ -752,6 +756,8 @@ class PlayerViewModel(
 
         return when {
             hasKeyword(recapKeywords) -> com.fam4k007.videoplayer.player.SkipSegmentType.RECAP
+            hasKeyword(coldOpenKeywords) && !introOk && !outroOk ->
+                com.fam4k007.videoplayer.player.SkipSegmentType.COLD_OPEN
             hasKeyword(creditsKeywords) && !introOk && !outroOk ->
                 com.fam4k007.videoplayer.player.SkipSegmentType.CREDITS
             hasKeyword(previewKeywords) && !introOk && !outroOk ->
