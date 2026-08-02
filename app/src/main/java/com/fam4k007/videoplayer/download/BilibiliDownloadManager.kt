@@ -54,7 +54,7 @@ class BilibiliDownloadManager(private val context: Context) {
                         isLogin = true,
                         isVip = vipStatus == 1,
                         vipType = vipType,
-                        uname = data.optString("uname", "未知用户")
+                        uname = data.optString("uname", "Unknown User")
                     ))
                 } else {
                     Result.failure(Exception("Verification failed: ${json.optString("message")}"))
@@ -433,7 +433,7 @@ class BilibiliDownloadManager(private val context: Context) {
         return BangumiDetailResult(
             aid = firstEp.optString("aid"),
             cid = firstEp.optString("cid"),
-            title = firstEp.optString("long_title", firstEp.optString("title", "未知番剧")),
+            title = firstEp.optString("long_title", firstEp.optString("title", "Unknown Bangumi")),
             epId = firstEp.optString("id"),
             seasonId = data.optString("season_id")
         )
@@ -476,7 +476,7 @@ class BilibiliDownloadManager(private val context: Context) {
                 val code = json.optInt("code", -1)
                 
                 if (code != 0) {
-                    val message = json.optString("message", "未知错误")
+                    val message = json.optString("message", "Unknown error")
                     Log.e(TAG, "番剧API错误: code=$code, message=$message")
                     throw Exception("Anime API error: $message")
                 }
@@ -495,7 +495,7 @@ class BilibiliDownloadManager(private val context: Context) {
                             episodeId = ep.optString("id"),
                             aid = ep.optString("aid"),
                             cid = ep.optString("cid"),
-                            title = ep.optString("title", "第${i+1}集"),
+                            title = ep.optString("title", "Episode ${i+1}"),
                             longTitle = ep.optString("long_title", ""),
                             index = i + 1,
                             badge = ep.optString("badge", ""),
@@ -690,7 +690,7 @@ class BilibiliDownloadManager(private val context: Context) {
                 Log.d(TAG, "标题: $title, CID: $cid")
                 return Pair(cid, title)
             } else {
-                val message = json.optString("message", "未知错误")
+                val message = json.optString("message", "Unknown error")
                 throw Exception("Failed to get video details: $message (code: $code)")
             }
         } else {

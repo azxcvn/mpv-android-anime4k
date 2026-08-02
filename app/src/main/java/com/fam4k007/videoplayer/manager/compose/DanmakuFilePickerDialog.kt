@@ -137,7 +137,7 @@ fun DanmakuFilePickerDialog(
         } catch (e: Exception) {
             android.widget.Toast.makeText(
                 context,
-                "无法访问目录: ${e.message}",
+                "Cannot access directory: ${e.message}",
                 android.widget.Toast.LENGTH_SHORT
             ).show()
         } finally {

@@ -49,7 +49,7 @@ class WebDavAccountDataSource(context: Context) {
             accounts.map { account ->
                 account.copy(
                     id = account.id ?: java.util.UUID.randomUUID().toString(),
-                    displayName = account.displayName ?: "未命名账户",
+                    displayName = account.displayName ?: "Unnamed Account",
                     serverUrl = account.serverUrl ?: "",
                     account = account.account ?: "",
                     password = account.password ?: "",

@@ -832,7 +832,7 @@ class VideoPlayerActivity : AppCompatActivity(),
                 
                 val enabledServers = preferencesManager.getEnabledDanmakuServers()
                 if (enabledServers.isEmpty()) {
-                    DialogUtils.showToastLong(this@VideoPlayerActivity, "没有启用的弹幕服务器")
+                    DialogUtils.showToastLong(this@VideoPlayerActivity, "No enabled danmaku server")
                     return@launch
                 }
                 
@@ -878,7 +878,7 @@ class VideoPlayerActivity : AppCompatActivity(),
                 }
                 
                 if (allMatchResults.isEmpty()) {
-                    DialogUtils.showToastLong(this@VideoPlayerActivity, "未找到匹配的弹幕")
+                    DialogUtils.showToastLong(this@VideoPlayerActivity, "No matching danmaku found")
                     return@launch
                 }
                 
@@ -924,7 +924,7 @@ class VideoPlayerActivity : AppCompatActivity(),
             Logger.d(TAG, "onAddAudioTrack: picker launched")
         } catch (e: Exception) {
             Logger.e(TAG, "onAddAudioTrack: failed to launch picker", e)
-            DialogUtils.showToastShort(this, "无法打开文件选择器")
+            DialogUtils.showToastShort(this, "Unable to open file picker")
         }
     }
     
@@ -957,7 +957,7 @@ class VideoPlayerActivity : AppCompatActivity(),
                 
                 if (finalPath == null) {
                     withContext(Dispatchers.Main) {
-                        DialogUtils.showToastShort(this@VideoPlayerActivity, "无法处理音频文件")
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "Unable to process audio file")
                     }
                     return@launch
                 }
@@ -980,16 +980,16 @@ class VideoPlayerActivity : AppCompatActivity(),
                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                             viewModel.refreshTrackList()
                         }, 500)
-                        DialogUtils.showToastShort(this@VideoPlayerActivity, "音频轨道已添加")
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "Audio track added")
                     } catch (e: Exception) {
                         Logger.e(TAG, "handleAddAudioTrack: MPVLib.command failed", e)
-                        DialogUtils.showToastShort(this@VideoPlayerActivity, "添加音频轨道失败: ${e.message}")
+                        DialogUtils.showToastShort(this@VideoPlayerActivity, "Failed to add audio track: ${e.message}")
                     }
                 }
             } catch (e: Exception) {
                 Logger.e(TAG, "handleAddAudioTrack: error", e)
                 withContext(Dispatchers.Main) {
-                    DialogUtils.showToastShort(this@VideoPlayerActivity, "添加音频失败: ${e.message}")
+                    DialogUtils.showToastShort(this@VideoPlayerActivity, "Failed to add audio track: ${e.message}")
                 }
             }
         }
@@ -1101,7 +1101,7 @@ class VideoPlayerActivity : AppCompatActivity(),
     override fun onFloatingWindow() {
         if (!::pipHelper.isInitialized) return
         if (!::playbackEngine.isInitialized) {
-            DialogUtils.showToastShort(this, "请先开始播放视频")
+            DialogUtils.showToastShort(this, "Please start playing a video first")
             return
         }
 

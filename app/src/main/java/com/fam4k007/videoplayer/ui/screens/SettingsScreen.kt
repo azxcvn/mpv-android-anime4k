@@ -198,8 +198,8 @@ fun SettingsScreen(
             item {
                 PreferenceCard {
                     ClickableItem(
-                        title = "文件夹黑白名单",
-                        subtitle = "屏蔽或指定文件夹，控制视频扫描范围",
+                        title = "Folder Blacklist/Whitelist",
+                        subtitle = "Block or specify folders to control video scanning scope",
                         icon = Icons.Default.Warning,
                         onClick = onNavigateToFolderBlacklist
                     )

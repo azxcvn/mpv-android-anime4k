@@ -188,7 +188,7 @@ fun SpeedDrawer(
                                     activeSpeed = speed
                                     sliderValue = speed.toFloat()
                                     onSpeedChanged(speed)
-                                    Toast.makeText(context, "播放速度：${formatSpeed(speed)}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Playback speed: ${formatSpeed(speed)}", Toast.LENGTH_SHORT).show()
                                 },
                                 onDelete = {
                                     presets = presets.filter { it != speed }

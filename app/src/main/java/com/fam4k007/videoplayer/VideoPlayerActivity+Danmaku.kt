@@ -116,7 +116,7 @@ internal fun VideoPlayerActivity.autoFindAndLoadDanmaku(videoUri: android.net.Ur
                     val fileName = danmakuPath?.substringAfterLast("/") ?: "danmaku file"
 
                     // 显示加载成功提示，提醒用户需要手动显示
-                    DialogUtils.showToastShort(this, "已自动加载弹幕: $fileName")
+                    DialogUtils.showToastShort(this, "Danmaku auto-loaded: $fileName")
 
                     // 根据实际的 trackSelected 状态更新Compose弹幕按钮
                     val isTrackSelected = danmakuManager.getTrackSelected()
@@ -188,7 +188,7 @@ internal fun VideoPlayerActivity.tryAutoMatchDanmaku(videoUri: android.net.Uri) 
                             val currentPosition = (playbackEngine.currentPosition * 1000).toLong()
                             danmakuManager.seekTo(currentPosition)
                             runOnUiThread {
-                                DialogUtils.showToastShort(this@tryAutoMatchDanmaku, "已自动加载弹幕: ${cache.animeTitle} ${matched.episodeTitle}")
+                                DialogUtils.showToastShort(this@tryAutoMatchDanmaku, "Danmaku auto-loaded: ${cache.animeTitle} ${matched.episodeTitle}")
                             }
                             videoUri?.let { uri ->
                                 historyManager.updateDanmu(uri = uri, danmuPath = danmakuFile.absolutePath, danmuVisible = true, danmuOffsetTime = 0L)

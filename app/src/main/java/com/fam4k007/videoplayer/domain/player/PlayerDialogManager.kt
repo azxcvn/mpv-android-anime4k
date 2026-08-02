@@ -504,7 +504,7 @@ class PlayerDialogManager(
     fun showAspectRatioDialog(currentAspect: VideoAspect) {
         val activity = activityRef.get() ?: return
 
-        val items = listOf("自动", "拉伸", "裁剪", "等宽", "等高", "原始", "4:3", "16:9")
+        val items = listOf("Auto", "Stretch", "Crop", "Equal Width", "Equal Height", "Original", "4:3", "16:9")
         val aspects = listOf(
             VideoAspect.FIT, VideoAspect.STRETCH, VideoAspect.CROP,
             VideoAspect.EQUAL_WIDTH, VideoAspect.EQUAL_HEIGHT, VideoAspect.ORIGINAL,
@@ -946,7 +946,7 @@ class PlayerDialogManager(
         if (hasChapters) {
             items.add("Chapters")
         }
-        items.addAll(listOf("解码", "听视频", "片头片尾", "小窗播放", "重复播放", "音频均衡器", autoRotateText))
+        items.addAll(listOf("Decoder", "Listen to Video", "Skip Intro/Outro", "Picture-in-Picture", "Repeat Playback", "Audio Equalizer", autoRotateText))
         
         // 根据屏幕方向决定对齐方式：竖屏靠右对齐，横屏居中
         val configuration = activity.resources.configuration
@@ -996,9 +996,9 @@ class PlayerDialogManager(
         val currentMode = callback.getRepeatMode()
 
         val modeItems = listOf(
-            "关闭循环" to com.fam4k007.videoplayer.presentation.RepeatMode.OFF,
-            "单个循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ONE,
-            "列表循环" to com.fam4k007.videoplayer.presentation.RepeatMode.ALL
+            "Loop Off" to com.fam4k007.videoplayer.presentation.RepeatMode.OFF,
+            "Loop One" to com.fam4k007.videoplayer.presentation.RepeatMode.ONE,
+            "Loop All" to com.fam4k007.videoplayer.presentation.RepeatMode.ALL
         )
 
         val items = modeItems.map { it.first }
@@ -1012,7 +1012,7 @@ class PlayerDialogManager(
         showPopupDialogAtLastAnchor(
             items,
             selectedPosition = selectedPosition,
-            title = "重复播放",
+            title = "Repeat Playback",
             showAbove = false,
             useFixedHeight = false,
             showScrollHint = false,
@@ -1023,12 +1023,12 @@ class PlayerDialogManager(
             val selectedMode = modeItems[position].second
             callback.onRepeatModeSelected(selectedMode)
             val modeName = when (selectedMode) {
-                com.fam4k007.videoplayer.presentation.RepeatMode.OFF -> "关闭"
-                com.fam4k007.videoplayer.presentation.RepeatMode.ONE -> "单集循环"
-                com.fam4k007.videoplayer.presentation.RepeatMode.ALL -> "列表循环"
+                com.fam4k007.videoplayer.presentation.RepeatMode.OFF -> "Off"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ONE -> "Loop One"
+                com.fam4k007.videoplayer.presentation.RepeatMode.ALL -> "Loop All"
                 else -> ""
             }
-            DialogUtils.showToastShort(activity, "重复播放：$modeName")
+            DialogUtils.showToastShort(activity, "Repeat playback: $modeName")
         }
     }
 
@@ -1259,7 +1259,7 @@ class PlayerDialogManager(
                 if (activity != null && hasDanmaku) {
                     com.fam4k007.videoplayer.utils.DialogUtils.showToastShort(
                         activity,
-                        if (enabled) "已开启随机渐变色，重启播放界面即可生效" else "已关闭随机渐变色，重启播放界面即可生效"
+                        if (enabled) "Random gradient colors enabled, restart the player to apply" else "Random gradient colors disabled, restart the player to apply"
                     )
                 }
             }

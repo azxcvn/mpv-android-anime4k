@@ -254,12 +254,12 @@ fun CacheManagementScreen(
                         viewModel.clearAllCache()
                     }
                 ) {
-                    Text("确定", color = MaterialTheme.colorScheme.error)
+                    Text("Confirm", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             }
         )

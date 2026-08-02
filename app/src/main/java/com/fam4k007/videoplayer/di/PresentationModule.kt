@@ -32,10 +32,13 @@ val presentationModule = module {
         ) 
     }
     
-    // 视频库ViewModel
+    // 视频库ViewModel（注入4个Manager + PreferencesManager）
     viewModel { 
         LibraryViewModel(
-            videoRepository = get(),
+            mediaScanManager = get(),
+            folderBrowserManager = get(),
+            videoBrowserManager = get(),
+            treeNavigationManager = get(),
             preferencesManager = get()
         ) 
     }

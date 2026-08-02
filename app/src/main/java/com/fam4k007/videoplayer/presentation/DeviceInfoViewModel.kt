@@ -58,7 +58,7 @@ class DeviceInfoViewModel(application: Application) : AndroidViewModel(applicati
                 Logger.e(TAG, "加载设备信息失败", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "加载设备信息失败: ${e.localizedMessage}"
+                    errorMessage = "Failed to load device info: ${e.localizedMessage}"
                 )
             }
         }

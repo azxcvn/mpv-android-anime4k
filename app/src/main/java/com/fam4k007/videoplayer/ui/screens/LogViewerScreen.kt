@@ -60,13 +60,13 @@ fun LogViewerScreen(
                 title = { Text("Error Logs", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     // 刷新按钮
                     IconButton(onClick = { viewModel.loadLogFiles() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -292,6 +292,6 @@ private fun EmptyState() {
 
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("日志内容", text)
+    val clip = ClipData.newPlainText("Log content", text)
     clipboard.setPrimaryClip(clip)
 }

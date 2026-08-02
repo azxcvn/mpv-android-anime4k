@@ -1497,7 +1497,7 @@ class PreferencesManager private constructor(context: Context) {
             servers.add(
                 DanmakuServer(
                     id = java.util.UUID.randomUUID().toString(),
-                    name = "自定义服务器",
+                    name = "Custom Server",
                     url = oldUrl,
                     isEnabled = true,
                     isDefault = false

@@ -123,7 +123,7 @@ fun ErrorState(
     message: String,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
-    retryText: String = "重试",
+    retryText: String = "Retry",
 ) {
     Box(
         modifier = modifier.fillMaxSize(),

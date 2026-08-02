@@ -132,7 +132,7 @@ fun SkipSettingsDrawer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "\u7247\u5934\u7247\u5C3E\u8BBE\u7F6E",
+                            text = "Skip Intro/Outro Settings",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -172,14 +172,14 @@ fun SkipSettingsDrawer(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "\u542F\u7528\u8DF3\u8FC7\u7247\u5934\u7247\u5C3E",
+                                    text = "Enable Skip Intro/Outro",
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color.White
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "\u901A\u8FC7\u624B\u52A8\u8BBE\u7F6E\u79D2\u6570\u6765\u8DF3\u8FC7\u7247\u5934\u7247\u5C3E",
+                                    text = "Skip intro/outro by manually setting seconds",
                                     fontSize = 12.sp,
                                     color = Color(0x88FFFFFF),
                                     lineHeight = 16.sp
@@ -214,16 +214,16 @@ fun SkipSettingsDrawer(
 
                                 // ---- intro section ----
                                 SkipSection(
-                                    label = "\u8DF3\u8FC7\u7247\u5934",
+                                    label = "Skip Intro",
                                     accentColor = Color(0xFF64B5F6),
                                     currentSeconds = introSeconds,
                                     range = introRange,
-                                    rangeLabel = "\u7247\u5934\u8303\u56F4",
+                                    rangeLabel = "Intro Range",
                                     onSecondsChange = { introSeconds = it; onSkipIntroChange(it) },
                                     onRangeChange = { introRange = it; onIntroRangeChange(it) },
                                     focusManager = focusManager,
                                     getSnapSeconds = { getCurrentPosition().toInt().coerceIn(0, introRange) },
-                                    snapButtonText = "\u8BBE\u4E3A\u5F53\u524D\u65F6\u95F4"
+                                    snapButtonText = "Set to Current Time"
                                 )
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -232,11 +232,11 @@ fun SkipSettingsDrawer(
 
                                 // ---- outro section ----
                                 SkipSection(
-                                    label = "\u8DF3\u8FC7\u7247\u5C3E",
+                                    label = "Skip Outro",
                                     accentColor = Color(0xFFE05666),
                                     currentSeconds = outroSeconds,
                                     range = outroRange,
-                                    rangeLabel = "\u7247\u5C3E\u8303\u56F4",
+                                    rangeLabel = "Outro Range",
                                     onSecondsChange = { outroSeconds = it; onSkipOutroChange(it) },
                                     onRangeChange = { outroRange = it; onOutroRangeChange(it) },
                                     focusManager = focusManager,
@@ -245,7 +245,7 @@ fun SkipSettingsDrawer(
                                         val pos = getCurrentPosition()
                                         if (dur > 0 && pos < dur) (dur - pos).toInt().coerceIn(0, outroRange) else 0
                                     },
-                                    snapButtonText = "\u8BBE\u4E3A\u5F53\u524D\u5269\u4F59\u65F6\u95F4"
+                                    snapButtonText = "Set to Remaining Time"
                                 )
 
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -271,7 +271,7 @@ fun SkipSettingsDrawer(
                                     )
                                 ) {
                                     Text(
-                                        text = "\u4E00\u952E\u91CD\u7F6E",
+                                        text = "Reset All",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -360,7 +360,7 @@ private fun SkipSection(
                     }
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "\u79D2", fontSize = 13.sp, color = Color(0x99FFFFFF))
+                Text(text = "s", fontSize = 13.sp, color = Color(0x99FFFFFF))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = formatSeconds(currentSeconds.coerceAtMost(range)),

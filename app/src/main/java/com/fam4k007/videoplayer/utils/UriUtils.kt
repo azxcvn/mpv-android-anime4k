@@ -86,17 +86,17 @@ object UriUtils {
      */
     fun Uri.getFolderName(): String {
         return try {
-            val path = this.path ?: return "未知文件夹"
+            val path = this.path ?: return "Unknown folder"
             val segments = path.split("/")
             val folderName = if (segments.size > 1) {
                 segments[segments.size - 2]
             } else {
-                "未知文件夹"
+                "Unknown folder"
             }
             folderName
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get folder name", e)
-            "未知文件夹"
+            "Unknown folder"
         }
     }
 }

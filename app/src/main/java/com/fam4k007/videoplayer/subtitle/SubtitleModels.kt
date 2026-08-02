@@ -15,8 +15,8 @@ data class SubtitleInfo(
     val isHearingImpaired: Boolean = false,
     val downloadCount: Int? = null
 ) {
-    val displayName: String get() = fileName ?: release ?: "未知字幕"
-    val displayLanguage: String get() = languageDisplay ?: language ?: "未知语言"
+    val displayName: String get() = fileName ?: release ?: "Unknown subtitle"
+    val displayLanguage: String get() = languageDisplay ?: language ?: "Unknown language"
 }
 
 /**
@@ -24,7 +24,7 @@ data class SubtitleInfo(
  */
 object SubtitleSources {
     val ALL = mapOf(
-        "all" to "全部来源",
+        "all" to "All Sources",
         "subdl" to "SubDL",
         "subf2m" to "Subf2m",
         "opensubtitles" to "OpenSubtitles",
@@ -51,12 +51,12 @@ object SubtitleFormats {
  */
 object SubtitleLanguages {
     val ALL = mapOf(
-        "all" to "全部语言",
-        "zh" to "简体中文",
-        "zh-TW" to "繁體中文",
+        "all" to "All Languages",
+        "zh" to "Simplified Chinese",
+        "zh-TW" to "Traditional Chinese",
         "en" to "English",
-        "ja" to "日本語",
-        "ko" to "한국어",
+        "ja" to "Japanese",
+        "ko" to "Korean",
         "fr" to "Français",
         "de" to "Deutsch",
         "es" to "Español",

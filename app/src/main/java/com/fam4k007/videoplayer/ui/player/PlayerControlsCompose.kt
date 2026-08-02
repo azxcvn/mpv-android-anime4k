@@ -1171,7 +1171,7 @@ fun RightSideControls(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.lock_open_48_filled),
-                        contentDescription = "解锁",
+                        contentDescription = "Unlock",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )

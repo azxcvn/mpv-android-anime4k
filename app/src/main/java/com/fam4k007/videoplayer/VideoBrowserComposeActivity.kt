@@ -251,7 +251,7 @@ class VideoBrowserComposeActivity : ComponentActivity() {
                         folders.add(
                             VideoFolder(
                                 folderPath = path,
-                                folderName = folderName.ifEmpty { "根目录" },
+                                folderName = folderName.ifEmpty { "Root" },
                                 videoCount = videos.size,
                                 videos = videos
                             )

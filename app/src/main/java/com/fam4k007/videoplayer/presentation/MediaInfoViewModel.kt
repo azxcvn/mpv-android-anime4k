@@ -27,7 +27,7 @@ class MediaInfoViewModel(
      */
     fun loadMediaInfo(videoUri: String, videoName: String) {
         if (videoUri.isEmpty()) {
-            _uiState.value = MediaInfoUiState.Error("无效的视频地址")
+            _uiState.value = MediaInfoUiState.Error("Invalid video address")
             return
         }
         
@@ -55,10 +55,10 @@ class MediaInfoViewModel(
                         )
                     }
                 }.onFailure { e ->
-                    _uiState.value = MediaInfoUiState.Error(e.message ?: "加载媒体信息失败")
+                    _uiState.value = MediaInfoUiState.Error(e.message ?: "Failed to load media info")
                 }
             } catch (e: Exception) {
-                _uiState.value = MediaInfoUiState.Error(e.message ?: "未知错误")
+                _uiState.value = MediaInfoUiState.Error(e.message ?: "Unknown error")
             }
         }
     }

@@ -414,7 +414,7 @@ private fun LoggedInContent(
         ) {
             Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("退出登录")
+            Text("Log Out")
         }
     }
 }
@@ -541,7 +541,7 @@ class LoginViewModel(private val authManager: BiliBiliAuthManager) : ViewModel()
                     is LoginResult.Failed -> { _uiState.value = LoginUiState.Error(result.message); pollingJob?.cancel(); return@launch }
                 }
             }
-            updateStatus("二维码已过期"); pollingJob?.cancel()
+            updateStatus("QR code expired"); pollingJob?.cancel()
         }
     }
 
@@ -568,12 +568,12 @@ class LoginViewModel(private val authManager: BiliBiliAuthManager) : ViewModel()
                         contentValues.clear(); contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
                         resolver.update(uri, contentValues, null, null)
                     }
-                    Toast.makeText(context, "二维码已保存到相册", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "QR code saved to gallery", Toast.LENGTH_SHORT).show()
                 } else {
                     @Suppress("DEPRECATION")
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                         val saved = MediaStore.Images.Media.insertImage(resolver, bitmap, fileName, "Bilibili Login QR Code")
-                        if (saved != null) Toast.makeText(context, "二维码已保存到相册", Toast.LENGTH_SHORT).show()
+                        if (saved != null) Toast.makeText(context, "QR code saved to gallery", Toast.LENGTH_SHORT).show()
                         else Toast.makeText(context, "Save failed", Toast.LENGTH_SHORT).show()
                     }
                 }

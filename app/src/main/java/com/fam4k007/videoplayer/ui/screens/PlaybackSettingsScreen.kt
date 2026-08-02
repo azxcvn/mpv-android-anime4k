@@ -83,9 +83,9 @@ fun PlaybackSettingsScreen(
                 .padding(padding),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ===== 解码与画质 =====
+            // ===== Decoding & Quality =====
             item {
-                PreferenceSectionHeader("解码与画质")
+                PreferenceSectionHeader("Decoding & Quality")
             }
 
             item {
@@ -120,8 +120,8 @@ fun PlaybackSettingsScreen(
                     )
                     PreferenceDivider()
                     SwitchItem(
-                        title = "记忆超分模式",
-                        subtitle = if (settings.anime4KMemory) "记住上次使用的Anime4K模式" else "每次播放都从关闭状态开始",
+                        title = "Remember Anime4K Mode",
+                        subtitle = if (settings.anime4KMemory) "Remember last used Anime4K mode" else "Start with Anime4K off every time",
                         checked = settings.anime4KMemory,
                         onCheckedChange = { viewModel.setAnime4KMemory(it) }
                     )
@@ -133,9 +133,9 @@ fun PlaybackSettingsScreen(
                 }
             }
 
-            // ===== 播放控制 =====
+            // ===== Playback Controls =====
             item {
-                PreferenceSectionHeader("播放控制")
+                PreferenceSectionHeader("Playback Controls")
             }
 
             item {
@@ -155,14 +155,14 @@ fun PlaybackSettingsScreen(
                     )
                     PreferenceDivider()
                     SwitchItem(
-                        title = "记忆播放倍速",
-                        subtitle = if (settings.rememberSpeed) "始终使用上次设置的播放倍速" else "每次切换视频恢复到1倍速",
+                        title = "Remember Playback Speed",
+                        subtitle = if (settings.rememberSpeed) "Always use the last set playback speed" else "Reset to 1x speed when switching videos",
                         checked = settings.rememberSpeed,
                         onCheckedChange = { viewModel.setRememberSpeed(it) }
                     )
                     PreferenceDivider()
                     SliderItem(
-                        title = "长按倍速",
+                        title = "Long-Press Speed",
                         value = settings.longPressSpeed,
                         valueRange = 1.0f..6.0f,
                         steps = 49,
@@ -171,23 +171,23 @@ fun PlaybackSettingsScreen(
                     )
                     PreferenceDivider()
                     SwitchItem(
-                        title = "精确进度定位",
-                        subtitle = if (settings.preciseSeeking) "定位更准确但可能较慢" else "定位更快但使用关键帧",
+                        title = "Precise Seeking",
+                        subtitle = if (settings.preciseSeeking) "More accurate but may be slower" else "Faster seeking using keyframes",
                         checked = settings.preciseSeeking,
                         onCheckedChange = { viewModel.setPreciseSeeking(it) }
                     )
                     PreferenceDivider()
                     TextItem(
-                        title = "快进/快退时长",
-                        value = "${settings.seekTime}秒",
+                        title = "Seek Step Duration",
+                        value = "${settings.seekTime}s",
                         onClick = { showSeekTimeDialog = true }
                     )
                 }
             }
 
-            // ===== 手势与灵敏度 =====
+            // ===== Gestures & Sensitivity =====
             item {
-                PreferenceSectionHeader("手势与灵敏度")
+                PreferenceSectionHeader("Gestures & Sensitivity")
             }
 
             item {
@@ -199,14 +199,14 @@ fun PlaybackSettingsScreen(
                     if (settings.doubleTapMode == 1) {
                         PreferenceDivider()
                         TextItem(
-                            title = "双击跳转时长",
-                            value = "${settings.doubleTapSeekSeconds}秒",
+                            title = "Double-Tap Seek Duration",
+                            value = "${settings.doubleTapSeekSeconds}s",
                             onClick = { showDoubleTapSeekDialog = true }
                         )
                     }
                     PreferenceDivider()
                     SliderItem(
-                        title = "亮度灵敏度",
+                        title = "Brightness Sensitivity",
                         value = settings.brightnessSensitivity,
                         valueRange = 0.5f..5.0f,
                         steps = 8,
@@ -215,7 +215,7 @@ fun PlaybackSettingsScreen(
                     )
                     PreferenceDivider()
                     SliderItem(
-                        title = "音量灵敏度",
+                        title = "Volume Sensitivity",
                         value = settings.volumeSensitivity,
                         valueRange = 50f..300f,
                         steps = 24,
@@ -224,24 +224,24 @@ fun PlaybackSettingsScreen(
                     )
                     PreferenceDivider()
                     SwitchItem(
-                        title = "控制系统音量",
-                        subtitle = if (settings.controlSystemVolume) "播放中调节的音量退出后保留" else "退出播放后恢复进入前的音量",
+                        title = "Control System Volume",
+                        subtitle = if (settings.controlSystemVolume) "Volume adjusted during playback is kept after exit" else "Restore to the volume before playback on exit",
                         checked = settings.controlSystemVolume,
                         onCheckedChange = { viewModel.setControlSystemVolume(it) }
                     )
                     PreferenceDivider()
                     SwitchItem(
-                        title = "音量增强",
-                        subtitle = if (settings.volumeBoost) "音量可超过100%,最高300%" else "音量范围限制在1-100%",
+                        title = "Volume Boost",
+                        subtitle = if (settings.volumeBoost) "Volume can exceed 100%, up to 300%" else "Volume limited to 1-100%",
                         checked = settings.volumeBoost,
                         onCheckedChange = { viewModel.setVolumeBoost(it) }
                     )
                 }
             }
 
-            // ===== 界面与显示 =====
+            // ===== Interface & Display =====
             item {
-                PreferenceSectionHeader("界面与显示")
+                PreferenceSectionHeader("Interface & Display")
             }
 
             item {
@@ -307,7 +307,7 @@ fun PlaybackSettingsScreen(
         }
     }
 
-    // 快进时长选择对话框
+    // Seek time selection dialog
     if (showSeekTimeDialog) {
         SeekTimeDialog(
             currentValue = settings.seekTime,
@@ -319,7 +319,7 @@ fun PlaybackSettingsScreen(
         )
     }
 
-    // 双击跳转时长选择对话框
+    // Double-tap seek duration dialog
     if (showDoubleTapSeekDialog) {
         DoubleTapSeekDialog(
             currentValue = settings.doubleTapSeekSeconds,
@@ -331,7 +331,7 @@ fun PlaybackSettingsScreen(
         )
     }
 
-    // MPV 解码器预设变更 — 重启确认对话框
+    // MPV decoder preset change — restart confirmation dialog
     if (showRestartDialog) {
         AlertDialog(
             onDismissRequest = { showRestartDialog = false },
@@ -374,7 +374,7 @@ fun PlaybackSettingsScreen(
         )
     }
 
-    // GPU Next 开启警告
+    // GPU Next enable warning
     if (showGpuNextWarning) {
         AlertDialog(
             onDismissRequest = { showGpuNextWarning = false },
@@ -443,7 +443,7 @@ private fun DoubleTapModeCard(
         )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
 
-        // 模式 0: 暂停/播放
+        // Mode 0: pause/play
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -956,7 +956,7 @@ private fun SeekbarStyleCard(
                         else MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
-                    // 样式实时预览（与实际播放效果一致）
+                    // Live style preview (identical to actual playback)
                     SeekbarStylePreview(
                         style = style,
                         modifier = Modifier
@@ -970,8 +970,9 @@ private fun SeekbarStyleCard(
 }
 
 /**
- * 进度条样式实时预览
- * 复用播放器实际的 CustomSeekbar 组件，驱动 0→100 的往返动画，所见即所得
+ * Live seekbar style preview
+ * Reuses the actual player CustomSeekbar, driven by a 0→100 looping animation,
+ * what you see is what you get
  */
 @Composable
 private fun SeekbarStylePreview(
@@ -1018,7 +1019,7 @@ private fun RotationLockSelector(
             )
     ) {
         Text(
-            "画面方向",
+            "Screen Orientation",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
@@ -1026,20 +1027,20 @@ private fun RotationLockSelector(
         Spacer(Modifier.height(MaterialTheme.spacing.small))
 
         QualityOption(
-            label = "自动",
-            subtitle = "跟随视频原始宽高比自适应",
+            label = "Auto",
+            subtitle = "Auto-adapt to the video's original aspect ratio",
             isSelected = currentMode == "AUTO",
             onClick = { onModeChange("AUTO") }
         )
         QualityOption(
-            label = "锁定纵向",
-            subtitle = "所有视频强制竖屏播放",
+            label = "Lock Portrait",
+            subtitle = "Force all videos to play in portrait",
             isSelected = currentMode == "PORTRAIT",
             onClick = { onModeChange("PORTRAIT") }
         )
         QualityOption(
-            label = "锁定横向",
-            subtitle = "所有视频强制横屏播放",
+            label = "Lock Landscape",
+            subtitle = "Force all videos to play in landscape",
             isSelected = currentMode == "LANDSCAPE",
             onClick = { onModeChange("LANDSCAPE") }
         )

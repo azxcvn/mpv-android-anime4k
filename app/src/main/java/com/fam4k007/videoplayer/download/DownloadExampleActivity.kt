@@ -55,7 +55,7 @@ class DownloadExampleActivity : ComponentActivity() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("B站视频下载") },
+                    title = { Text("Bilibili Video Download") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
@@ -72,8 +72,8 @@ class DownloadExampleActivity : ComponentActivity() {
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("输入视频/番剧链接") },
-                    placeholder = { Text("https://www.bilibili.com/video/BV... 或 ss12345") },
+                    label = { Text("Enter video/bangumi link") },
+                    placeholder = { Text("https://www.bilibili.com/video/BV... or ss12345") },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isParsing
                 )
@@ -96,7 +96,7 @@ class DownloadExampleActivity : ComponentActivity() {
                                             viewModel.addDownloadByMediaParse(result)
                                             Toast.makeText(
                                                 this@DownloadExampleActivity,
-                                                "已添加到下载队列: ${result.title}",
+                                                "Added to download queue: ${result.title}",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -108,7 +108,7 @@ class DownloadExampleActivity : ComponentActivity() {
                                                 selectedSeasonId = result.seasonId
                                                 Toast.makeText(
                                                     this@DownloadExampleActivity,
-                                                    "找到 ${episodes.size} 集，请选择要下载的集数",
+                                                    "Found ${episodes.size} episodes, please select which to download",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             } else {
@@ -117,7 +117,7 @@ class DownloadExampleActivity : ComponentActivity() {
                                         }
                                     }
                                 } catch (e: Exception) {
-                                    parseError = e.message ?: "解析失败"
+                                    parseError = e.message ?: "Parse failed"
                                 } finally {
                                     isParsing = false
                                 }
@@ -134,14 +134,14 @@ class DownloadExampleActivity : ComponentActivity() {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text(if (isParsing) "解析中..." else "解析链接")
+                    Text(if (isParsing) "Parsing..." else "Parse Link")
                 }
 
                 // 错误提示
                 if (parseError != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "错误: $parseError",
+                        text = "Error: $parseError",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -152,7 +152,7 @@ class DownloadExampleActivity : ComponentActivity() {
                 // 番剧集数列表
                 if (episodes.isNotEmpty()) {
                     Text(
-                        text = "选择集数 (共 ${episodes.size} 集)",
+                        text = "Select Episodes (${episodes.size} total)",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -170,7 +170,7 @@ class DownloadExampleActivity : ComponentActivity() {
                                         viewModel.addDownloadByEpisode(episode, seasonId)
                                         Toast.makeText(
                                             this@DownloadExampleActivity,
-                                            "已添加到下载队列: ${episode.longTitle.ifEmpty { episode.title }}",
+                                            "Added to download queue: ${episode.longTitle.ifEmpty { episode.title }}",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -182,14 +182,14 @@ class DownloadExampleActivity : ComponentActivity() {
                 } else {
                     // 下载列表
                     Text(
-                        text = "下载列表",
+                        text = "Download List",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     if (downloadItems.isEmpty()) {
                         Text(
-                            text = "暂无下载任务",
+                            text = "No download tasks yet",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -228,7 +228,7 @@ class DownloadExampleActivity : ComponentActivity() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "第 ${episode.index} 集",
+                        text = "Episode ${episode.index}",
                         style = MaterialTheme.typography.titleSmall
                     )
                     if (episode.longTitle.isNotEmpty()) {
@@ -251,7 +251,7 @@ class DownloadExampleActivity : ComponentActivity() {
                 }
                 Icon(
                     painter = painterResource(android.R.drawable.stat_sys_download),
-                    contentDescription = "下载"
+                    contentDescription = "Download"
                 )
             }
         }
@@ -281,12 +281,12 @@ class DownloadExampleActivity : ComponentActivity() {
                 ) {
                     Text(
                         text = when (item.status) {
-                            "pending" -> "等待中"
-                            "downloading" -> "下载中"
-                            "paused" -> "已暂停"
-                            "completed" -> "已完成"
-                            "failed" -> "失败"
-                            "merging" -> "合并中"
+                            "pending" -> "Pending"
+                            "downloading" -> "Downloading"
+                            "paused" -> "Paused"
+                            "completed" -> "Completed"
+                            "failed" -> "Failed"
+                            "merging" -> "Merging"
                             else -> item.status
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -314,7 +314,7 @@ class DownloadExampleActivity : ComponentActivity() {
                 if (item.errorMessage != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "错误: ${item.errorMessage}",
+                        text = "Error: ${item.errorMessage}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )

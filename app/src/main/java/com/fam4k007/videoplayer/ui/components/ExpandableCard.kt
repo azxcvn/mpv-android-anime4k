@@ -172,7 +172,7 @@ fun ExpandableSection(
             
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (expanded) "收起" else "展开",
+                contentDescription = if (expanded) "Collapse" else "Expand",
                 modifier = Modifier
                     .size(20.dp)
                     .rotate(rotationAngle),

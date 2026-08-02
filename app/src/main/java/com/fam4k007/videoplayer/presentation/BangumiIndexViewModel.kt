@@ -97,7 +97,7 @@ class BangumiIndexViewModel(
                 },
                 onFailure = { error ->
                     Logger.e(TAG, "Failed to load index condition", error)
-                    _uiState.value = BangumiIndexUiState.Error(error.message ?: "加载筛选条件失败")
+                    _uiState.value = BangumiIndexUiState.Error(error.message ?: "Failed to load filter conditions")
                 }
             )
         }
@@ -202,7 +202,7 @@ class BangumiIndexViewModel(
                 onFailure = { error ->
                     Logger.e(TAG, "Failed to load index result", error)
                     if (reset) {
-                        _uiState.value = BangumiIndexUiState.Error(error.message ?: "加载索引结果失败")
+                        _uiState.value = BangumiIndexUiState.Error(error.message ?: "Failed to load index results")
                     }
                 }
             )

@@ -387,13 +387,13 @@ fun DanmakuStyleContent(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "弹幕颜色修改为随机含渐变颜色",
+                    text = "Use random gradient colors for danmaku",
                     fontSize = 14.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "开启后忽略文件内颜色，使用随机渐变色",
+                    text = "When enabled, ignores file colors and uses random gradients",
                     fontSize = 11.sp,
                     color = Color(0x99FFFFFF),
                     modifier = Modifier.padding(top = 2.dp)

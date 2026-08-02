@@ -48,7 +48,7 @@ class BilibiliRepository(
             authManager.pollQRCodeStatus(qrcodeKey)
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to poll QR code status: ${e.message}", e)
-            LoginResult.Failed("轮询失败: ${e.message}")
+            LoginResult.Failed("Polling failed: ${e.message}")
         }
     }
     

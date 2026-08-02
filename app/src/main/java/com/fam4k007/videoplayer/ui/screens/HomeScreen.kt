@@ -125,7 +125,7 @@ fun HomeScreen(
             
             // 播放本地视频按钮（给文本留出空间）
             GradientButton(
-                text = "播放本地视频",
+                text = "Play Local Videos",
                 isLoading = isScanningFlat,
                 onClick = {
                     if (preferencesManager.getVideoDisplayMode() == "flat") {
@@ -136,12 +136,12 @@ fun HomeScreen(
                             }
                             isScanningFlat = false
                             if (videos.isEmpty()) {
-                                android.widget.Toast.makeText(context, "未找到视频文件", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, "No video files found", android.widget.Toast.LENGTH_SHORT).show()
                                 return@launch
                             }
                             val intent = Intent(context, com.fam4k007.videoplayer.VideoListComposeActivity::class.java)
-                            intent.putExtra("folder_name", "所有视频")
-                            intent.putExtra("folder_path", "所有视频")
+                            intent.putExtra("folder_name", "All Videos")
+                            intent.putExtra("folder_path", "All Videos")
                             intent.putParcelableArrayListExtra("video_list", ArrayList(videos))
                             context.startActivity(intent)
                             (context as? android.app.Activity)?.overridePendingTransition(
@@ -341,7 +341,7 @@ fun GradientButton(
             Spacer(modifier = Modifier.width(12.dp))
         }
         Text(
-            text = if (isLoading) "正在扫描视频..." else text,
+            text = if (isLoading) "Scanning videos..." else text,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onPrimary

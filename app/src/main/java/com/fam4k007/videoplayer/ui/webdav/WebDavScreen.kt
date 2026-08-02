@@ -281,8 +281,8 @@ private fun WebDavAddAccountDialog(
                 OutlinedTextField(
                     value = state.displayName,
                     onValueChange = { viewModel.updateDisplayName(it) },
-                    label = { Text("显示名称") },
-                    placeholder = { Text("我的网盘") },
+                    label = { Text("Display Name") },
+                    placeholder = { Text("My Cloud Drive") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(20.dp)
@@ -292,8 +292,8 @@ private fun WebDavAddAccountDialog(
                 OutlinedTextField(
                     value = state.host,
                     onValueChange = { viewModel.updateHost(it) },
-                    label = { Text("主机地址") },
-                    placeholder = { Text("192.168.1.100 或 example.com") },
+                    label = { Text("Host Address") },
+                    placeholder = { Text("192.168.1.100 or example.com") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -308,7 +308,7 @@ private fun WebDavAddAccountDialog(
                     OutlinedTextField(
                         value = state.port,
                         onValueChange = { viewModel.updatePort(it) },
-                        label = { Text("端口") },
+                        label = { Text("Port") },
                         placeholder = { Text("8080") },
                         modifier = Modifier.weight(0.3f),
                         singleLine = true,
@@ -318,7 +318,7 @@ private fun WebDavAddAccountDialog(
                     OutlinedTextField(
                         value = state.path,
                         onValueChange = { viewModel.updatePath(it) },
-                        label = { Text("路径") },
+                        label = { Text("Path") },
                         placeholder = { Text("/dav/") },
                         modifier = Modifier.weight(0.7f),
                         singleLine = true,
@@ -376,7 +376,7 @@ private fun WebDavAddAccountDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "匿名/访客访问",
+                            text = "Anonymous/Guest access",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -395,7 +395,7 @@ private fun WebDavAddAccountDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "启用HTTPS连接",
+                            text = "Use HTTPS connection",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -411,8 +411,8 @@ private fun WebDavAddAccountDialog(
                         OutlinedTextField(
                             value = state.account,
                             onValueChange = { viewModel.updateAccount(it) },
-                            label = { Text("账号") },
-                            placeholder = { Text("用户名") },
+                            label = { Text("Account") },
+                            placeholder = { Text("Username") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             shape = RoundedCornerShape(20.dp)
@@ -420,8 +420,8 @@ private fun WebDavAddAccountDialog(
                         OutlinedTextField(
                             value = state.password,
                             onValueChange = { viewModel.updatePassword(it) },
-                            label = { Text("密码") },
-                            placeholder = { Text("密码") },
+                            label = { Text("Password") },
+                            placeholder = { Text("Password") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             visualTransformation = if (state.passwordVisible)
@@ -434,7 +434,7 @@ private fun WebDavAddAccountDialog(
                                 IconButton(onClick = { viewModel.togglePasswordVisible() }) {
                                     Icon(
                                         imageVector = if (state.passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (state.passwordVisible) "隐藏密码" else "显示密码"
+                                        contentDescription = if (state.passwordVisible) "Hide password" else "Show password"
                                     )
                                 }
                             }
@@ -710,7 +710,7 @@ fun WebDavBrowserScreen(
                         if (folders.isNotEmpty()) {
                             item(key = "folders_header") {
                                 Text(
-                                    text = "文件夹",
+                                    text = "Folders",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
@@ -728,7 +728,7 @@ fun WebDavBrowserScreen(
                         if (videos.isNotEmpty()) {
                             item(key = "videos_header") {
                                 Text(
-                                    text = "视频",
+                                    text = "Videos",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(start = 16.dp, top = if (folders.isNotEmpty()) 16.dp else 8.dp, bottom = 8.dp)
@@ -749,7 +749,7 @@ fun WebDavBrowserScreen(
                         if (others.isNotEmpty()) {
                             item(key = "others_header") {
                                 Text(
-                                    text = "其他文件",
+                                    text = "Other Files",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
@@ -872,7 +872,7 @@ private fun WebDavFolderRow(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = file.name.ifEmpty { "(无名称)" },
+                text = file.name.ifEmpty { "(Unnamed)" },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
@@ -929,7 +929,7 @@ private fun WebDavVideoRow(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = file.name.ifEmpty { "(无名称)" },
+                    text = file.name.ifEmpty { "(Unnamed)" },
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
@@ -1013,7 +1013,7 @@ private fun WebDavFileRow(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = file.name.ifEmpty { "(无名称)" },
+                text = file.name.ifEmpty { "(Unnamed)" },
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,

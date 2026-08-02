@@ -155,7 +155,7 @@ class DanmakuPlayerView @JvmOverloads constructor(
             val danmuFile = File(filePath)
             if (!danmuFile.exists()) {
                 Log.e(TAG, "Danmaku file not exists: $filePath")
-                Toast.makeText(context, "弹幕文件不存在", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Danmaku file not found", Toast.LENGTH_SHORT).show()
                 return false
             }
 
@@ -167,7 +167,7 @@ class DanmakuPlayerView @JvmOverloads constructor(
             val dataSource = danmakuLoader.dataSource
             if (dataSource == null) {
                 Log.e(TAG, "Failed to load danmaku data source")
-                Toast.makeText(context, "弹幕加载失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Danmaku loading failed", Toast.LENGTH_SHORT).show()
                 return false
             }
 
@@ -186,7 +186,7 @@ class DanmakuPlayerView @JvmOverloads constructor(
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Error loading danmaku", e)
-            Toast.makeText(context, "弹幕加载异常: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Danmaku loading error: ${e.message}", Toast.LENGTH_SHORT).show()
             return false
         }
     }

@@ -154,9 +154,9 @@ data class PlayUrlResult(
 )
 
 /**
- * 番剧剪辑信息（bilibili playurl 响应的 clip_info_list）
- * 官方维护的片头/片尾时间段，start/end 单位秒
- * clipType: CLIP_TYPE_OP = 片头, CLIP_TYPE_ED = 片尾
+ * Bangumi clip info (bilibili playurl response clip_info_list)
+ * Officially maintained OP/ED time ranges, start/end in seconds
+ * clipType: CLIP_TYPE_OP = opening, CLIP_TYPE_ED = ending
  */
 data class ClipInfo(
     val start: Double,

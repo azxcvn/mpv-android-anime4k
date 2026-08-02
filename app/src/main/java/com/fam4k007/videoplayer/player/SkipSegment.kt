@@ -3,27 +3,27 @@ package com.fam4k007.videoplayer.player
 import androidx.compose.ui.graphics.Color
 
 /**
- * OP/ED 跳过片段类型
+ * OP/ED skip segment type
  */
 enum class SkipSegmentType(
     val label: String,
     val accentColor: Color,
 ) {
-    INTRO("跳过片头", Color(0xFFFF7A00)),
-    RECAP("跳过前情提要", Color(0xFF2F80FF)),
-    OUTRO("跳过片尾", Color(0xFFE05666)),
-    CREDITS("跳过制作人员", Color(0xFFA64DFF)),
-    COLD_OPEN("跳过正片前段", Color(0xFFFFB300)),
-    PREVIEW("跳过下集预告", Color(0xFF00D4C7)),
+    INTRO("Skip Intro", Color(0xFFFF7A00)),
+    RECAP("Skip Recap", Color(0xFF2F80FF)),
+    OUTRO("Skip Outro", Color(0xFFE05666)),
+    CREDITS("Skip Credits", Color(0xFFA64DFF)),
+    COLD_OPEN("Skip Opening Segment", Color(0xFFFFB300)),
+    PREVIEW("Skip Next Preview", Color(0xFF00D4C7)),
 }
 
 /**
- * 跳过片段数据
+ * Skip segment data
  *
- * @param type 片段类型（OP/ED 等）
- * @param startSeconds 起始时间（秒）
- * @param endSeconds 结束时间（秒）
- * @param source 来源标识（"chapter" 表示从章节检测）
+ * @param type segment type (OP/ED etc.)
+ * @param startSeconds start time (seconds)
+ * @param endSeconds end time (seconds)
+ * @param source source identifier ("chapter" means detected from chapters)
  */
 data class SkipSegment(
     val type: SkipSegmentType,

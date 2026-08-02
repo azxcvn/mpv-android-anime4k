@@ -387,7 +387,7 @@ fun DownloadScreen(
                         ) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "清除结果",
+                                contentDescription = "Clear Results",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -423,7 +423,7 @@ fun DownloadScreen(
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
-                                            contentDescription = "清除结果",
+                                            contentDescription = "Clear Results",
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(20.dp)
                                         )

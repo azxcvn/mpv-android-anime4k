@@ -85,7 +85,7 @@ class SubtitleSearchActivity : BaseActivity() {
             contentResolver.takePersistableUriPermission(uri, flags)
             viewModel.setFolderUri(uri)
         } catch (e: Exception) {
-            Toast.makeText(this, "设置失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to save settings: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

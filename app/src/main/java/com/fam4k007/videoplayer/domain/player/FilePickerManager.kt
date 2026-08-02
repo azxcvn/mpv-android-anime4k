@@ -103,7 +103,7 @@ class FilePickerManager(
                 Log.d(TAG, "importSubtitle: system file picker launched (Android 10-)")
             } catch (e: Exception) {
                 Log.e(TAG, "importSubtitle: failed to launch system picker", e)
-                activityRef.get()?.let { DialogUtils.showToastShort(it, "无法打开文件选择器") }
+                activityRef.get()?.let { DialogUtils.showToastShort(it, "Unable to open file picker") }
             }
         } else {
             // Android 11 及以上：使用内置 Compose 文件选择器
@@ -145,7 +145,7 @@ class FilePickerManager(
                 Log.d(TAG, "importDanmaku: system file picker launched (Android 10-)")
             } catch (e: Exception) {
                 Log.e(TAG, "importDanmaku: failed to launch system picker", e)
-                activityRef.get()?.let { DialogUtils.showToastShort(it, "无法打开文件选择器") }
+                activityRef.get()?.let { DialogUtils.showToastShort(it, "Unable to open file picker") }
             }
         } else {
             // Android 11 及以上：使用内置 Compose 文件选择器
@@ -364,7 +364,7 @@ class FilePickerManager(
             Log.d(TAG, "System subtitle picker returned: $uri")
             val success = subtitleManager.addExternalSubtitle(activity, uri)
             if (success) {
-                DialogUtils.showToastShort(activity, "字幕导入成功")
+                DialogUtils.showToastShort(activity, "Subtitle imported successfully")
 
                 // 保存外挂字幕路径到历史记录
                 currentVideoUri?.let { videoUri ->
@@ -375,7 +375,7 @@ class FilePickerManager(
                     }
                 }
             } else {
-                DialogUtils.showToastLong(activity, "字幕导入失败")
+                DialogUtils.showToastLong(activity, "Subtitle import failed")
             }
         } else {
             Log.d(TAG, "System subtitle picker cancelled")
@@ -399,7 +399,7 @@ class FilePickerManager(
 
                     withContext(Dispatchers.Main) {
                         if (danmakuPath != null) {
-                            DialogUtils.showToastShort(activity, "弹幕导入成功")
+                            DialogUtils.showToastShort(activity, "Danmaku imported successfully")
                             val currentPosition = (playbackEngine.currentPosition * 1000).toLong()
                             danmakuManager.seekTo(currentPosition)
                             Log.d(TAG, "Danmaku loaded and synced to position: $currentPosition")
@@ -414,13 +414,13 @@ class FilePickerManager(
                                 Log.d(TAG, "Danmu info updated in history")
                             }
                         } else {
-                            DialogUtils.showToastLong(activity, "弹幕导入失败")
+                            DialogUtils.showToastLong(activity, "Danmaku import failed")
                         }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to import danmaku from system picker", e)
                     withContext(Dispatchers.Main) {
-                        DialogUtils.showToastLong(activity, "弹幕导入失败: ${e.message}")
+                        DialogUtils.showToastLong(activity, "Danmaku import failed: ${e.message}")
                     }
                 }
             }

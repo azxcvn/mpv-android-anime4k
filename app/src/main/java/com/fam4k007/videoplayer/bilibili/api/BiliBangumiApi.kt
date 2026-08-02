@@ -42,11 +42,11 @@ class BiliBangumiApi(
                     .build()
 
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("网络错误"))
+                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Network error"))
 
                 val apiResponse = gson.fromJson(body, PgcIndexConditionResponse::class.java)
                 if (apiResponse.code != 0) {
-                    return@withContext Result.failure(Exception("API错误: ${apiResponse.message}"))
+                    return@withContext Result.failure(Exception("API error: ${apiResponse.message}"))
                 }
 
                 Result.success(apiResponse.data ?: PgcIndexConditionData(null, null))
@@ -87,11 +87,11 @@ class BiliBangumiApi(
                     .build()
 
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("网络错误"))
+                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Network error"))
 
                 val apiResponse = gson.fromJson(body, PgcIndexResultResponse::class.java)
                 if (apiResponse.code != 0) {
-                    return@withContext Result.failure(Exception("API错误: ${apiResponse.message}"))
+                    return@withContext Result.failure(Exception("API error: ${apiResponse.message}"))
                 }
 
                 Result.success(apiResponse.data ?: PgcIndexResultData(0, null))
@@ -122,15 +122,15 @@ class BiliBangumiApi(
                     .build()
 
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("网络错误"))
+                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Network error"))
                 Logger.d(TAG, "getSeasonInfo: code=${response.code}, body=${body.take(300)}")
 
                 val apiResponse = gson.fromJson(body, PgcInfoResponse::class.java)
                 if (apiResponse.code != 0) {
-                    return@withContext Result.failure(Exception("API错误: ${apiResponse.message}"))
+                    return@withContext Result.failure(Exception("API error: ${apiResponse.message}"))
                 }
 
-                val result = apiResponse.result ?: return@withContext Result.failure(Exception("数据为空"))
+                val result = apiResponse.result ?: return@withContext Result.failure(Exception("Empty data"))
                 Result.success(result)
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to get season info", e)
@@ -180,7 +180,7 @@ class BiliBangumiApi(
                     .build()
 
                 val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("网络错误"))
+                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Network error"))
                 Logger.d(TAG, "getPlayUrl: code=${response.code}, body=${body.take(300)}")
 
                 if (!response.isSuccessful) {
@@ -199,8 +199,8 @@ class BiliBangumiApi(
                 val jsonObj = gson.fromJson(body, com.google.gson.JsonObject::class.java)
                 val code = jsonObj.get("code")?.asInt
                 if (code != null && code != 0) {
-                    val msg = jsonObj.get("message")?.asString ?: "未知错误"
-                    return@withContext Result.failure(Exception("获取播放地址失败($code): $msg"))
+                    val msg = jsonObj.get("message")?.asString ?: "Unknown error"
+                    return@withContext Result.failure(Exception("Failed to get play URL ($code): $msg"))
                 }
                 
                 val resultObj = jsonObj.getAsJsonObject("result")
@@ -234,7 +234,7 @@ class BiliBangumiApi(
                 .build()
 
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-            val body = withContext(Dispatchers.IO) { response.body?.string() } ?: return Result.failure(Exception("网络错误"))
+            val body = withContext(Dispatchers.IO) { response.body?.string() } ?: return Result.failure(Exception("Network error"))
             Logger.d(TAG, "Search response: code=${response.code}, body=${body.take(300)}")
 
             if (!response.isSuccessful) {
@@ -244,8 +244,8 @@ class BiliBangumiApi(
             val jsonObj = gson.fromJson(body, com.google.gson.JsonObject::class.java)
             val code = jsonObj.get("code")?.asInt ?: -1
             if (code != 0) {
-                val msg = jsonObj.get("message")?.asString ?: "未知错误"
-                return Result.failure(Exception("搜索失败($code): $msg"))
+                val msg = jsonObj.get("message")?.asString ?: "Unknown error"
+                return Result.failure(Exception("Search failed ($code): $msg"))
             }
 
             val data = jsonObj.get("data")

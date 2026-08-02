@@ -15,7 +15,7 @@ data class DanmakuServer(
 ) {
     companion object {
         const val DEFAULT_URL = "https://api.dandanplay.net"
-        const val DEFAULT_NAME = "弹弹Play（默认）"
+        const val DEFAULT_NAME = "DanDanPlay (Default)"
         const val DEFAULT_ID = "default"
 
         fun createDefault(): DanmakuServer = DanmakuServer(

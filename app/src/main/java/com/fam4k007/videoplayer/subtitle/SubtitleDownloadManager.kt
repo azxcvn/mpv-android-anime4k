@@ -67,7 +67,7 @@ class SubtitleDownloadManager(private val context: Context) {
     suspend fun searchMedia(query: String): MediaSearchResult = withContext(Dispatchers.IO) {
         try {
             if (query.isBlank()) {
-                return@withContext MediaSearchResult.Error("搜索关键词不能为空")
+                return@withContext MediaSearchResult.Error("Search keyword cannot be empty")
             }
             
             Log.d(TAG, "开始搜索媒体: $query")
@@ -117,7 +117,7 @@ class SubtitleDownloadManager(private val context: Context) {
             
         } catch (e: Exception) {
             Log.e(TAG, "搜索媒体失败", e)
-            MediaSearchResult.Error("搜索失败: ${e.message}")
+            MediaSearchResult.Error("Search failed: ${e.message}")
         }
     }
     
@@ -141,7 +141,7 @@ class SubtitleDownloadManager(private val context: Context) {
             
         } catch (e: Exception) {
             Log.e(TAG, "搜索失败", e)
-            SearchResult.Error("搜索失败: ${e.message}")
+            SearchResult.Error("Search failed: ${e.message}")
         }
     }
     
@@ -156,7 +156,7 @@ class SubtitleDownloadManager(private val context: Context) {
     ): SearchResult = withContext(Dispatchers.IO) {
         try {
             if (query.isBlank()) {
-                return@withContext SearchResult.Error("搜索关键词不能为空")
+                return@withContext SearchResult.Error("Search keyword cannot be empty")
             }
             
             Log.d(TAG, "开始搜索字幕: $query")
@@ -179,7 +179,7 @@ class SubtitleDownloadManager(private val context: Context) {
             
         } catch (e: Exception) {
             Log.e(TAG, "搜索失败", e)
-            SearchResult.Error("搜索失败: ${e.message}")
+            SearchResult.Error("Search failed: ${e.message}")
         }
     }
     
@@ -305,11 +305,11 @@ class SubtitleDownloadManager(private val context: Context) {
             val response = client.newCall(request).execute()
             
             if (!response.isSuccessful) {
-                return@withContext DownloadResult.Error("下载失败: HTTP ${response.code}")
+                return@withContext DownloadResult.Error("Download failed: HTTP ${response.code}")
             }
             
             val bytes = response.body?.bytes() 
-                ?: return@withContext DownloadResult.Error("下载内容为空")
+                ?: return@withContext DownloadResult.Error("Download content is empty")
             
             // 确定文件扩展名
             val extension = subtitle.format?.lowercase() ?: "srt"
@@ -322,7 +322,7 @@ class SubtitleDownloadManager(private val context: Context) {
             // 保存到指定目录
             val parentDir = DocumentFile.fromTreeUri(context, saveUri)
             if (parentDir?.exists() != true) {
-                return@withContext DownloadResult.Error("保存目录不存在")
+                return@withContext DownloadResult.Error("Save directory does not exist")
             }
             
             // 检查是否已存在同名文件，如果存在则先删除
@@ -332,7 +332,7 @@ class SubtitleDownloadManager(private val context: Context) {
             // 创建新文件
             val subFile = parentDir.createFile("application/octet-stream", fileName)
             if (subFile == null) {
-                return@withContext DownloadResult.Error("创建文件失败")
+                return@withContext DownloadResult.Error("Failed to create file")
             }
             
             // 写入内容
@@ -345,7 +345,7 @@ class SubtitleDownloadManager(private val context: Context) {
             
         } catch (e: Exception) {
             Log.e(TAG, "下载失败", e)
-            DownloadResult.Error("下载失败: ${e.message}")
+            DownloadResult.Error("Download failed: ${e.message}")
         }
     }
 }

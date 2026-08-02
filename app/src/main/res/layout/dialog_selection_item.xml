@@ -19,7 +19,7 @@
             android:id="@+id/itemText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="选项"
+            android:text="Option"
             android:gravity="center"
             android:textSize="14sp"
             android:textColor="?attr/colorDialogText"

@@ -86,33 +86,33 @@ fun FolderBlacklistScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val descriptionText = if (isWhitelistMode)
-        "指定文件夹后，APP将只扫描其中的视频"
+        "After specifying folders, the app will only scan videos inside them"
     else
-        "屏蔽文件夹后，APP将不再扫描其中的视频"
-    val emptyText = if (isWhitelistMode) "暂无白名单文件夹" else "暂无黑名单文件夹"
+        "After blocking folders, the app will no longer scan videos inside them"
+    val emptyText = if (isWhitelistMode) "No whitelisted folders yet" else "No blacklisted folders yet"
     val sectionHeader = if (isWhitelistMode)
-        "已选择的文件夹 (${folders.size})"
+        "Selected folders (${folders.size})"
     else
-        "已屏蔽的文件夹 (${folders.size})"
-    val addButtonText = if (isWhitelistMode) "添加文件夹到白名单" else "添加文件夹到黑名单"
-    val clearButtonText = if (isWhitelistMode) "清除所有白名单文件夹" else "清除所有黑名单文件夹"
-    val dialogTitle = if (isWhitelistMode) "选择要添加的文件夹" else "选择要屏蔽的文件夹"
+        "Blocked folders (${folders.size})"
+    val addButtonText = if (isWhitelistMode) "Add folder to whitelist" else "Add folder to blacklist"
+    val clearButtonText = if (isWhitelistMode) "Clear all whitelisted folders" else "Clear all blacklisted folders"
+    val dialogTitle = if (isWhitelistMode) "Select folder to add" else "Select folder to block"
     val dialogEmptyText = if (isWhitelistMode)
-        "没有可添加的文件夹（所有视频文件夹已在白名单中）"
+        "No folders to add (all video folders are already whitelisted)"
     else
-        "没有可添加的文件夹（所有视频文件夹已在黑名单中）"
-    val clearDialogTitle = if (isWhitelistMode) "清除所有白名单文件夹？" else "清除所有黑名单文件夹？"
+        "No folders to add (all video folders are already blacklisted)"
+    val clearDialogTitle = if (isWhitelistMode) "Clear all whitelisted folders?" else "Clear all blacklisted folders?"
     val clearDialogText = if (isWhitelistMode)
-        "这将移除所有文件夹白名单，你可以稍后重新添加。"
+        "This will remove all folder whitelists. You can add them again later."
     else
-        "这将移除所有文件夹黑名单，你可以稍后重新添加。"
+        "This will remove all folder blacklists. You can add them again later."
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "文件夹黑白名单",
+                        text = "Folder Blacklist/Whitelist",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -147,8 +147,8 @@ fun FolderBlacklistScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 SwitchItem(
-                    title = "白名单模式",
-                    subtitle = if (isWhitelistMode) "启用白名单模式后，只扫描其中的视频" else "屏蔽已选择的文件夹，不扫描其中的视频",
+                    title = "Whitelist Mode",
+                    subtitle = if (isWhitelistMode) "When whitelist mode is enabled, only videos inside are scanned" else "Block selected folders, do not scan videos inside",
                     checked = isWhitelistMode,
                     onCheckedChange = { enabled ->
                         isWhitelistMode = enabled

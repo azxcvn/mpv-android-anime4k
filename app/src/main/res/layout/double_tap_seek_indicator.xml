@@ -63,6 +63,6 @@
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="3"
-        tools:text="+10秒" />
+        tools:text="+10s" />
 
 </merge>

@@ -60,13 +60,13 @@ class AboutComposeActivity : BaseActivity() {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:$email")
                 putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-                putExtra(Intent.EXTRA_SUBJECT, "小喵player使用反馈")
+                putExtra(Intent.EXTRA_SUBJECT, "FAM4K007 Feedback")
             }
             startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(
                 this,
-                "未找到可用的邮件应用",
+                "No email app available",
                 Toast.LENGTH_SHORT
             ).show()
         }

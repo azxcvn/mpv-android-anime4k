@@ -97,7 +97,7 @@ class SubtitleSearchViewModel(
     fun setFolderUri(uri: Uri) {
         _uiState.value = _uiState.value.copy(
             savedFolderUri = uri,
-            message = "保存文件夹设置成功"
+            message = "Save folder setting successful"
         )
         savePreferences()
     }
@@ -108,7 +108,7 @@ class SubtitleSearchViewModel(
     fun updateSearchOptions(options: SearchOptions) {
         _uiState.value = _uiState.value.copy(
             searchOptions = options,
-            message = "搜索选项已更新"
+            message = "Search options updated"
         )
         savePreferences()
         
@@ -123,7 +123,7 @@ class SubtitleSearchViewModel(
      */
     fun searchMedia(query: String) {
         if (query.isBlank()) {
-            _uiState.value = _uiState.value.copy(message = "请输入搜索关键词")
+            _uiState.value = _uiState.value.copy(message = "Please enter a search keyword")
             return
         }
 
@@ -142,7 +142,7 @@ class SubtitleSearchViewModel(
                         isSearchingMedia = false,
                         mediaResults = media,
                         message = when {
-                            media.isEmpty() -> "未找到相关影片"
+                            media.isEmpty() -> "No related media found"
                             media.size == 1 -> null // 自动选择，不显示消息
                             else -> null
                         }
@@ -156,7 +156,7 @@ class SubtitleSearchViewModel(
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isSearchingMedia = false,
-                        message = "搜索失败: ${error.message}"
+                        message = "Search failed: ${error.message}"
                     )
                 }
         }
@@ -192,15 +192,15 @@ class SubtitleSearchViewModel(
                         isSearching = false,
                         searchResults = subtitles,
                         message = when {
-                            subtitles.isEmpty() -> "未找到字幕"
-                            else -> "找到 ${subtitles.size} 个字幕"
+                            subtitles.isEmpty() -> "No subtitles found"
+                            else -> "Found ${subtitles.size} subtitles"
                         }
                     )
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isSearching = false,
-                        message = "搜索失败: ${error.message}"
+                        message = "Search failed: ${error.message}"
                     )
                 }
         }
@@ -223,14 +223,14 @@ class SubtitleSearchViewModel(
         val state = _uiState.value
         
         if (state.savedFolderUri == null) {
-            _uiState.value = _uiState.value.copy(message = "请先设置保存文件夹")
+            _uiState.value = _uiState.value.copy(message = "Please set the save folder first")
             return
         }
 
         val videoFileName = state.selectedMedia?.title ?: "subtitle"
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(message = "开始下载...")
+            _uiState.value = _uiState.value.copy(message = "Starting download...")
 
             subtitleRepository.downloadSubtitle(
                 subtitle,
@@ -239,12 +239,12 @@ class SubtitleSearchViewModel(
             )
                 .onSuccess { filePath ->
                     _uiState.value = _uiState.value.copy(
-                        message = "下载成功: $filePath"
+                        message = "Download successful: $filePath"
                     )
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
-                        message = "下载失败: ${error.message}"
+                        message = "Download failed: ${error.message}"
                     )
                 }
         }

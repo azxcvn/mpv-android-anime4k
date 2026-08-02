@@ -28,9 +28,9 @@ class CacheManagementViewModel(
     // ==================== UI State ====================
     
     data class UiState(
-        val cacheSize: String = "计算中...",
-        val thumbnailCacheSize: String = "计算中...",
-        val otherCacheSize: String = "计算中...",
+        val cacheSize: String = "Calculating...",
+        val thumbnailCacheSize: String = "Calculating...",
+        val otherCacheSize: String = "Calculating...",
         val isLoading: Boolean = false,
         val message: String? = null
     )
@@ -66,7 +66,7 @@ class CacheManagementViewModel(
                 updateCacheSize()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    message = "缓存已清除"
+                    message = "Cache cleared"
                 )
                 
                 Logger.d(TAG, "All cache cleared successfully")
@@ -74,7 +74,7 @@ class CacheManagementViewModel(
                 Logger.e(TAG, "Failed to clear all cache", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    message = "清除缓存失败: ${e.message}"
+                    message = "Failed to clear cache: ${e.message}"
                 )
             }
         }
@@ -96,7 +96,7 @@ class CacheManagementViewModel(
                 updateCacheSize()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    message = "缩略图缓存已清除"
+                    message = "Thumbnail cache cleared"
                 )
                 
                 Logger.d(TAG, "Thumbnail cache cleared successfully")
@@ -104,7 +104,7 @@ class CacheManagementViewModel(
                 Logger.e(TAG, "Failed to clear thumbnail cache", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    message = "清除缩略图缓存失败: ${e.message}"
+                    message = "Failed to clear thumbnail cache: ${e.message}"
                 )
             }
         }
@@ -139,9 +139,9 @@ class CacheManagementViewModel(
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to calculate cache size", e)
                 _uiState.value = _uiState.value.copy(
-                    cacheSize = "未知",
-                    thumbnailCacheSize = "未知",
-                    otherCacheSize = "未知"
+                    cacheSize = "Unknown",
+                    thumbnailCacheSize = "Unknown",
+                    otherCacheSize = "Unknown"
                 )
             }
         }

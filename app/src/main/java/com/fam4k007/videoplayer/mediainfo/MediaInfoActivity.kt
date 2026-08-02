@@ -445,7 +445,7 @@ private suspend fun copyToClipboard(context: Context, text: String, fileName: St
             clipboard.setPrimaryClip(clip)
             Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(context, "复制失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Copy failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -455,12 +455,12 @@ private suspend fun shareMediaInfo(context: Context, text: String, fileName: Str
         try {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "媒体信息 - $fileName")
+                putExtra(Intent.EXTRA_SUBJECT, "Media info - $fileName")
                 putExtra(Intent.EXTRA_TEXT, text)
             }
             context.startActivity(Intent.createChooser(intent, "Share Media Info"))
         } catch (e: Exception) {
-            Toast.makeText(context, "分享失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }

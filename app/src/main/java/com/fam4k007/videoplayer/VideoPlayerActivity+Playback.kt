@@ -187,7 +187,7 @@ internal fun VideoPlayerActivity.loadResolvedRemoteVideo(
                     val suggestion = RemotePlaybackResolver.buildFailureSuggestion(result.reason)
                     DialogUtils.showToastLong(
                         this@loadResolvedRemoteVideo,
-                        "${result.message}，继续尝试直接播放\n$suggestion"
+                        "${result.message}, trying direct playback\n$suggestion"
                     )
                 }
                 playbackEngine.loadRemote(finalRequest, position)

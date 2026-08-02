@@ -69,13 +69,13 @@ fun PlaybackHistoryScreen(
                 title = { Text("Playback History", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                            Icon(Icons.Default.MoreVert, contentDescription = "More")
                         }
                         DropdownMenu(
                             expanded = showMenu,
@@ -83,7 +83,7 @@ fun PlaybackHistoryScreen(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("清除历史记录") },
+                                text = { Text("Clear History") },
                                 onClick = {
                                     showMenu = false
                                     showClearDialog = true
@@ -94,7 +94,7 @@ fun PlaybackHistoryScreen(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("记录播放历史") },
+                                text = { Text("Record Playback History") },
                                 onClick = {
                                     if (historyRecordingEnabled) {
                                         showHistoryOffDialog = true
@@ -245,14 +245,14 @@ fun PlaybackHistoryScreen(
             onDismissRequest = { showHistoryOffDialog = false },
             title = {
                 Text(
-                    text = "关闭记录播放历史",
+                    text = "Turn off playback history recording",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                 )
             },
             text = {
                 Text(
-                    text = "若关闭记录播放历史，则会直接影响到视频列表的进度记录，使得此功能失效（哪怕已经在设置中打开了该功能也会失效）",
+                    text = "Turning off playback history recording will affect the progress records in the video list and disable this feature (even if it is enabled in settings)",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -268,12 +268,12 @@ fun PlaybackHistoryScreen(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("确认关闭")
+                    Text("Turn Off")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showHistoryOffDialog = false }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
             shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
@@ -314,7 +314,7 @@ fun PlaybackHistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { itemToDelete = null }) {
-                    Text("取消")
+                    Text("Cancel")
                 }
             },
             shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),

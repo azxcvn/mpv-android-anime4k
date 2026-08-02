@@ -218,10 +218,10 @@ class SubtitleManager {
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to get display name from content URI", e)
                 }
-                "外挂字幕"
+                "External subtitle"
             }
             else -> {
-                "字幕文件"
+                "Subtitle file"
             }
         }
     }

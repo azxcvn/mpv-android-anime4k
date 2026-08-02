@@ -404,29 +404,29 @@ object RemotePlaybackResolver {
 
     internal fun buildFallbackMessage(reason: FailureReason): String {
         return when (reason) {
-            FailureReason.NETWORK -> "网络连接失败，已回退到原始地址"
-            FailureReason.TIMEOUT -> "链接探测超时，已回退到原始地址"
-            FailureReason.SSL -> "TLS/证书握手失败，已回退到原始地址"
-            FailureReason.UNAUTHORIZED -> "链接需要鉴权，已回退到原始地址"
-            FailureReason.FORBIDDEN -> "链接被服务器拒绝，已回退到原始地址"
-            FailureReason.NOT_FOUND -> "链接资源不存在，已回退到原始地址"
-            FailureReason.SERVER_ERROR -> "服务器响应异常，已回退到原始地址"
-            FailureReason.NON_MEDIA -> "链接看起来不像媒体资源，已回退到原始地址"
-            FailureReason.UNKNOWN -> "远程链接预解析失败，已回退到原始地址"
+            FailureReason.NETWORK -> "Network connection failed, falling back to original address"
+            FailureReason.TIMEOUT -> "Connection probe timed out, falling back to original address"
+            FailureReason.SSL -> "TLS/certificate handshake failed, falling back to original address"
+            FailureReason.UNAUTHORIZED -> "Link requires authentication, falling back to original address"
+            FailureReason.FORBIDDEN -> "Link rejected by server, falling back to original address"
+            FailureReason.NOT_FOUND -> "Link resource not found, falling back to original address"
+            FailureReason.SERVER_ERROR -> "Server responded abnormally, falling back to original address"
+            FailureReason.NON_MEDIA -> "Link does not look like a media resource, falling back to original address"
+            FailureReason.UNKNOWN -> "Remote link pre-resolution failed, falling back to original address"
         }
     }
 
     internal fun buildFailureSuggestion(reason: FailureReason): String {
         return when (reason) {
             FailureReason.UNAUTHORIZED,
-            FailureReason.FORBIDDEN -> "如直接播放仍失败，请在高级设置补充 Referer/Cookie/User-Agent/Authorization"
-            FailureReason.NON_MEDIA -> "如果这是网页接口，请粘贴完整请求文本或 curl，并补充来源页面 URL"
+            FailureReason.FORBIDDEN -> "If direct playback still fails, add Referer/Cookie/User-Agent/Authorization in advanced settings"
+            FailureReason.NON_MEDIA -> "If this is a web endpoint, paste the full request text or curl, and provide the source page URL"
             FailureReason.NETWORK,
             FailureReason.TIMEOUT,
-            FailureReason.SSL -> "请检查链接是否过期，或稍后重试"
-            FailureReason.NOT_FOUND -> "这类签名链接通常有时效性，请重新获取链接"
+            FailureReason.SSL -> "Check if the link has expired, or try again later"
+            FailureReason.NOT_FOUND -> "These signed links usually expire, please obtain a new link"
             FailureReason.SERVER_ERROR,
-            FailureReason.UNKNOWN -> "如果是防盗链资源，下一步请带上 Referer/User-Agent 再测"
+            FailureReason.UNKNOWN -> "If it's anti-hotlink protected, try again with Referer/User-Agent next time"
         }
     }
 

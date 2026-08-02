@@ -62,7 +62,7 @@ class PlaybackHistoryViewModel(
                 Logger.e(TAG, "Failed to load history", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "加载历史记录失败: ${e.message}"
+                    error = "Failed to load history: ${e.message}"
                 )
             }
         }
@@ -84,7 +84,7 @@ class PlaybackHistoryViewModel(
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to delete history", e)
                 _uiState.value = _uiState.value.copy(
-                    error = "删除失败: ${e.message}"
+                    error = "Failed to delete: ${e.message}"
                 )
             }
         }
@@ -105,7 +105,7 @@ class PlaybackHistoryViewModel(
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to clear history", e)
                 _uiState.value = _uiState.value.copy(
-                    error = "清空失败: ${e.message}"
+                    error = "Failed to clear: ${e.message}"
                 )
             }
         }

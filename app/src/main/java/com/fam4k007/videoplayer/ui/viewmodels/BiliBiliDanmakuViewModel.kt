@@ -98,10 +98,10 @@ class BiliBiliDanmakuViewModel(application: Application) : AndroidViewModel(appl
                     .apply()
 
                 _savedFolderUri.value = uri
-                _successMessage.value = "文件夹设置成功"
+                _successMessage.value = "Folder setting saved"
                 Log.d(TAG, "文件夹URI已保存: $uri")
             } catch (e: Exception) {
-                _errorMessage.value = "设置失败: ${e.message}"
+                _errorMessage.value = "Failed to save settings: ${e.message}"
                 Log.e(TAG, "保存文件夹URI失败", e)
             }
         }
@@ -112,13 +112,13 @@ class BiliBiliDanmakuViewModel(application: Application) : AndroidViewModel(appl
      */
     fun startDownload(url: String, downloadWholeSeason: Boolean) {
         if (!downloadManager.isValidBilibiliUrl(url)) {
-            _errorMessage.value = "请输入有效的B站视频/番剧链接"
+            _errorMessage.value = "Please enter a valid Bilibili video/bangumi link"
             return
         }
 
         val folderUri = _savedFolderUri.value
         if (folderUri == null) {
-            _errorMessage.value = "请先设置保存文件夹"
+            _errorMessage.value = "Please set the save folder first"
             return
         }
 
@@ -146,17 +146,17 @@ class BiliBiliDanmakuViewModel(application: Application) : AndroidViewModel(appl
 
                 when (result) {
                     is BiliBiliDanmakuDownloadManager.DownloadResult.Success -> {
-                        _successMessage.value = "下载成功"
+                        _successMessage.value = "Download successful"
                         Log.d(TAG, "弹幕下载成功")
                     }
                     is BiliBiliDanmakuDownloadManager.DownloadResult.Error -> {
-                        _errorMessage.value = "下载失败: ${result.message}"
+                        _errorMessage.value = "Download failed: ${result.message}"
                         Log.e(TAG, "弹幕下载失败: ${result.message}")
                     }
                 }
             } catch (e: Exception) {
                 _isDownloading.value = false
-                _errorMessage.value = "下载失败: ${e.message}"
+                _errorMessage.value = "Download failed: ${e.message}"
                 Log.e(TAG, "下载过程出错", e)
             }
         }

@@ -178,21 +178,21 @@ fun VideoListScreenPaging(
                         }) {
                             Icon(
                                 imageVector = if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                                contentDescription = if (isEditMode) "退出编辑" else "编辑",
+                                contentDescription = if (isEditMode) "Exit Edit" else "Edit",
                                 tint = Color.White
                             )
                         }
                         IconButton(onClick = { showSearch = true }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
-                                contentDescription = "搜索",
+                                contentDescription = "Search",
                                 tint = Color.White
                             )
                         }
                         IconButton(onClick = { showSortDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Sort,
-                                contentDescription = "排序",
+                                contentDescription = "Sort",
                                 tint = Color.White
                             )
                         }
@@ -219,9 +219,9 @@ fun VideoListScreenPaging(
             }
             
             if (filteredItems == null || (searchQuery.isNotEmpty() && lazyPagingItems.itemCount == 0)) {
-                EmptyState("搜索功能需要在数据库层面实现，请使用排序功能")
+                EmptyState("Search requires database-level implementation, please use sorting instead")
             } else if (lazyPagingItems.itemCount == 0) {
-                EmptyState("此文件夹中没有视频")
+                EmptyState("No videos in this folder")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -393,7 +393,7 @@ fun VideoListScreenPaging(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
-                        Icon(Icons.Default.Refresh, "刷新")
+                        Icon(Icons.Default.Refresh, "Refresh")
                     }
                 }
             }
@@ -543,7 +543,7 @@ fun VideoListScreenPaging(
     if (showCopyDialog && (selectedVideos.isNotEmpty() || selectedVideoForOperation != null)) {
         val fileName = when {
             selectedVideos.size == 1 -> selectedVideos.first().name
-            selectedVideos.size > 1 -> "${selectedVideos.size} 个文件"
+            selectedVideos.size > 1 -> "${selectedVideos.size} files"
             else -> selectedVideoForOperation?.name ?: ""
         }
         
@@ -611,7 +611,7 @@ private fun SearchTopBar(
                 decorationBox = { innerTextField ->
                     if (searchQuery.isEmpty()) {
                         Text(
-                            "搜索视频...",
+                            "Search videos...",
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 18.sp
                         )
@@ -625,7 +625,7 @@ private fun SearchTopBar(
             IconButton(onClick = onCloseSearch) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "关闭搜索",
+                    contentDescription = "Close Search",
                     tint = Color.White
                 )
             }
@@ -635,7 +635,7 @@ private fun SearchTopBar(
                 IconButton(onClick = { onSearchQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "清除",
+                        contentDescription = "Clear",
                         tint = Color.White
                     )
                 }
@@ -794,7 +794,7 @@ private fun VideoItem(
                 IconButton(onClick = onMoreClick) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "更多",
+                        contentDescription = "More",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -816,7 +816,7 @@ private fun VideoSortDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "排序方式",
+                text = "Sort By",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -824,22 +824,22 @@ private fun VideoSortDialog(
         text = {
             Column {
                 SortOption(
-                    text = "名称 (升序)",
+                    text = "Name (Ascending)",
                     isSelected = currentSortType == "NAME" && currentSortOrder == "ASCENDING",
                     onClick = { onSortSelected("NAME", "ASCENDING") }
                 )
                 SortOption(
-                    text = "名称 (降序)",
+                    text = "Name (Descending)",
                     isSelected = currentSortType == "NAME" && currentSortOrder == "DESCENDING",
                     onClick = { onSortSelected("NAME", "DESCENDING") }
                 )
                 SortOption(
-                    text = "日期 (升序)",
+                    text = "Date (Ascending)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "ASCENDING",
                     onClick = { onSortSelected("DATE", "ASCENDING") }
                 )
                 SortOption(
-                    text = "日期 (降序)",
+                    text = "Date (Descending)",
                     isSelected = currentSortType == "DATE" && currentSortOrder == "DESCENDING",
                     onClick = { onSortSelected("DATE", "DESCENDING") }
                 )
@@ -847,7 +847,7 @@ private fun VideoSortDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         shape = RoundedCornerShape(28.dp),

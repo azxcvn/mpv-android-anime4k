@@ -309,7 +309,7 @@ class DanmakuManager(
                 "${videoNameWithoutExt}.acfun.xml",
                 // 通用格式
                 "danmaku.xml",
-                "弹幕.xml",
+                "danmaku.xml",
                 // 无扩展名（兼容弹弹play缓存）
                 videoNameWithoutExt
             )

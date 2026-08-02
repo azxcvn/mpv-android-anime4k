@@ -87,7 +87,7 @@ fun DanmakuServerScreen(
                 ) {
                     Column {
                         SwitchItem(
-                            title = "切集自动匹配弹幕",
+                            title = "Auto-match Danmaku on Episode Switch",
                             checked = autoMatchEnabled,
                             enabled = !hasDefaultServer,
                             onCheckedChange = { enabled ->
@@ -97,7 +97,7 @@ fun DanmakuServerScreen(
                         )
                         if (hasDefaultServer) {
                             Text(
-                                text = "由于弹弹 Play 有配额限制，禁止使用该功能\n想要使用该功能，请停用弹弹Play服务器",
+                                text = "DanDanPlay has quota limits, so this feature is disabled.\nTo use it, please disable the DanDanPlay server",
                                 fontSize = 13.sp,
                                 color = Color(0xFFEF5350),
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
@@ -247,12 +247,12 @@ private fun AddDanmakuServerDialog(
                 onClick = { onConfirm(name, url) },
                 enabled = name.isNotBlank() && url.isNotBlank()
             ) {
-                Text("添加")
+                Text("Add")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text("Cancel")
             }
         },
         shape = RoundedCornerShape(28.dp),

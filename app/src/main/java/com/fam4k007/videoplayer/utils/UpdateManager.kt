@@ -121,10 +121,10 @@ object UpdateManager {
                 }
             } else if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
                 Log.e(TAG, "仓库未找到或没有发布任何 Release")
-                throw Exception("仓库未找到 Release，请先在 GitHub 发布版本")
+                throw Exception("Repository not found or has no Release, please publish a release on GitHub first")
             } else {
                 Log.e(TAG, "请求失败: $responseCode")
-                throw Exception("网络请求失败: HTTP $responseCode")
+                throw Exception("Network request failed: HTTP $responseCode")
             }
         } catch (e: Exception) {
             Log.e(TAG, "检查更新失败", e)
@@ -150,9 +150,9 @@ object UpdateManager {
     fun getAppVersionName(context: Context): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName ?: "未知"
+            packageInfo.versionName ?: "Unknown"
         } catch (e: Exception) {
-            "未知"
+            "Unknown"
         }
     }
     

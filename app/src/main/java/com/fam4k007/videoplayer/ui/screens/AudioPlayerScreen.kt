@@ -161,7 +161,7 @@ fun AudioPlayerScreen(
 
             // 标题
             Text(
-                videoTitle.ifBlank { "未命名视频" },
+                videoTitle.ifBlank { "Untitled Video" },
                 color = textColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal,
@@ -288,7 +288,7 @@ fun AudioPlayerScreen(
             IconButton(onClick = onClose) {
                 Icon(
                     painterResource(R.drawable.arrow_left_48_regular),
-                    "返回",
+                    "Back",
                     tint = textSecondary,
                     modifier = Modifier.size(28.dp)
                 )
@@ -365,7 +365,7 @@ private fun SpeedBottomSheet(
     onSelect: (Float) -> Unit,
     onDismiss: () -> Unit
 ) {
-    BottomSheet("播放速度", bg, text, onDismiss) {
+    BottomSheet("Playback Speed", bg, text, onDismiss) {
         listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f).forEach { s ->
             val cur = s == currentSpeed
             Row(
@@ -407,9 +407,9 @@ private fun PlaylistBottomSheet(
     onDismiss: () -> Unit
 ) {
     val repeatLabel = when (repeatMode) {
-        RepeatMode.OFF -> "列表循环"
-        RepeatMode.ONE -> "单曲循环"
-        RepeatMode.ALL -> "列表循环"
+        RepeatMode.OFF -> "Loop All"
+        RepeatMode.ONE -> "Loop One"
+        RepeatMode.ALL -> "Loop All"
     }
     val repeatIcon = when (repeatMode) {
         RepeatMode.ONE -> R.drawable.ic_repeat_one_48_regular
@@ -421,7 +421,7 @@ private fun PlaylistBottomSheet(
     val cardBgColor = Color.White.copy(alpha = 0.85f)
     val footerInactiveColor = Color(0xFF1A1A1A)
 
-    BottomSheet("播放列表", bg, text, onDismiss,
+    BottomSheet("Playlist", bg, text, onDismiss,
         footer = {
             HorizontalDivider(color = dividerColor)
             Row(
@@ -445,13 +445,13 @@ private fun PlaylistBottomSheet(
                     ) {
                         Icon(
                             painterResource(R.drawable.ic_shuffle_48_regular),
-                            contentDescription = "随机播放",
+                            contentDescription = "Shuffle",
                             tint = if (shuffleEnabled) accentColor else footerInactiveColor.copy(alpha = 0.4f),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "随机播放",
+                            "Shuffle",
                             color = if (shuffleEnabled) accentColor else footerInactiveColor,
                             fontSize = 11.sp
                         )
@@ -488,7 +488,7 @@ private fun PlaylistBottomSheet(
     ) {
         videoList.forEachIndexed { i, v ->
             val cur = i == currentIndex
-            val name = v.name.ifBlank { "视频 ${i + 1}" }
+            val name = v.name.ifBlank { "Video ${i + 1}" }
 
             Row(
                 Modifier
@@ -621,7 +621,7 @@ private fun BottomSheet(
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("关闭", color = text.copy(alpha = 0.65f), fontSize = 14.sp)
+                    Text("Close", color = text.copy(alpha = 0.65f), fontSize = 14.sp)
                 }
             }
         }

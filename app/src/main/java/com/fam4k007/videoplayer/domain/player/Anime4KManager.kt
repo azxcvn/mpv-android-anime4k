@@ -211,13 +211,13 @@ class Anime4KManager(private val context: Context) {
      */
     fun getModeDescription(mode: Mode): String {
         return when (mode) {
-            Mode.OFF -> "禁用 Anime4K"
-            Mode.A -> "模式 A - 优化1080p动画\n高模糊度、重采样伪影"
-            Mode.B -> "模式 B - 优化720p动画\n低模糊度、下采样振铃"
-            Mode.C -> "模式 C - 优化480p动画\n最高PSNR、低感知质量"
-            Mode.A_PLUS -> "模式 A+A - 最高感知质量\n更强的线条重建（较慢）"
-            Mode.B_PLUS -> "模式 B+B - 高感知质量\n更好的720p效果（较慢）"
-            Mode.C_PLUS -> "模式 C+A - 略高感知质量\n改进的480p效果（较慢）"
+            Mode.OFF -> "Anime4K Off"
+            Mode.A -> "Mode A - Optimized for 1080p anime\nHigh blur, resampling artifacts"
+            Mode.B -> "Mode B - Optimized for 720p anime\nLow blur, downsampling ringing"
+            Mode.C -> "Mode C - Optimized for 480p anime\nHighest PSNR, low perceptual quality"
+            Mode.A_PLUS -> "Mode A+A - Best perceptual quality\nStronger line reconstruction (slower)"
+            Mode.B_PLUS -> "Mode B+B - High perceptual quality\nBetter 720p result (slower)"
+            Mode.C_PLUS -> "Mode C+A - Slightly higher perceptual quality\nImproved 480p result (slower)"
         }
     }
 
@@ -226,9 +226,9 @@ class Anime4KManager(private val context: Context) {
      */
     fun getQualityDescription(quality: Quality): String {
         return when (quality) {
-            Quality.FAST -> "快速(S) - 低GPU占用"
-            Quality.BALANCED -> "平衡 (M) - 推荐"
-            Quality.HIGH -> "高质量(L) - 高GPU占用"
+            Quality.FAST -> "Fast (S) - Low GPU usage"
+            Quality.BALANCED -> "Balanced (M) - Recommended"
+            Quality.HIGH -> "High Quality (L) - High GPU usage"
         }
     }
 

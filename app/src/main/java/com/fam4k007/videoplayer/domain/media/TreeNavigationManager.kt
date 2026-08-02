@@ -28,7 +28,7 @@ class TreeNavigationManager {
     private val backStack = mutableListOf<Pair<String?, String>>()
 
     // 面包屑状态
-    private val _breadcrumbs = MutableStateFlow<List<Pair<String, String>>>(listOf("" to "根目录"))
+    private val _breadcrumbs = MutableStateFlow<List<Pair<String, String>>>(listOf("" to "Root"))
     val breadcrumbs: StateFlow<List<Pair<String, String>>> = _breadcrumbs.asStateFlow()
 
     // 当前层级中有子文件夹的节点路径集合（用于 UI 判断是否显示子文件夹箭头）
@@ -155,6 +155,6 @@ class TreeNavigationManager {
      * 更新面包屑状态
      */
     private fun updateBreadcrumbs() {
-        _breadcrumbs.value = listOf("" to "根目录") + backStack.map { (p, n) -> (p ?: "") to n }
+        _breadcrumbs.value = listOf("" to "Root") + backStack.map { (p, n) -> (p ?: "") to n }
     }
 }

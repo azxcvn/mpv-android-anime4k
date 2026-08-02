@@ -104,7 +104,7 @@ class LogViewerViewModel(
                 Logger.e(TAG, "Failed to load log files", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    message = "加载日志失败: ${e.message}"
+                    message = "Failed to load logs: ${e.message}"
                 )
             }
         }
@@ -125,7 +125,7 @@ class LogViewerViewModel(
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to read log file", e)
                 _uiState.value = _uiState.value.copy(
-                    message = "读取日志失败: ${e.message}"
+                    message = "Failed to read logs: ${e.message}"
                 )
             }
         }
@@ -160,14 +160,14 @@ class LogViewerViewModel(
                 _uiState.value = _uiState.value.copy(
                     logFiles = emptyList(),
                     selectedLog = null,
-                    message = "已清除 $deletedCount 个日志文件"
+                    message = "Cleared $deletedCount log files"
                 )
                 
                 Logger.d(TAG, "Cleared $deletedCount log files")
             } catch (e: Exception) {
                 Logger.e(TAG, "Failed to clear logs", e)
                 _uiState.value = _uiState.value.copy(
-                    message = "清除日志失败: ${e.message}"
+                    message = "Failed to clear logs: ${e.message}"
                 )
             }
         }

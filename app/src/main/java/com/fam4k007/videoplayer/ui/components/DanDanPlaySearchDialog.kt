@@ -200,7 +200,7 @@ private fun DanDanPlaySearchContent(
             OutlinedTextField(
                 value = searchText,
                 onValueChange = { searchText = it },
-                placeholder = { Text("输入番剧名称", color = Color(0xFF888888)) },
+                placeholder = { Text("Search anime name", color = Color(0xFF888888)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
@@ -226,7 +226,7 @@ private fun DanDanPlaySearchContent(
                                             val serverUrl = if (server.isDefault) null else server.url
                                             if (serverUrl != null && !serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
                                                 android.util.Log.w("DanDanPlayUI", "跳过无效服务器 URL: ${server.name} -> $serverUrl")
-                                                errors.add("${server.name}: URL 格式无效")
+                                                errors.add("${server.name}: invalid URL format")
                                                 continue
                                             }
                                             val api = com.fam4k007.videoplayer.dandanplay.DanDanPlayApi(serverUrl)
@@ -271,7 +271,7 @@ private fun DanDanPlaySearchContent(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Send,
-                                contentDescription = "搜索",
+                                contentDescription = "Search",
                                 tint = Color(0xFF64B5F6),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -417,7 +417,7 @@ private fun AnimeCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${anime.typeDescription} · ${anime.episodes.size} 集",
+                    text = "${anime.typeDescription} · ${anime.episodes.size} episodes",
                     fontSize = 12.sp,
                     color = Color(0xFF9E9E9E)
                 )
@@ -460,7 +460,7 @@ private fun EpisodeList(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${anime.typeDescription} · ${anime.episodes.size} 集",
+                        text = "${anime.typeDescription} · ${anime.episodes.size} episodes",
                         fontSize = 12.sp,
                         color = Color(0xFF9E9E9E)
                     )

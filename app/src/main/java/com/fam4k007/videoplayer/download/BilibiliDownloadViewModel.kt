@@ -486,13 +486,13 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
                                     if (moveToFinalLocation(outputFile, outputFileName)) {
                                         DownloadTaskStore.updateItemStatus(item.id, "completed")
                                     } else {
-                                        DownloadTaskStore.updateItemStatus(item.id, "failed", "无法保存到选择的文件夹")
+                                        DownloadTaskStore.updateItemStatus(item.id, "failed", "Unable to save to the selected folder")
                                     }
                                 } else {
                                     DownloadTaskStore.updateItemStatus(item.id, "completed")
                                 }
                             } else {
-                                DownloadTaskStore.updateItemStatus(item.id, "failed", "音视频合并失败")
+                                DownloadTaskStore.updateItemStatus(item.id, "failed", "Audio/video merge failed")
                             }
                         }
                     } else {
@@ -615,7 +615,7 @@ class BilibiliDownloadViewModel(application: Application) : AndroidViewModel(app
                                         DownloadTaskStore.updateItemStatus(newItem.id, "completed")
                                     } else {
                                         Log.e(TAG, "移动文件失败")
-                                        DownloadTaskStore.updateItemStatus(newItem.id, "failed", "无法保存到选择的文件夹")
+                                        DownloadTaskStore.updateItemStatus(newItem.id, "failed", "Unable to save to the selected folder")
                                     }
                                 } else {
                                     DownloadTaskStore.updateItemStatus(newItem.id, "completed")

@@ -48,7 +48,7 @@ class BackgroundPlaybackService : Service() {
         Log.d(TAG, "Service starting startId=$startId")
         var title = intent?.getStringExtra("media_title")
         if (title.isNullOrBlank()) title = MPVLib.getPropertyString("media-title")
-        if (title.isNullOrBlank()) title = "听视频"
+        if (title.isNullOrBlank()) title = "Listen to Video"
 
         try {
             val openIntent = Intent(this, VideoPlayerActivity::class.java)

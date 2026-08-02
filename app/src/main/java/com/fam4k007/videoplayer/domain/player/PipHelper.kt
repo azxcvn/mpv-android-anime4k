@@ -116,12 +116,12 @@ class PipHelper(
     private fun createPipActions(): List<RemoteAction> {
         val isPlaying = MPVLib.getPropertyBoolean("pause") == false
         return listOf(
-            createRemoteAction("快退", android.R.drawable.ic_media_rew, PIP_REWIND),
+            createRemoteAction("Rewind", android.R.drawable.ic_media_rew, PIP_REWIND),
             if (isPlaying)
-                createRemoteAction("暂停", android.R.drawable.ic_media_pause, PIP_PAUSE)
+                createRemoteAction("Pause", android.R.drawable.ic_media_pause, PIP_PAUSE)
             else
-                createRemoteAction("播放", android.R.drawable.ic_media_play, PIP_PLAY),
-            createRemoteAction("快进", android.R.drawable.ic_media_ff, PIP_FORWARD)
+                createRemoteAction("Play", android.R.drawable.ic_media_play, PIP_PLAY),
+            createRemoteAction("Forward", android.R.drawable.ic_media_ff, PIP_FORWARD)
         )
     }
 

@@ -27,7 +27,7 @@ class TVBrowserViewModel : ViewModel() {
 
     data class BrowserState(
         val currentUrl: String = "",
-        val currentTitle: String = "TV浏览器",
+        val currentTitle: String = "TV Browser",
         val isLoading: Boolean = false,
         val urlInput: String = "",
         val showUrlBar: Boolean = false,
@@ -41,7 +41,7 @@ class TVBrowserViewModel : ViewModel() {
     // ==================== 页面信息（供 WebView 回调使用） ====================
 
     private var currentPageUrl: String = ""
-    private var currentPageTitle: String = "TV浏览器"
+    private var currentPageTitle: String = "TV Browser"
 
     init {
         VideoSnifferManager.clear()
@@ -124,7 +124,7 @@ class TVBrowserViewModel : ViewModel() {
         Log.d(TAG, "Playing best video: ${bestVideo.url}")
 
         val request = bestVideo.toRemotePlaybackRequest().copy(
-            title = bestVideo.title.ifEmpty { "在线视频" }
+            title = bestVideo.title.ifEmpty { "Online Video" }
         )
         RemotePlaybackLauncher.start(context, request)
     }

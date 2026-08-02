@@ -177,7 +177,7 @@ fun VideoListScreen(
                     CircularProgressIndicator()
                 }
             } else if (videoListState.filteredVideos.isEmpty()) {
-                EmptyState(if (videoListState.searchQuery.isEmpty()) "此文件夹中没有视频" else "未找到匹配的视频")
+                EmptyState(if (videoListState.searchQuery.isEmpty()) "No videos in this folder" else "No matching videos found")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -676,7 +676,7 @@ private fun SearchTopBar(
             IconButton(onClick = onCloseSearch) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回"
+                    contentDescription = "Back"
                 )
             }
         },

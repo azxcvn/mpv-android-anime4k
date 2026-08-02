@@ -95,7 +95,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                 
                 // 1. 从输入中提取纯链接
                 val videoUrl = extractUrlFromInput(input)
-                    ?: return@withContext DownloadResult.Error("无法从输入中识别有效的B站链接")
+                    ?: return@withContext DownloadResult.Error("Unable to identify a valid Bilibili link from the input")
                 
                 Log.d(TAG, "提取到的链接: $videoUrl")
                 
@@ -135,7 +135,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                 
             } catch (e: Exception) {
                 Log.e(TAG, "下载弹幕失败", e)
-                DownloadResult.Error(e.message ?: "未知错误")
+                DownloadResult.Error(e.message ?: "Unknown error")
             }
         }
     }
@@ -215,27 +215,27 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
         progressCallback: ((Int, Int, String, Int, Int) -> Unit)? = null
     ): DownloadResult {
         return try {
-            progressCallback?.invoke(1, 1, "正在获取视频信息...", 0, 0)
+            progressCallback?.invoke(1, 1, "Fetching video info...", 0, 0)
             
             val (aid, cid, title) = extractVideoInfo(videoUrl)
-                ?: return DownloadResult.Error("无法解析视频信息")
+                ?: return DownloadResult.Error("Failed to parse video info")
             
             Log.d(TAG, "视频信息 - 标题: $title, AID: $aid, CID: $cid")
             
-            progressCallback?.invoke(1, 1, "正在下载弹幕...", 0, 0)
+            progressCallback?.invoke(1, 1, "Downloading danmaku...", 0, 0)
             
             val xmlContent = downloadDanmakuXml(cid, aid = aid)
-                ?: return DownloadResult.Error("弹幕下载失败")
+                ?: return DownloadResult.Error("Danmaku download failed")
             
             val fileName = saveToDirectory(saveDirectoryUri, title, xmlContent)
-                ?: return DownloadResult.Error("保存文件失败")
+                ?: return DownloadResult.Error("Failed to save file")
             
             Log.d(TAG, "弹幕下载完成: $fileName")
-            progressCallback?.invoke(1, 1, "下载完成", 1, 0)
+            progressCallback?.invoke(1, 1, "Download complete", 1, 0)
             DownloadResult.Success(fileName)
         } catch (e: Exception) {
             Log.e(TAG, "下载视频弹幕失败", e)
-            DownloadResult.Error(e.message ?: "未知错误")
+            DownloadResult.Error(e.message ?: "Unknown error")
         }
     }
     
@@ -248,27 +248,27 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
         progressCallback: ((Int, Int, String, Int, Int) -> Unit)? = null
     ): DownloadResult {
         return try {
-            progressCallback?.invoke(1, 1, "正在获取番剧信息...", 0, 0)
+            progressCallback?.invoke(1, 1, "Fetching bangumi info...", 0, 0)
             
             val (aid, cid, title) = extractBangumiInfo(bangumiUrl)
-                ?: return DownloadResult.Error("无法解析番剧信息")
+                ?: return DownloadResult.Error("Failed to parse bangumi info")
             
             Log.d(TAG, "番剧信息 - 标题: $title, AID: $aid, CID: $cid")
             
-            progressCallback?.invoke(1, 1, "正在下载弹幕...", 0, 0)
+            progressCallback?.invoke(1, 1, "Downloading danmaku...", 0, 0)
             
             val xmlContent = downloadDanmakuXml(cid, aid = aid)
-                ?: return DownloadResult.Error("弹幕下载失败")
+                ?: return DownloadResult.Error("Danmaku download failed")
             
             val fileName = saveToDirectory(saveDirectoryUri, title, xmlContent)
-                ?: return DownloadResult.Error("保存文件失败")
+                ?: return DownloadResult.Error("Failed to save file")
             
             Log.d(TAG, "弹幕下载完成: $fileName")
-            progressCallback?.invoke(1, 1, "下载完成", 1, 0)
+            progressCallback?.invoke(1, 1, "Download complete", 1, 0)
             DownloadResult.Success(fileName)
         } catch (e: Exception) {
             Log.e(TAG, "下载番剧弹幕失败", e)
-            DownloadResult.Error(e.message ?: "未知错误")
+            DownloadResult.Error(e.message ?: "Unknown error")
         }
     }
     
@@ -281,17 +281,17 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
         progressCallback: ((Int, Int, String, Int, Int) -> Unit)? = null
     ): DownloadResult {
         return try {
-            progressCallback?.invoke(0, 0, "正在获取番剧季度信息...", 0, 0)
+            progressCallback?.invoke(0, 0, "Fetching bangumi season info...", 0, 0)
             
             // 获取番剧季度信息
             val seasonInfo = getBangumiSeasonInfo(bangumiUrl)
-                ?: return DownloadResult.Error("无法获取番剧信息")
+                ?: return DownloadResult.Error("Failed to fetch bangumi info")
             
             val (seasonTitle, episodes) = seasonInfo
             Log.d(TAG, "番剧: $seasonTitle, 共${episodes.size}集")
             
             if (episodes.isEmpty()) {
-                return DownloadResult.Error("该番剧没有可下载的集数")
+                return DownloadResult.Error("This bangumi has no downloadable episodes")
             }
             
             // 分批并发下载所有集数的弹幕（优化内存占用）
@@ -353,20 +353,20 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                 }
             }
             
-            val message = "番剧《$seasonTitle》下载完成\n成功: $successCount 集\n失败: $failCount 集"
+            val message = "Bangumi \"$seasonTitle\" download complete\nSucceeded: $successCount episodes\nFailed: $failCount episodes"
             Log.d(TAG, message)
             
-            progressCallback?.invoke(episodes.size, episodes.size, "下载完成", successCount, failCount)
+            progressCallback?.invoke(episodes.size, episodes.size, "Download complete", successCount, failCount)
             
             if (successCount > 0) {
                 DownloadResult.Success(message)
             } else {
-                DownloadResult.Error("所有集数下载失败")
+                DownloadResult.Error("All episodes failed to download")
             }
             
         } catch (e: Exception) {
             Log.e(TAG, "下载番剧弹幕失败", e)
-            DownloadResult.Error(e.message ?: "未知错误")
+            DownloadResult.Error(e.message ?: "Unknown error")
         }
     }
     
@@ -421,7 +421,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                 // 获取季度标题
                 val seasonTitle = result.optString("season_title") 
                     ?: result.optString("title")
-                    ?: "未知番剧"
+                    ?: "Unknown Bangumi"
                 
                 // 获取所有集数
                 val episodes = result.optJSONArray("episodes")
@@ -437,7 +437,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                     val cid = ep.getLong("cid")
                     val epTitle = ep.optString("long_title").ifEmpty { null }
                         ?: ep.optString("title").ifEmpty { null }
-                        ?: "第${i + 1}集"
+                        ?: "Episode ${i + 1}"
                     episodeList.add(Triple(aid, cid, epTitle))
                 }
                 
@@ -549,7 +549,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                 // 获取标题
                 val title = result.optString("season_title") 
                     ?: result.optString("title")
-                    ?: "未知番剧"
+                    ?: "Unknown Bangumi"
                 
                 // 获取第一集的cid（作为默认）
                 // 优先从episodes数组获取
@@ -567,7 +567,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                                 val cid = ep.getLong("cid")
                                 val epTitle = ep.optString("long_title").ifEmpty { null }
                                     ?: ep.optString("title").ifEmpty { null }
-                                    ?: "第${i + 1}集"
+                                    ?: "Episode ${i + 1}"
                                 // 文件名只使用集数标题
                                 val fullTitle = epTitle
                                 Log.d(TAG, "找到指定集数: $fullTitle (来自《$title》), AID: $aid, CID: $cid")
@@ -582,7 +582,7 @@ class BiliBiliDanmakuDownloadManager(private val context: Context) {
                     val cid = firstEp.getLong("cid")
                     val epTitle = firstEp.optString("long_title").ifEmpty { null }
                         ?: firstEp.optString("title").ifEmpty { null }
-                        ?: "第1集"
+                        ?: "Episode 1"
                     // 文件名只使用集数标题
                     val fullTitle = epTitle
                     Log.d(TAG, "使用第一集: $fullTitle (来自《$title》), AID: $aid, CID: $cid")
