@@ -28,7 +28,7 @@ class VideoBrowserManager(
     /**
      * 对视频列表进行排序
      * @param videos 待排序的视频列表
-     * @param sortType 0=名称(自然排序), 1=日期, 2=大小
+     * @param sortType 0=名称(自然排序), 1=日期, 2=大小, 3=时长
      * @param sortOrder 0=升序, 1=降序
      */
     fun sort(videos: List<VideoFileParcelable>, sortType: Int, sortOrder: Int): List<VideoFileParcelable> {
@@ -39,6 +39,7 @@ class VideoBrowserManager(
             }
             1 -> if (sortOrder == 0) videos.sortedBy { it.dateAdded } else videos.sortedByDescending { it.dateAdded }
             2 -> if (sortOrder == 0) videos.sortedBy { it.size } else videos.sortedByDescending { it.size }
+            3 -> if (sortOrder == 0) videos.sortedBy { it.duration } else videos.sortedByDescending { it.duration }
             else -> videos
         }
     }
@@ -64,6 +65,7 @@ class VideoBrowserManager(
             "NAME" -> 0
             "DATE" -> 1
             "SIZE" -> 2
+            "DURATION" -> 3
             else -> 0
         }
         val sortOrder = when (preferencesManager.getVideoSortOrder()) {
@@ -83,6 +85,7 @@ class VideoBrowserManager(
             0 -> "NAME"
             1 -> "DATE"
             2 -> "SIZE"
+            3 -> "DURATION"
             else -> "NAME"
         }
         val orderStr = when (sortOrder) {

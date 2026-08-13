@@ -28,18 +28,18 @@ class FolderBrowserManager(
     /**
      * 对文件夹列表进行排序
      * @param folders 待排序的文件夹列表
-     * @param sortType 0=名称(自然排序), 2=视频数量
+     * @param sortType 0=名称(自然排序), 1=日期, 2=视频数量, 3=总大小
      * @param sortOrder 0=升序, 1=降序
      */
     fun sort(folders: List<VideoFolder>, sortType: Int, sortOrder: Int): List<VideoFolder> {
-        return when (sortType) {
-            0 -> {
-                val sorted = folders.sortedWith(NaturalOrderComparator.comparator { it.folderName })
-                if (sortOrder == 0) sorted else sorted.reversed()
-            }
-            2 -> if (sortOrder == 0) folders.sortedBy { it.videoCount } else folders.sortedByDescending { it.videoCount }
+        val sorted = when (sortType) {
+            0 -> folders.sortedWith(NaturalOrderComparator.comparator { it.folderName })
+            1 -> folders.sortedBy { it.dateModified }
+            2 -> folders.sortedBy { it.videoCount }
+            3 -> folders.sortedBy { it.totalSize }
             else -> folders
         }
+        return if (sortOrder == 0) sorted else sorted.reversed()
     }
 
     // ==================== 黑名单过滤 ====================
@@ -74,13 +74,15 @@ class FolderBrowserManager(
     fun loadSavedSortSettings(): Pair<Int, Int> {
         val sortType = when (preferencesManager.getFolderSortType()) {
             "NAME" -> 0
+            "DATE" -> 1
             "VIDEO_COUNT" -> 2
-            else -> 2
+            "SIZE" -> 3
+            else -> 0
         }
         val sortOrder = when (preferencesManager.getFolderSortOrder()) {
             "ASCENDING" -> 0
             "DESCENDING" -> 1
-            else -> 1
+            else -> 0
         }
         Logger.d(TAG, "Loaded folder sort settings: type=$sortType, order=$sortOrder")
         return sortType to sortOrder
@@ -92,7 +94,9 @@ class FolderBrowserManager(
     fun saveSortSettings(sortType: Int, sortOrder: Int) {
         val typeStr = when (sortType) {
             0 -> "NAME"
+            1 -> "DATE"
             2 -> "VIDEO_COUNT"
+            3 -> "SIZE"
             else -> "NAME"
         }
         val orderStr = when (sortOrder) {

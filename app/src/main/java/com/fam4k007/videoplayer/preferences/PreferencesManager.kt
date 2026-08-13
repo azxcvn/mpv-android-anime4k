@@ -988,10 +988,10 @@ class PreferencesManager private constructor(context: Context) {
     }
     
     /**
-     * 获取文件夹列表排序类型 (NAME, VIDEO_COUNT)
+     * 获取文件夹列表排序类型 (NAME, DATE, VIDEO_COUNT, SIZE)
      */
     fun getFolderSortType(): String {
-        return sharedPreferences.getString("folder_sort_type", "VIDEO_COUNT") ?: "VIDEO_COUNT"
+        return sharedPreferences.getString("folder_sort_type", "NAME") ?: "NAME"
     }
     
     /**
@@ -1005,7 +1005,7 @@ class PreferencesManager private constructor(context: Context) {
      * 获取文件夹列表排序顺序 (ASCENDING, DESCENDING)
      */
     fun getFolderSortOrder(): String {
-        return sharedPreferences.getString("folder_sort_order", "DESCENDING") ?: "DESCENDING"
+        return sharedPreferences.getString("folder_sort_order", "ASCENDING") ?: "ASCENDING"
     }
     
     /**
@@ -1013,6 +1013,48 @@ class PreferencesManager private constructor(context: Context) {
      */
     fun setFolderSortOrder(order: String) {
         sharedPreferences.edit().putString("folder_sort_order", order).apply()
+    }
+    
+    // ==================== 文件夹列表显示字段 ====================
+    
+    /**
+     * 获取文件夹列表显示字段集合
+     * 可选值：PATH、COUNT、SIZE、DATE
+     * @return 需要显示的字段集合
+     */
+    fun getFolderDisplayFields(): Set<String> {
+        return sharedPreferences.getStringSet(
+            "folder_display_fields",
+            setOf("COUNT", "SIZE")
+        ) ?: setOf("COUNT", "SIZE")
+    }
+    
+    /**
+     * 保存文件夹列表显示字段集合
+     */
+    fun setFolderDisplayFields(fields: Set<String>) {
+        sharedPreferences.edit().putStringSet("folder_display_fields", fields).apply()
+    }
+    
+    // ==================== 视频列表显示字段 ====================
+    
+    /**
+     * 获取视频列表显示字段集合
+     * 可选值：DURATION、SIZE、DATE、RESOLUTION、PROGRESS
+     * @return 需要显示的字段集合
+     */
+    fun getVideoDisplayFields(): Set<String> {
+        return sharedPreferences.getStringSet(
+            "video_display_fields",
+            setOf("DURATION", "SIZE", "DATE", "PROGRESS")
+        ) ?: setOf("DURATION", "SIZE", "DATE", "PROGRESS")
+    }
+    
+    /**
+     * 保存视频列表显示字段集合
+     */
+    fun setVideoDisplayFields(fields: Set<String>) {
+        sharedPreferences.edit().putStringSet("video_display_fields", fields).apply()
     }
     
     // ==================== 硬件解码 ====================
