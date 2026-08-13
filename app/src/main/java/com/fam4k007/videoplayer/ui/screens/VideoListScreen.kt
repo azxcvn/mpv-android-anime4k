@@ -11,6 +11,8 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -54,7 +57,6 @@ import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
-import com.fam4k007.videoplayer.ui.components.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -237,6 +239,7 @@ fun VideoListScreen(
                             playbackState = playbackStates[video.uri],
                             watchedThreshold = watchedThreshold,
                             showProgressBar = showProgressBar,
+                            displayFields = videoListState.displayFields,
                             onClick = { 
                                 if (isEditMode) {
                                     // 编辑模式下切换选中状态
@@ -328,6 +331,7 @@ fun VideoListScreen(
                 0 -> "NAME"
                 1 -> "DATE"
                 2 -> "SIZE"
+                3 -> "DURATION"
                 else -> "NAME"
             },
             currentSortOrder = when (videoListState.sortOrder) {
@@ -335,6 +339,7 @@ fun VideoListScreen(
                 1 -> "DESCENDING"
                 else -> "ASCENDING"
             },
+            currentFields = videoListState.displayFields,
             onDismiss = { showSortDialog = false },
             onSortSelected = { newType: String, newOrder: String ->
                 // 将字符串类型映射为整数
@@ -342,6 +347,7 @@ fun VideoListScreen(
                     "NAME" -> 0
                     "DATE" -> 1
                     "SIZE" -> 2
+                    "DURATION" -> 3
                     else -> 0
                 }
                 val sortOrder = when (newOrder) {
@@ -350,7 +356,9 @@ fun VideoListScreen(
                     else -> 0
                 }
                 viewModel.sortVideos(sortType, sortOrder)
-                showSortDialog = false
+            },
+            onFieldsChanged = { fields ->
+                viewModel.setVideoDisplayFields(fields)
             }
         )
     }
@@ -520,7 +528,7 @@ fun VideoListScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun VideoItem(
     video: VideoFileParcelable,
@@ -530,6 +538,7 @@ private fun VideoItem(
     playbackState: PlaybackState?,
     watchedThreshold: Int,
     showProgressBar: Boolean,
+    displayFields: Set<String>,
     onClick: () -> Unit,
     onMoreClick: () -> Unit
 ) {
@@ -557,6 +566,13 @@ private fun VideoItem(
     val isWatched = playbackState?.hasBeenWatched == true || (progressPercent >= watchedThreshold && progressPercent > 0)
     val isWatching = progressPercent in 1 until watchedThreshold
     val showBar = showProgressBar && progressPercent in 1..99
+
+    // 显示字段开关
+    val showSize = "SIZE" in displayFields && video.size > 0
+    val showDuration = "DURATION" in displayFields && video.duration > 0
+    val showProgress = "PROGRESS" in displayFields
+    val showDate = "DATE" in displayFields && video.dateAdded > 0
+    val showResolution = "RESOLUTION" in displayFields && video.width > 0 && video.height > 0
 
     Card(
         modifier = Modifier
@@ -655,7 +671,7 @@ private fun VideoItem(
                 }
                 
                 // 时长浮层（右下角）
-                if (video.duration > 0) {
+                if (showDuration) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -672,62 +688,94 @@ private fun VideoItem(
                         )
                     }
                 }
+
+                // 大小浮层（左下角）
+                if (showSize) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 3.dp, bottom = if (showBar) 4.dp else 1.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = FormatUtils.formatFileSize(video.size),
+                            fontSize = 9.sp,
+                            color = Color.White,
+                            maxLines = 1,
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 视频信息
+            // 视频信息（随字段行数动态变化，缩略图整体垂直居中）
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(68.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
             ) {
                 // 标题
                 Text(
                     text = video.name,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 3,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = if (isWatched)
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     else
                         MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 16.sp
+                    lineHeight = 18.sp
                 )
 
-                // 状态标签 + 文件大小
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // 观看状态标签
-                    Text(
-                        text = when {
-                            isWatched -> "已观看"
-                            isWatching -> "观看中 ${progressPercent}%"
-                            else -> "未观看"
-                        },
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                        color = when {
-                            isWatched -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            isWatching -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                // 字段标签：观看进度 / 日期 / 分辨率
+                if (showProgress || showDate || showResolution) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // 观看进度
+                        if (showProgress) {
+                            VideoFieldTag(
+                                icon = Icons.Default.Schedule,
+                                text = when {
+                                    isWatched -> "已观看"
+                                    isWatching -> "观看中 ${progressPercent}%"
+                                    else -> "未观看"
+                                },
+                                color = when {
+                                    isWatched -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    isWatching -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
                         }
-                    )
-                    Text(
-                        text = FormatUtils.formatFileSize(video.size),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        color = if (isWatched)
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        // 日期
+                        if (showDate) {
+                            VideoFieldTag(
+                                icon = Icons.Default.CalendarToday,
+                                text = FormatUtils.formatDateOnly(video.dateAdded * 1000),
+                                color = if (isWatched)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // 分辨率
+                        if (showResolution) {
+                            VideoFieldTag(
+                                icon = Icons.Default.AspectRatio,
+                                text = "${video.width}x${video.height}",
+                                color = if (isWatched)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -746,6 +794,32 @@ private fun VideoItem(
                 }
             }
         }
+    }
+}
+
+/**
+ * 视频字段标签（左侧小图标 + 文本）
+ */
+@Composable
+private fun VideoFieldTag(
+    icon: ImageVector,
+    text: String,
+    color: Color
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(13.dp),
+            tint = color
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            maxLines = 1,
+            color = color
+        )
     }
 }
 
@@ -806,44 +880,84 @@ private fun SearchTopBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun VideoSortDialog(
     currentSortType: String,
     currentSortOrder: String,
+    currentFields: Set<String>,
     onDismiss: () -> Unit,
-    onSortSelected: (String, String) -> Unit
+    onSortSelected: (String, String) -> Unit,
+    onFieldsChanged: (Set<String>) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "排序方式",
+                text = "排序与显示",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
         },
         text = {
-            Column {
-                SortOption(
-                    text = "名称 (升序)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("NAME", "ASCENDING") }
-                )
-                SortOption(
-                    text = "名称 (降序)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("NAME", "DESCENDING") }
-                )
-                SortOption(
-                    text = "日期 (升序)",
-                    isSelected = currentSortType == "DATE" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("DATE", "ASCENDING") }
-                )
-                SortOption(
-                    text = "日期 (降序)",
-                    isSelected = currentSortType == "DATE" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("DATE", "DESCENDING") }
-                )
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // 排序方式
+                VideoSectionTitle("排序方式")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    VideoSortField.entries.forEach { field ->
+                        FilterChip(
+                            selected = currentSortType == field.key,
+                            onClick = { onSortSelected(field.key, currentSortOrder) },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
+
+                // 排序方向
+                VideoSectionTitle("排序方向")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = currentSortOrder == "ASCENDING",
+                        onClick = { onSortSelected(currentSortType, "ASCENDING") },
+                        label = { Text("升序") }
+                    )
+                    FilterChip(
+                        selected = currentSortOrder == "DESCENDING",
+                        onClick = { onSortSelected(currentSortType, "DESCENDING") },
+                        label = { Text("降序") }
+                    )
+                }
+
+                // 显示字段
+                VideoSectionTitle("显示字段")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    VideoDisplayField.entries.forEach { field ->
+                        FilterChip(
+                            selected = field.key in currentFields,
+                            onClick = {
+                                val next = if (field.key in currentFields) {
+                                    currentFields - field.key
+                                } else {
+                                    currentFields + field.key
+                                }
+                                onFieldsChanged(next)
+                            },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -853,6 +967,33 @@ private fun VideoSortDialog(
         },
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
+    )
+}
+
+/** 视频排序字段选项 */
+private enum class VideoSortField(val key: String, val label: String) {
+    NAME("NAME", "名称"),
+    DATE("DATE", "日期"),
+    SIZE("SIZE", "大小"),
+    DURATION("DURATION", "时长")
+}
+
+/** 视频显示字段选项 */
+private enum class VideoDisplayField(val key: String, val label: String) {
+    DURATION("DURATION", "时长"),
+    SIZE("SIZE", "大小"),
+    DATE("DATE", "日期"),
+    RESOLUTION("RESOLUTION", "分辨率"),
+    PROGRESS("PROGRESS", "观看进度")
+}
+
+@Composable
+private fun VideoSectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 

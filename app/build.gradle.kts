@@ -28,7 +28,7 @@ android {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a")
+            include("arm64-v8a", "armeabi-v7a")
             isUniversalApk = false
         }
     }
@@ -37,8 +37,8 @@ android {
         applicationId = "com.fam4k007.videoplayer"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 31
-        versionName = "1.3.1"
+        versionCode = 32
+        versionName = "1.3.2"
 
         buildConfigField(
             "String",

@@ -300,6 +300,13 @@ fun PlaybackSettingsScreen(
                         checked = settings.drawerAnimationEnabled,
                         onCheckedChange = { viewModel.setDrawerAnimationEnabled(it) }
                     )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "启用长按倍速提示",
+                        subtitle = if (settings.longPressSpeedHintEnabled) "长按时显示当前倍速提示" else "长按时不显示倍速提示",
+                        checked = settings.longPressSpeedHintEnabled,
+                        onCheckedChange = { viewModel.setLongPressSpeedHintEnabled(it) }
+                    )
                 }
             }
 

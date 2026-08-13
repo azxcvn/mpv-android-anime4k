@@ -25,7 +25,9 @@ object TreeViewScanner {
         val name: String,
         val videoCount: Int,
         val hasSubfolders: Boolean,
-        val videos: List<VideoFile> = emptyList()
+        val videos: List<VideoFile> = emptyList(),
+        val totalSize: Long = 0L,
+        val latestDate: Long = 0L
     )
 
     /**
@@ -105,8 +107,13 @@ object TreeViewScanner {
                 ChildInfo(directChildName)
             }
 
-            // 累加视频计数
+            // 累加视频计数、大小与最近日期
             childInfo.videoCount += videos.size
+            childInfo.totalSize += videos.sumOf { it.size }
+            childInfo.latestDate = maxOf(
+                childInfo.latestDate,
+                videos.maxOfOrNull { it.dateAdded } ?: 0L
+            )
 
             // 如果不是直接子文件夹，说明有更深层的子目录
             if (relativePath.contains("/")) {
@@ -131,7 +138,9 @@ object TreeViewScanner {
                     name = parentName,
                     videoCount = parentVideos.size,
                     hasSubfolders = false,
-                    videos = parentVideos
+                    videos = parentVideos,
+                    totalSize = parentVideos.sumOf { it.size },
+                    latestDate = parentVideos.maxOfOrNull { it.dateAdded } ?: 0L
                 )
             )
         }
@@ -143,7 +152,9 @@ object TreeViewScanner {
                     path = childPath,
                     name = info.name,
                     videoCount = info.videoCount,
-                    hasSubfolders = info.hasSubfolders
+                    hasSubfolders = info.hasSubfolders,
+                    totalSize = info.totalSize,
+                    latestDate = info.latestDate
                 )
             )
         }
@@ -176,6 +187,8 @@ object TreeViewScanner {
     private data class ChildInfo(
         val name: String,
         var videoCount: Int = 0,
+        var totalSize: Long = 0L,
+        var latestDate: Long = 0L,
         var hasSubfolders: Boolean = false
     )
 }

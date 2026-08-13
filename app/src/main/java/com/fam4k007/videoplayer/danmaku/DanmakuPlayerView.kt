@@ -403,7 +403,9 @@ class DanmakuPlayerView @JvmOverloads constructor(
 
     fun updateOffsetTime() {
         if (isPrepared) {
-            seekDanmaku(currentTime)
+            // 使用视频实际播放位置（未含偏移）作为基准，再叠加新的偏移，避免重复叠加
+            val basePosition = positionProvider?.getCurrentPosition() ?: return
+            seekTo(basePosition + DanmakuConfig.offsetTime)
         }
     }
 

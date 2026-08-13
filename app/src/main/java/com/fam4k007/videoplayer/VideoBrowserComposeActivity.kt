@@ -253,7 +253,9 @@ class VideoBrowserComposeActivity : ComponentActivity() {
                                 folderPath = path,
                                 folderName = folderName.ifEmpty { "根目录" },
                                 videoCount = videos.size,
-                                videos = videos
+                                videos = videos,
+                                totalSize = videos.sumOf { it.size },
+                                dateModified = videos.maxOfOrNull { it.dateAdded } ?: 0L
                             )
                         )
                     }

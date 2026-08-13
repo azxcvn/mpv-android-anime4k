@@ -74,6 +74,9 @@ object AppConstants {
         // 抽屉界面动画开关
         const val DRAWER_ANIMATION_ENABLED = "drawer_animation_enabled"
 
+        // 长按倍速提示开关
+        const val LONG_PRESS_SPEED_HINT_ENABLED = "long_press_speed_hint_enabled"
+
         // MPV 解码器预设
         const val MPV_PROFILE = "mpv_profile"
         const val GPU_NEXT = "gpu_next"
