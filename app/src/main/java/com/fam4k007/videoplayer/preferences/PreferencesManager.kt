@@ -623,6 +623,17 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean(AppConstants.Preferences.DRAWER_ANIMATION_ENABLED, enabled).apply()
     }
 
+    /**
+     * 是否启用长按倍速提示
+     */
+    fun isLongPressSpeedHintEnabled(): Boolean {
+        return sharedPreferences.getBoolean(AppConstants.Preferences.LONG_PRESS_SPEED_HINT_ENABLED, true)
+    }
+
+    fun setLongPressSpeedHintEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(AppConstants.Preferences.LONG_PRESS_SPEED_HINT_ENABLED, enabled).apply()
+    }
+
     fun getVideoAspect(): String {
         return sharedPreferences.getString("video_aspect", "FIT") ?: "FIT"
     }

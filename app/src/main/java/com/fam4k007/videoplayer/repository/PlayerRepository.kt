@@ -229,6 +229,14 @@ class PlayerRepository(
         preferencesManager.setDrawerAnimationEnabled(enabled)
     }
 
+    fun isLongPressSpeedHintEnabled(): Boolean {
+        return preferencesManager.isLongPressSpeedHintEnabled()
+    }
+
+    fun setLongPressSpeedHintEnabled(enabled: Boolean) {
+        preferencesManager.setLongPressSpeedHintEnabled(enabled)
+    }
+
     fun getVideoAspect(): String {
         return preferencesManager.getVideoAspect()
     }

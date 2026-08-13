@@ -344,6 +344,15 @@ class PlayerViewModel(
     // 长按动态调速的速度档位预设
     val dynamicSpeedPresets = listOf(0.25f, 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 4.0f)
 
+    // 长按倍速提示开关（从 PreferencesManager 加载）
+    private val _longPressSpeedHintEnabled = MutableStateFlow(true)
+    val longPressSpeedHintEnabled: StateFlow<Boolean> = _longPressSpeedHintEnabled.asStateFlow()
+
+    // 档位列表条可见性（动态调速后自动隐藏，文字提示不受此控制）
+    private val _speedPresetBarVisible = MutableStateFlow(false)
+    val speedPresetBarVisible: StateFlow<Boolean> = _speedPresetBarVisible.asStateFlow()
+    private var speedPresetBarJob: Job? = null
+
     // 滑动 Seek 预览（null=未在滑动，有值=正在滑动中）
     data class SwipeSeekPreview(val targetSeconds: Int, val deltaSeconds: Int)
     private val _swipeSeekPreview = MutableStateFlow<SwipeSeekPreview?>(null)
@@ -556,6 +565,7 @@ class PlayerViewModel(
     fun syncAnimationSettings() {
         _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
         _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
+        _longPressSpeedHintEnabled.value = playerRepository.isLongPressSpeedHintEnabled()
         updateGlobalAnimationFlag()
     }
 
@@ -926,6 +936,8 @@ class PlayerViewModel(
         _controlsAnimationEnabled.value = playerRepository.isControlsAnimationEnabled()
         // 加载抽屉界面动画开关
         _drawerAnimationEnabled.value = playerRepository.isDrawerAnimationEnabled()
+        // 加载长按倍速提示开关
+        _longPressSpeedHintEnabled.value = playerRepository.isLongPressSpeedHintEnabled()
     }
     
     // 轮询协程的Job
@@ -1893,6 +1905,8 @@ class PlayerViewModel(
         setSpeed(_longPressSpeed.value.toDouble())
         _isLongPressing.value = true
         _isDynamicSpeedActive.value = false
+        _speedPresetBarVisible.value = false
+        cancelSpeedPresetBarJob()
         cancelAutoHideTimer()
     }
 
@@ -1902,6 +1916,13 @@ class PlayerViewModel(
     fun updateDynamicSpeed(newSpeed: Float) {
         _isDynamicSpeedActive.value = true
         setSpeed(newSpeed.toDouble())
+        // 档位条显示后 2.5 秒自动隐藏（文字提示不消失，一直长按一直显示）
+        _speedPresetBarVisible.value = true
+        cancelSpeedPresetBarJob()
+        speedPresetBarJob = viewModelScope.launch {
+            delay(2500L)
+            _speedPresetBarVisible.value = false
+        }
     }
 
     /**
@@ -1911,7 +1932,14 @@ class PlayerViewModel(
         restoreSpeedAfterLongPress()
         _isLongPressing.value = false
         _isDynamicSpeedActive.value = false
+        _speedPresetBarVisible.value = false
+        cancelSpeedPresetBarJob()
         resetAutoHideTimer()
+    }
+
+    private fun cancelSpeedPresetBarJob() {
+        speedPresetBarJob?.cancel()
+        speedPresetBarJob = null
     }
 
     /**
