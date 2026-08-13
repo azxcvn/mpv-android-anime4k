@@ -118,12 +118,14 @@ val abiVersionCodes = mapOf(
     "armeabi-v7a" to 1
 )
 
+val baseVersionCode = 32
+
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             val abiName = output.filters.find { it.filterType == FilterType.ABI }?.identifier
             if (abiName != null) {
-                output.versionCode.set((variant.outputs.first().versionCode.get() ?: 0) * 10 + (abiVersionCodes[abiName] ?: 0))
+                output.versionCode.set(baseVersionCode * 10 + (abiVersionCodes[abiName] ?: 0))
             }
         }
     }
