@@ -95,6 +95,9 @@ class PlaybackSettingsViewModel(
                     // 抽屉界面动画
                     drawerAnimationEnabled = playerRepository.isDrawerAnimationEnabled(),
 
+                    // 长按倍速提示
+                    longPressSpeedHintEnabled = playerRepository.isLongPressSpeedHintEnabled(),
+
                     // 画面方向锁定
                     rotationLockMode = playerRepository.getRotationLockMode()
                 )
@@ -488,6 +491,18 @@ class PlaybackSettingsViewModel(
         }
     }
 
+    fun setLongPressSpeedHintEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                playerRepository.setLongPressSpeedHintEnabled(enabled)
+                _playbackSettings.value = _playbackSettings.value.copy(longPressSpeedHintEnabled = enabled)
+                Logger.d(TAG, "Set long press speed hint: $enabled")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to set long press speed hint", e)
+            }
+        }
+    }
+
     // ==================== 画面方向锁定 ====================
 
     fun setRotationLockMode(mode: String) {
@@ -555,6 +570,9 @@ data class PlaybackSettings(
 
     // 抽屉界面动画
     val drawerAnimationEnabled: Boolean = false,
+
+    // 长按倍速提示
+    val longPressSpeedHintEnabled: Boolean = true,
 
     // 画面方向锁定
     val rotationLockMode: String = "AUTO"

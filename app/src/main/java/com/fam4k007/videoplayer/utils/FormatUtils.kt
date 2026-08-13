@@ -106,6 +106,20 @@ object FormatUtils {
     }
 
     /**
+     * 格式化时间戳为纯日期（毫秒 → YYYY-MM-DD）
+     * @param timestamp 时间戳（毫秒）
+     * @return 格式化后的日期字符串
+     */
+    fun formatDateOnly(timestamp: Long): String {
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            sdf.format(Date(timestamp))
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }
+
+    /**
      * 生成时间戳后缀（用于截图文件名）
      * 格式：yyyyMMdd_HHmmss
      * @return 时间戳字符串，例如 "20231225_143022"

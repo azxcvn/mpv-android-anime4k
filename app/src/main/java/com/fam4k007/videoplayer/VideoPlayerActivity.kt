@@ -1463,10 +1463,12 @@ class VideoPlayerActivity : AppCompatActivity(),
 
                 if (hasNextItem && autoplayEnabled) {
                     Log.d(TAG, "handleEndOfFile: has next AND autoplay enabled -> playNext()")
+                    savePlaybackStateAsCompleted()
                     isSwitchingVideo = true
                     playNext()
                 } else if (viewModel.shouldRepeatPlaylist() && autoplayEnabled) {
                     Log.d(TAG, "handleEndOfFile: no next but repeat playlist AND autoplay -> loop from start")
+                    savePlaybackStateAsCompleted()
                     isSwitchingVideo = true
                     if (viewModel.shuffleEnabled.value) {
                         generateShuffledIndices()

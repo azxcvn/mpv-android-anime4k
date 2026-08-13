@@ -11,6 +11,8 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -33,11 +36,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.fam4k007.videoplayer.R
+import com.fam4k007.videoplayer.AppConstants
 import com.fam4k007.videoplayer.VideoFileParcelable
+import com.fam4k007.videoplayer.database.PlaybackState
+import com.fam4k007.videoplayer.database.VideoDatabase
 import com.fam4k007.videoplayer.presentation.LibraryViewModel
 import com.fam4k007.videoplayer.utils.ThumbnailCacheManager
 import com.fam4k007.videoplayer.utils.FileOperationManager
@@ -48,11 +56,11 @@ import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.RenameDialog
-import com.fam4k007.videoplayer.ui.components.SortOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -64,7 +72,8 @@ fun VideoListScreen(
     onNavigateBack: () -> Unit,
     onOpenVideo: (VideoFileParcelable, Int, List<VideoFileParcelable>) -> Unit,
     onOpenMediaInfo: (VideoFileParcelable) -> Unit = {},
-    viewModel: LibraryViewModel = koinViewModel()
+    viewModel: LibraryViewModel = koinViewModel(),
+    preferencesManager: com.fam4k007.videoplayer.preferences.PreferencesManager = koinInject()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -96,6 +105,32 @@ fun VideoListScreen(
             // 否则从文件夹扫描（folder模式）
             viewModel.scanVideosInFolder(folderPath)
         }
+    }
+
+    // 加载播放进度数据（屏幕恢复时自动刷新）
+    var playbackStates by remember { mutableStateOf<Map<String, PlaybackState>>(emptyMap()) }
+    var watchedThreshold by remember { mutableStateOf(AppConstants.Defaults.DEFAULT_WATCHED_THRESHOLD) }
+    var showProgressBar by remember { mutableStateOf(true) }
+    var refreshTrigger by remember { mutableStateOf(0) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshTrigger++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(videoListState.filteredVideos, refreshTrigger) {
+        val states = withContext(Dispatchers.IO) {
+            val db = VideoDatabase.getDatabase(context)
+            db.playbackHistoryDao().getAllPlaybackStates().associateBy { it.uri }
+        }
+        playbackStates = states
+        watchedThreshold = preferencesManager.getWatchedThreshold()
+        showProgressBar = preferencesManager.isShowVideoProgressBarEnabled()
     }
 
     Scaffold(
@@ -200,6 +235,10 @@ fun VideoListScreen(
                             isSelected = video == selectedVideoForOperation,
                             isEditMode = isEditMode,
                             isChecked = selectedVideos.contains(video),
+                            playbackState = playbackStates[video.uri],
+                            watchedThreshold = watchedThreshold,
+                            showProgressBar = showProgressBar,
+                            displayFields = videoListState.displayFields,
                             onClick = { 
                                 if (isEditMode) {
                                     // 编辑模式下切换选中状态
@@ -291,6 +330,7 @@ fun VideoListScreen(
                 0 -> "NAME"
                 1 -> "DATE"
                 2 -> "SIZE"
+                3 -> "DURATION"
                 else -> "NAME"
             },
             currentSortOrder = when (videoListState.sortOrder) {
@@ -298,6 +338,7 @@ fun VideoListScreen(
                 1 -> "DESCENDING"
                 else -> "ASCENDING"
             },
+            currentFields = videoListState.displayFields,
             onDismiss = { showSortDialog = false },
             onSortSelected = { newType: String, newOrder: String ->
                 // 将字符串类型映射为整数
@@ -305,6 +346,7 @@ fun VideoListScreen(
                     "NAME" -> 0
                     "DATE" -> 1
                     "SIZE" -> 2
+                    "DURATION" -> 3
                     else -> 0
                 }
                 val sortOrder = when (newOrder) {
@@ -313,7 +355,9 @@ fun VideoListScreen(
                     else -> 0
                 }
                 viewModel.sortVideos(sortType, sortOrder)
-                showSortDialog = false
+            },
+            onFieldsChanged = { fields ->
+                viewModel.setVideoDisplayFields(fields)
             }
         )
     }
@@ -483,19 +527,37 @@ fun VideoListScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun VideoItem(
     video: VideoFileParcelable,
     isSelected: Boolean,
     isEditMode: Boolean,
     isChecked: Boolean,
+    playbackState: PlaybackState?,
+    watchedThreshold: Int,
+    showProgressBar: Boolean,
+    displayFields: Set<String>,
     onClick: () -> Unit,
     onMoreClick: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var thumbnailBitmap by remember(video.uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    // 计算观看状态
+    val progressPercent = if (playbackState != null && playbackState.duration > 0) {
+        ((playbackState.position.toFloat() / playbackState.duration) * 100).toInt().coerceIn(0, 100)
+    } else 0
+    val isWatched = playbackState?.hasBeenWatched == true || (progressPercent >= watchedThreshold && progressPercent > 0)
+    val isWatching = progressPercent in 1 until watchedThreshold
+    val showBar = showProgressBar && progressPercent in 1..99
+
+    val showSize = "SIZE" in displayFields && video.size > 0
+    val showDuration = "DURATION" in displayFields && video.duration > 0
+    val showDate = "DATE" in displayFields && video.dateAdded > 0
+    val showResolution = "RESOLUTION" in displayFields && video.width > 0 && video.height > 0
+    val showProgress = "PROGRESS" in displayFields
 
     LaunchedEffect(video.uri) {
         thumbnailBitmap = null // 立即清空旧缩略图
@@ -561,7 +623,7 @@ private fun VideoItem(
                 )
             }
             
-            // 缩略图
+            // 缩略图（带时长/大小浮层）
             Box(
                 modifier = Modifier
                     .width(120.dp)
@@ -585,42 +647,135 @@ private fun VideoItem(
                         modifier = Modifier.size(32.dp)
                     )
                 }
+
+                // 进度条（底部，3dp高）
+                if (showBar) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = 0.5f))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(progressPercent / 100f)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+
+                // 时长浮层（右下角）
+                if (showDuration) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 3.dp, bottom = if (showBar) 4.dp else 1.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = FormatUtils.formatDuration(video.duration),
+                            fontSize = 9.sp,
+                            color = Color.White,
+                            maxLines = 1,
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
+
+                // 大小浮层（左下角）
+                if (showSize) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 3.dp, bottom = if (showBar) 4.dp else 1.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = FormatUtils.formatFileSize(video.size),
+                            fontSize = 9.sp,
+                            color = Color.White,
+                            maxLines = 1,
+                            lineHeight = 14.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // 视频信息
+            // 视频信息（随字段行数动态变化，缩略图整体垂直居中）
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(68.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
             ) {
-                // 标题（顶部对齐）
+                // 标题
                 Text(
                     text = video.name,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 3,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 16.sp
+                    color = if (isWatched)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 18.sp
                 )
 
-                // 时长和大小标签（底部对齐）
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = FormatUtils.formatDuration(video.duration),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = FormatUtils.formatFileSize(video.size),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                // 字段标签：观看进度 / 日期 / 分辨率
+                if (showProgress || showDate || showResolution) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // 观看进度
+                        if (showProgress) {
+                            VideoFieldTag(
+                                icon = Icons.Default.Schedule,
+                                text = when {
+                                    isWatched -> "Watched"
+                                    isWatching -> "Watching $progressPercent%"
+                                    else -> "Not watched"
+                                },
+                                color = when {
+                                    isWatched -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    isWatching -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                        // 日期
+                        if (showDate) {
+                            VideoFieldTag(
+                                icon = Icons.Default.CalendarToday,
+                                text = FormatUtils.formatDateOnly(video.dateAdded * 1000),
+                                color = if (isWatched)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // 分辨率
+                        if (showResolution) {
+                            VideoFieldTag(
+                                icon = Icons.Default.AspectRatio,
+                                text = "${video.width}x${video.height}",
+                                color = if (isWatched)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -638,6 +793,32 @@ private fun VideoItem(
                 }
             }
         }
+    }
+}
+
+/**
+ * 视频字段标签（左侧小图标 + 文本）
+ */
+@Composable
+private fun VideoFieldTag(
+    icon: ImageVector,
+    text: String,
+    color: Color
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(13.dp),
+            tint = color
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            maxLines = 1,
+            color = color
+        )
     }
 }
 
@@ -696,44 +877,84 @@ private fun SearchTopBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun VideoSortDialog(
     currentSortType: String,
     currentSortOrder: String,
+    currentFields: Set<String>,
     onDismiss: () -> Unit,
-    onSortSelected: (String, String) -> Unit
+    onSortSelected: (String, String) -> Unit,
+    onFieldsChanged: (Set<String>) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Sort By",
+                text = "Sort & Display",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
         },
         text = {
-            Column {
-                SortOption(
-                    text = "Name (Ascending)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("NAME", "ASCENDING") }
-                )
-                SortOption(
-                    text = "Name (Descending)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("NAME", "DESCENDING") }
-                )
-                SortOption(
-                    text = "Date (Ascending)",
-                    isSelected = currentSortType == "DATE" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("DATE", "ASCENDING") }
-                )
-                SortOption(
-                    text = "Date (Descending)",
-                    isSelected = currentSortType == "DATE" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("DATE", "DESCENDING") }
-                )
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // 排序方式
+                VideoSectionTitle("Sort By")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    VideoSortField.entries.forEach { field ->
+                        FilterChip(
+                            selected = currentSortType == field.key,
+                            onClick = { onSortSelected(field.key, currentSortOrder) },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
+
+                // 排序方向
+                VideoSectionTitle("Order")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = currentSortOrder == "ASCENDING",
+                        onClick = { onSortSelected(currentSortType, "ASCENDING") },
+                        label = { Text("Ascending") }
+                    )
+                    FilterChip(
+                        selected = currentSortOrder == "DESCENDING",
+                        onClick = { onSortSelected(currentSortType, "DESCENDING") },
+                        label = { Text("Descending") }
+                    )
+                }
+
+                // 显示字段
+                VideoSectionTitle("Fields")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    VideoDisplayField.entries.forEach { field ->
+                        FilterChip(
+                            selected = field.key in currentFields,
+                            onClick = {
+                                val next = if (field.key in currentFields) {
+                                    currentFields - field.key
+                                } else {
+                                    currentFields + field.key
+                                }
+                                onFieldsChanged(next)
+                            },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -743,6 +964,33 @@ private fun VideoSortDialog(
         },
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
+    )
+}
+
+/** 视频排序字段选项 */
+private enum class VideoSortField(val key: String, val label: String) {
+    NAME("NAME", "Name"),
+    DATE("DATE", "Date"),
+    SIZE("SIZE", "Size"),
+    DURATION("DURATION", "Duration")
+}
+
+/** 视频显示字段选项 */
+private enum class VideoDisplayField(val key: String, val label: String) {
+    DURATION("DURATION", "Duration"),
+    SIZE("SIZE", "Size"),
+    DATE("DATE", "Date"),
+    RESOLUTION("RESOLUTION", "Resolution"),
+    PROGRESS("PROGRESS", "Progress")
+}
+
+@Composable
+private fun VideoSectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 

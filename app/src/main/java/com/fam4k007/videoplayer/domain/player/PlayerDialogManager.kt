@@ -1203,6 +1203,7 @@ class PlayerDialogManager(
         val currentDisplayArea = com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent
         val currentMaxScreenNum = com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum
         val currentRandomColor = com.fam4k007.videoplayer.danmaku.DanmakuConfig.randomGradientColor
+        val currentOffsetTime = com.fam4k007.videoplayer.danmaku.DanmakuConfig.offsetTime
         
         composeOverlayManager.showDanmakuSettingsDrawer(
             hasDanmakuLoaded = hasDanmaku,
@@ -1216,6 +1217,7 @@ class PlayerDialogManager(
             currentDisplayArea = currentDisplayArea,
             currentMaxScreenNum = currentMaxScreenNum,
             currentRandomColor = currentRandomColor,
+            currentOffsetTime = currentOffsetTime,
             onSizeChange = { size ->
                 com.fam4k007.videoplayer.danmaku.DanmakuConfig.setSize(size)
                 danmakuManager.updateSize()
@@ -1262,6 +1264,10 @@ class PlayerDialogManager(
                         if (enabled) "Random gradient colors enabled, restart the player to apply" else "Random gradient colors disabled, restart the player to apply"
                     )
                 }
+            },
+            onOffsetTimeChange = { timeMs ->
+                com.fam4k007.videoplayer.danmaku.DanmakuConfig.setOffsetTime(timeMs)
+                danmakuManager.updateOffsetTime()
             }
         )
     }

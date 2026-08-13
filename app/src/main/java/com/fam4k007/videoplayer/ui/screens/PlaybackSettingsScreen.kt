@@ -300,6 +300,13 @@ fun PlaybackSettingsScreen(
                         checked = settings.drawerAnimationEnabled,
                         onCheckedChange = { viewModel.setDrawerAnimationEnabled(it) }
                     )
+                    PreferenceDivider()
+                    SwitchItem(
+                        title = "Enable Long-Press Speed Hint",
+                        subtitle = if (settings.longPressSpeedHintEnabled) "Show current speed hint while long-pressing" else "No speed hint while long-pressing",
+                        checked = settings.longPressSpeedHintEnabled,
+                        onCheckedChange = { viewModel.setLongPressSpeedHintEnabled(it) }
+                    )
                 }
             }
 

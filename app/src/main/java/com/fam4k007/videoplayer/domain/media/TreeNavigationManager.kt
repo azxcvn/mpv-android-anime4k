@@ -146,7 +146,9 @@ class TreeNavigationManager {
                 folderPath = node.path,
                 folderName = node.name,
                 videoCount = node.videoCount,
-                videos = node.videos
+                videos = node.videos,
+                totalSize = node.totalSize,
+                dateModified = node.latestDate
             )
         }
     }

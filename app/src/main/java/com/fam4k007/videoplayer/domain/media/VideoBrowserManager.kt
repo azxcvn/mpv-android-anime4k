@@ -39,6 +39,7 @@ class VideoBrowserManager(
             }
             1 -> if (sortOrder == 0) videos.sortedBy { it.dateAdded } else videos.sortedByDescending { it.dateAdded }
             2 -> if (sortOrder == 0) videos.sortedBy { it.size } else videos.sortedByDescending { it.size }
+            3 -> if (sortOrder == 0) videos.sortedBy { it.duration } else videos.sortedByDescending { it.duration }
             else -> videos
         }
     }
@@ -64,6 +65,7 @@ class VideoBrowserManager(
             "NAME" -> 0
             "DATE" -> 1
             "SIZE" -> 2
+            "DURATION" -> 3
             else -> 0
         }
         val sortOrder = when (preferencesManager.getVideoSortOrder()) {
@@ -83,6 +85,7 @@ class VideoBrowserManager(
             0 -> "NAME"
             1 -> "DATE"
             2 -> "SIZE"
+            3 -> "DURATION"
             else -> "NAME"
         }
         val orderStr = when (sortOrder) {

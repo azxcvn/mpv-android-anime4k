@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -40,7 +42,6 @@ import com.fam4k007.videoplayer.ui.components.DeleteConfirmDialog
 import com.fam4k007.videoplayer.ui.components.MultiSelectActionBar
 import com.fam4k007.videoplayer.ui.components.EmptyState
 import com.fam4k007.videoplayer.ui.components.RenameDialog
-import com.fam4k007.videoplayer.ui.components.SortOption
 import com.fam4k007.videoplayer.utils.FileOperationManager
 import com.fam4k007.videoplayer.utils.FormatUtils
 import kotlinx.coroutines.delay
@@ -317,6 +318,7 @@ fun FolderBrowserScreen(
                                         isSelected = folder == selectedFolder,
                                         isEditMode = isEditMode,
                                         isChecked = selectedFolders.contains(folder),
+                                        displayFields = folderListState.displayFields,
                                         onClick = { 
                                             if (isEditMode) {
                                                 selectedFolders = if (selectedFolders.contains(folder)) {
@@ -404,10 +406,12 @@ fun FolderBrowserScreen(
     }
 
     if (showSortDialog) {
-        SortDialog(
+        FolderSortDialog(
             currentSortType = when (folderListState.sortType) {
                 0 -> "NAME"
+                1 -> "DATE"
                 2 -> "VIDEO_COUNT"
+                3 -> "SIZE"
                 else -> "NAME"
             },
             currentSortOrder = when (folderListState.sortOrder) {
@@ -415,12 +419,15 @@ fun FolderBrowserScreen(
                 1 -> "DESCENDING"
                 else -> "ASCENDING"
             },
+            currentFields = folderListState.displayFields,
             onDismiss = { showSortDialog = false },
             onSortSelected = { newType: String, newOrder: String ->
                 // 将字符串类型映射为整数
                 val sortType = when (newType) {
                     "NAME" -> 0
+                    "DATE" -> 1
                     "VIDEO_COUNT" -> 2
+                    "SIZE" -> 3
                     else -> 0
                 }
                 val sortOrder = when (newOrder) {
@@ -429,7 +436,9 @@ fun FolderBrowserScreen(
                     else -> 0
                 }
                 viewModel.sortFolders(sortType, sortOrder)
-                showSortDialog = false
+            },
+            onFieldsChanged = { fields ->
+                viewModel.setFolderDisplayFields(fields)
             }
         )
     }
@@ -513,13 +522,14 @@ fun FolderBrowserScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FolderItem(
     folder: VideoFolder,
     isSelected: Boolean,
     isEditMode: Boolean,
     isChecked: Boolean,
+    displayFields: Set<String>,
     onClick: () -> Unit
 ) {
     Card(
@@ -571,15 +581,23 @@ private fun FolderItem(
                 )
             }
             
-            // 文件夹图标
-            Icon(
-                imageVector = Icons.Default.Folder,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.secondary
-            )
+            // 文件夹图标（圆角容器，随卡片高度动态垂直居中）
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Folder,
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             // 文件夹信息
             Column(
@@ -597,13 +615,57 @@ private fun FolderItem(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                // 路径字段（单独一行）
+                if ("PATH" in displayFields) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = folder.folderPath,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
 
-                Text(
-                    text = "${folder.videoCount} videos",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // 数量/大小/日期标签（带图标）
+                if ("COUNT" in displayFields || "SIZE" in displayFields || "DATE" in displayFields) {
+                    val totalSize = folder.totalSize
+                    val latestDate = folder.dateModified
+                    Spacer(modifier = Modifier.height(4.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        if ("COUNT" in displayFields) {
+                            FolderFieldTag(
+                                icon = Icons.Default.VideoLibrary,
+                                text = "${folder.videoCount} videos"
+                            )
+                        }
+                        if ("SIZE" in displayFields && totalSize > 0) {
+                            FolderFieldTag(
+                                icon = Icons.Default.DataUsage,
+                                text = FormatUtils.formatFileSize(totalSize)
+                            )
+                        }
+                        if ("DATE" in displayFields && latestDate > 0L) {
+                            FolderFieldTag(
+                                icon = Icons.Default.CalendarToday,
+                                text = FormatUtils.formatDateOnly(latestDate * 1000)
+                            )
+                        }
+                    }
+                }
             }
 
             // 右箭头（非编辑模式）
@@ -668,44 +730,84 @@ private fun PermissionPrompt(onRequestPermission: () -> Unit) {
 
 
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun SortDialog(
+private fun FolderSortDialog(
     currentSortType: String,
     currentSortOrder: String,
+    currentFields: Set<String>,
     onDismiss: () -> Unit,
-    onSortSelected: (String, String) -> Unit
+    onSortSelected: (String, String) -> Unit,
+    onFieldsChanged: (Set<String>) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Sort By",
+                text = "Sort & Display",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
         },
         text = {
-            Column {
-                SortOption(
-                    text = "Name (Ascending)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("NAME", "ASCENDING") }
-                )
-                SortOption(
-                    text = "Name (Descending)",
-                    isSelected = currentSortType == "NAME" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("NAME", "DESCENDING") }
-                )
-                SortOption(
-                    text = "Video Count (Ascending)",
-                    isSelected = currentSortType == "VIDEO_COUNT" && currentSortOrder == "ASCENDING",
-                    onClick = { onSortSelected("VIDEO_COUNT", "ASCENDING") }
-                )
-                SortOption(
-                    text = "Video Count (Descending)",
-                    isSelected = currentSortType == "VIDEO_COUNT" && currentSortOrder == "DESCENDING",
-                    onClick = { onSortSelected("VIDEO_COUNT", "DESCENDING") }
-                )
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // 排序方式
+                SectionTitle("Sort By")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FolderSortField.entries.forEach { field ->
+                        FilterChip(
+                            selected = currentSortType == field.key,
+                            onClick = { onSortSelected(field.key, currentSortOrder) },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
+
+                // 排序方向
+                SectionTitle("Order")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = currentSortOrder == "ASCENDING",
+                        onClick = { onSortSelected(currentSortType, "ASCENDING") },
+                        label = { Text("Ascending") }
+                    )
+                    FilterChip(
+                        selected = currentSortOrder == "DESCENDING",
+                        onClick = { onSortSelected(currentSortType, "DESCENDING") },
+                        label = { Text("Descending") }
+                    )
+                }
+
+                // 显示字段
+                SectionTitle("Fields")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FolderDisplayField.entries.forEach { field ->
+                        FilterChip(
+                            selected = field.key in currentFields,
+                            onClick = {
+                                val next = if (field.key in currentFields) {
+                                    currentFields - field.key
+                                } else {
+                                    currentFields + field.key
+                                }
+                                onFieldsChanged(next)
+                            },
+                            label = { Text(field.label) }
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -716,6 +818,57 @@ private fun SortDialog(
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
     )
+}
+
+/** 文件夹排序字段选项 */
+private enum class FolderSortField(val key: String, val label: String) {
+    NAME("NAME", "Name"),
+    DATE("DATE", "Date"),
+    SIZE("SIZE", "Size"),
+    COUNT("VIDEO_COUNT", "Count")
+}
+
+/** 文件夹显示字段选项 */
+private enum class FolderDisplayField(val key: String, val label: String) {
+    PATH("PATH", "Path"),
+    COUNT("COUNT", "Count"),
+    SIZE("SIZE", "Size"),
+    DATE("DATE", "Date")
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/**
+ * 文件夹字段标签（左侧小图标 + 文本）
+ */
+@Composable
+private fun FolderFieldTag(
+    icon: ImageVector,
+    text: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            maxLines = 1,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 // ==================== 树状视图视频项 ====================

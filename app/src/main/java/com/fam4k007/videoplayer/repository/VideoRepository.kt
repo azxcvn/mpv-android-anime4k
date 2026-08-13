@@ -78,7 +78,9 @@ class VideoRepository(
                 MediaStore.Video.Media.DURATION,
                 MediaStore.Video.Media.SIZE,
                 MediaStore.Video.Media.DATE_ADDED,
-                MediaStore.Video.Media.DATE_MODIFIED
+                MediaStore.Video.Media.DATE_MODIFIED,
+                MediaStore.Video.Media.WIDTH,
+                MediaStore.Video.Media.HEIGHT
             )
             
             val selection = "${MediaStore.Video.Media.DATA} LIKE ?"
@@ -105,6 +107,8 @@ class VideoRepository(
                 val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
                 val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
                 val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+                val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH)
+                val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT)
                 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
@@ -113,6 +117,8 @@ class VideoRepository(
                     val duration = cursor.getLong(durationColumn)
                     val size = cursor.getLong(sizeColumn)
                     val dateAdded = cursor.getLong(dateColumn)
+                    val width = cursor.getInt(widthColumn)
+                    val height = cursor.getInt(heightColumn)
                     
                     // 确保文件真的在该文件夹下（排除子文件夹）
                     val file = File(path)
@@ -131,7 +137,9 @@ class VideoRepository(
                                 path = path,
                                 size = size,
                                 duration = duration,
-                                dateAdded = dateAdded
+                                dateAdded = dateAdded,
+                                width = width,
+                                height = height
                             )
                         )
                     }
@@ -361,7 +369,9 @@ class VideoRepository(
                     folderPath = folderPath,
                     folderName = folderName,
                     videoCount = videos.size,
-                    videos = videos
+                    videos = videos,
+                    totalSize = videos.sumOf { it.size },
+                    dateModified = videos.maxOfOrNull { it.dateAdded } ?: 0L
                 )
             }.sortedByDescending { it.videoCount }
             

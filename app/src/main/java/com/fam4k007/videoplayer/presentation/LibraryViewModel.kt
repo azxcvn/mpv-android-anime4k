@@ -52,7 +52,8 @@ class LibraryViewModel(
         val isRefreshing: Boolean = false,
         val error: String? = null,
         val sortType: Int = 0,
-        val sortOrder: Int = 0
+        val sortOrder: Int = 0,
+        val displayFields: Set<String> = setOf("COUNT", "SIZE")
     )
 
     private val _folderListState = MutableStateFlow(FolderListState())
@@ -69,7 +70,8 @@ class LibraryViewModel(
         val sortType: Int = 0,
         val sortOrder: Int = 0,
         val searchQuery: String = "",
-        val playbackStates: Map<String, PlaybackState> = emptyMap()
+        val playbackStates: Map<String, PlaybackState> = emptyMap(),
+        val displayFields: Set<String> = setOf("DURATION", "SIZE", "DATE", "PROGRESS")
     )
 
     private val _videoListState = MutableStateFlow(VideoListState())
@@ -92,10 +94,18 @@ class LibraryViewModel(
     init {
         // 恢复保存的排序设置
         val (folderSortType, folderSortOrder) = folderBrowserManager.loadSavedSortSettings()
-        _folderListState.value = _folderListState.value.copy(sortType = folderSortType, sortOrder = folderSortOrder)
+        _folderListState.value = _folderListState.value.copy(
+            sortType = folderSortType,
+            sortOrder = folderSortOrder,
+            displayFields = preferencesManager.getFolderDisplayFields()
+        )
 
         val (videoSortType, videoSortOrder) = videoBrowserManager.loadSavedSortSettings()
-        _videoListState.value = _videoListState.value.copy(sortType = videoSortType, sortOrder = videoSortOrder)
+        _videoListState.value = _videoListState.value.copy(
+            sortType = videoSortType,
+            sortOrder = videoSortOrder,
+            displayFields = preferencesManager.getVideoDisplayFields()
+        )
 
         // 先显示缓存（秒开），再后台刷新
         viewModelScope.launch {
@@ -194,6 +204,14 @@ class LibraryViewModel(
         folderBrowserManager.saveSortSettings(sortType, sortOrder)
     }
 
+    /**
+     * 更新文件夹列表显示字段并持久化
+     */
+    fun setFolderDisplayFields(fields: Set<String>) {
+        _folderListState.value = _folderListState.value.copy(displayFields = fields)
+        preferencesManager.setFolderDisplayFields(fields)
+    }
+
     // ==================== 视频扫描 ====================
 
     fun scanVideosInFolder(folderPath: String) {
@@ -254,6 +272,14 @@ class LibraryViewModel(
             sortOrder = sortOrder
         )
         videoBrowserManager.saveSortSettings(sortType, sortOrder)
+    }
+
+    /**
+     * 更新视频列表显示字段并持久化
+     */
+    fun setVideoDisplayFields(fields: Set<String>) {
+        _videoListState.value = _videoListState.value.copy(displayFields = fields)
+        preferencesManager.setVideoDisplayFields(fields)
     }
 
     fun searchVideos(query: String) {

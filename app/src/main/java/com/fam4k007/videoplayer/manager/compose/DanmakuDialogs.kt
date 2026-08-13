@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -44,6 +45,7 @@ fun DanmakuSettingsDrawer(
     currentDisplayArea: Int,
     currentMaxScreenNum: Int,
     currentRandomColor: Boolean,
+    currentOffsetTime: Long,
     onSizeChange: (Int) -> Unit,
     onSpeedChange: (Int) -> Unit,
     onAlphaChange: (Int) -> Unit,
@@ -54,6 +56,7 @@ fun DanmakuSettingsDrawer(
     onDisplayAreaChange: (Int) -> Unit,
     onMaxScreenNumChange: (Int) -> Unit,
     onRandomColorChange: (Boolean) -> Unit,
+    onOffsetTimeChange: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
     var expandedSection by remember { mutableStateOf<String?>(null) }
@@ -234,11 +237,13 @@ fun DanmakuSettingsDrawer(
                                     currentShowBottom = currentShowBottom,
                                     currentDisplayArea = currentDisplayArea,
                                     currentMaxScreenNum = currentMaxScreenNum,
+                                    currentOffsetTime = currentOffsetTime,
                                     onShowScrollChange = onShowScrollChange,
                                     onShowTopChange = onShowTopChange,
                                     onShowBottomChange = onShowBottomChange,
                                     onDisplayAreaChange = onDisplayAreaChange,
-                                    onMaxScreenNumChange = onMaxScreenNumChange
+                                    onMaxScreenNumChange = onMaxScreenNumChange,
+                                    onOffsetTimeChange = onOffsetTimeChange
                                 )
                             }
                         }
@@ -447,17 +452,28 @@ fun DanmakuConfigContent(
     currentShowBottom: Boolean,
     currentDisplayArea: Int,
     currentMaxScreenNum: Int,
+    currentOffsetTime: Long,
     onShowScrollChange: (Boolean) -> Unit,
     onShowTopChange: (Boolean) -> Unit,
     onShowBottomChange: (Boolean) -> Unit,
     onDisplayAreaChange: (Int) -> Unit,
-    onMaxScreenNumChange: (Int) -> Unit
+    onMaxScreenNumChange: (Int) -> Unit,
+    onOffsetTimeChange: (Long) -> Unit
 ) {
     var showScroll by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showScrollDanmaku) }
     var showTop by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showTopDanmaku) }
     var showBottom by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.showBottomDanmaku) }
     var displayArea by remember { mutableIntStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.displayAreaPercent) }
     var maxScreenNum by remember { mutableStateOf(com.fam4k007.videoplayer.danmaku.DanmakuConfig.maxScreenNum.toFloat()) }
+
+    // 弹幕时间轴偏移（秒）
+    var offsetSeconds by remember { mutableIntStateOf((currentOffsetTime / 1000L).toInt()) }
+    var showOffsetInput by remember { mutableStateOf(false) }
+
+    val applyOffsetDelta: (Int) -> Unit = { delta ->
+        offsetSeconds = (offsetSeconds + delta).coerceIn(-600, 600)
+        onOffsetTimeChange(offsetSeconds * 1000L)
+    }
 
     val areaOptions = listOf(10, 25, 50, 75, 100)
 
@@ -577,6 +593,135 @@ fun DanmakuConfigContent(
                 inactiveTrackColor = Color(0xFF555555)
             )
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ==================== 弹幕时间轴偏移 ====================
+        Text(
+            text = "Danmaku Timeline Offset",
+            fontSize = 16.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = "Shift all danmaku timing; positive delays, negative advances",
+            fontSize = 11.sp,
+            color = Color(0x99FFFFFF),
+            modifier = Modifier.padding(top = 2.dp)
+        )
+
+        // 当前值显示 + 重置
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = formatDanmakuOffset(offsetSeconds),
+                fontSize = 15.sp,
+                color = if (offsetSeconds == 0) Color(0x99FFFFFF) else Color(0xFF64B5F6),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { showOffsetInput = true }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+            TextButton(
+                onClick = {
+                    offsetSeconds = 0
+                    onOffsetTimeChange(0L)
+                },
+                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF6666))
+            ) {
+                Text("Reset")
+            }
+        }
+
+        // 滑轨（粗调）
+        Slider(
+            value = offsetSeconds.toFloat(),
+            onValueChange = {
+                offsetSeconds = it.toInt().coerceIn(-600, 600)
+                onOffsetTimeChange(offsetSeconds * 1000L)
+            },
+            valueRange = -600f..600f,
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF64B5F6),
+                activeTrackColor = Color(0xFF64B5F6),
+                inactiveTrackColor = Color(0xFF555555)
+            )
+        )
+
+        // 步进按钮（细调/快调）
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            OffsetStepButton("-10s") { applyOffsetDelta(-10) }
+            OffsetStepButton("-5s") { applyOffsetDelta(-5) }
+            OffsetStepButton("-1s") { applyOffsetDelta(-1) }
+            OffsetStepButton("+1s") { applyOffsetDelta(1) }
+            OffsetStepButton("+5s") { applyOffsetDelta(5) }
+            OffsetStepButton("+10s") { applyOffsetDelta(10) }
+        }
+
+        Text(
+            text = "Tap the value above to enter seconds manually (-600 ~ 600)",
+            fontSize = 11.sp,
+            color = Color(0x99FFFFFF),
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+
+    // 手动输入对话框
+    if (showOffsetInput) {
+        var inputText by remember { mutableStateOf(offsetSeconds.toString()) }
+        AlertDialog(
+            onDismissRequest = { showOffsetInput = false },
+            title = {
+                Text("Danmaku Timeline Offset", color = Color.White)
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter offset seconds (negative allowed, -600 ~ 600)",
+                        fontSize = 12.sp,
+                        color = Color(0x99FFFFFF)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
+                        label = { Text("Seconds") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF64B5F6),
+                            unfocusedBorderColor = Color(0xFF555555),
+                            cursorColor = Color(0xFF64B5F6)
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val parsed = inputText.trim().toIntOrNull()
+                    if (parsed != null) {
+                        offsetSeconds = parsed.coerceIn(-600, 600)
+                        onOffsetTimeChange(offsetSeconds * 1000L)
+                    }
+                    showOffsetInput = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOffsetInput = false }) { Text("Cancel") }
+            },
+            containerColor = Color(0xFF1E1E1E),
+            shape = RoundedCornerShape(28.dp)
+        )
     }
 }
 
@@ -617,4 +762,41 @@ fun DanmakuSwitchItem(
             )
         )
     }
+}
+
+/**
+ * 偏移步进按钮
+ */
+@Composable
+private fun RowScope.OffsetStepButton(
+    label: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .background(Color(0x1AFFFFFF), RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+/**
+ * 格式化弹幕偏移秒数（如 +1min23s）
+ */
+private fun formatDanmakuOffset(seconds: Int): String {
+    if (seconds == 0) return "Offset: 0s"
+    val sign = if (seconds > 0) "+" else "-"
+    val abs = kotlin.math.abs(seconds)
+    val m = abs / 60
+    val s = abs % 60
+    return if (m > 0) "Offset: $sign${m}min${s}s" else "Offset: $sign${s}s"
 }

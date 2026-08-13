@@ -1235,6 +1235,8 @@ fun LongPressSpeedOverlay(
     val isDynamicSpeedActive by viewModel.isDynamicSpeedActive.collectAsState()
     val speed by viewModel.speed.collectAsState()
     val speedPresets = viewModel.dynamicSpeedPresets
+    val longPressSpeedHintEnabled by viewModel.longPressSpeedHintEnabled.collectAsState()
+    val speedPresetBarVisible by viewModel.speedPresetBarVisible.collectAsState()
     val showHint = remember { mutableStateOf(!preferencesManager.hasDynamicSpeedBeenUsed()) }
 
     // 用户首次使用动态调速后，标记已掌握并隐藏提示
@@ -1246,7 +1248,7 @@ fun LongPressSpeedOverlay(
     }
 
     androidx.compose.animation.AnimatedVisibility(
-        visible = isLongPressing,
+        visible = isLongPressing && longPressSpeedHintEnabled,
         enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
         exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(300)),
         modifier = modifier.fillMaxSize()
@@ -1259,7 +1261,7 @@ fun LongPressSpeedOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(top = 15.dp)
             ) {
-                // 速度文字提示
+                // 速度文字提示（一直长按一直显示，不自动消失）
                 Text(
                     text = if (isDynamicSpeedActive)
                         "Speed: ${String.format("%.2f", speed)}x"
@@ -1288,28 +1290,36 @@ fun LongPressSpeedOverlay(
                     )
                 }
                 
-                // 动态调速时显示速度档位条
-                if (isDynamicSpeedActive) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                // 动态调速时显示速度档位条（右滑调速后 2.5 秒自动消失）
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = isDynamicSpeedActive && speedPresetBarVisible,
+                    enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
+                    exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(300))
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        speedPresets.forEach { preset ->
-                            val isSelected = abs(speed.toFloat() - preset) < 0.01f
-                            Text(
-                                text = if (preset == preset.toInt().toFloat()) 
-                                    "${preset.toInt()}x" 
-                                else 
-                                    "${String.format("%.1f", preset)}x",
-                                color = if (isSelected) Color(0xFF4FC3F7) else Color.White.copy(alpha = 0.6f),
-                                fontSize = if (isSelected) 14.sp else 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            speedPresets.forEach { preset ->
+                                val isSelected = abs(speed.toFloat() - preset) < 0.01f
+                                Text(
+                                    text = if (preset == preset.toInt().toFloat())
+                                        "${preset.toInt()}x"
+                                    else
+                                        "${String.format("%.1f", preset)}x",
+                                    color = if (isSelected) Color(0xFF4FC3F7) else Color.White.copy(alpha = 0.6f),
+                                    fontSize = if (isSelected) 14.sp else 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
                         }
                     }
                 }
