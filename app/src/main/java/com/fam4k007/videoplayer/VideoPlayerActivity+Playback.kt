@@ -461,3 +461,36 @@ internal fun VideoPlayerActivity.savePlaybackState() {
         Log.e(TAG, "Failed to save playback state", e)
     }
 }
+
+/**
+ * 视频自然播放完成时保存：将进度写入末尾并清除续播位置，确保当前集被标记为已观看。
+ * 修复自动连播开启时，上一集自然播完切到下一集后未被标记完成的问题（issue #94）。
+ */
+internal fun VideoPlayerActivity.savePlaybackStateAsCompleted() {
+    val uri = videoUri ?: return
+
+    try {
+        if (duration > 0 && !isOnlineVideo && preferencesManager.isHistoryRecordingEnabled()) {
+            val fileName = getFileNameFromUri(uri)
+            val folderName = uri.getFolderName()
+            val danmakuPath = danmakuManager.getCurrentDanmakuPath()
+            val danmuVisible = danmakuPath != null && viewModel.danmakuVisible.value
+
+            historyManager.addHistory(
+                uri = uri,
+                fileName = fileName,
+                position = (duration * 1000).toLong(),
+                duration = (duration * 1000).toLong(),
+                folderName = folderName,
+                danmuPath = danmakuPath,
+                danmuVisible = danmuVisible
+            )
+            Logger.d(TAG, "Playback completed saved: $fileName, position=${duration}s")
+        }
+
+        // 已看完，清除续播位置，避免下次从接近末尾的位置恢复
+        preferencesManager.clearPlaybackPosition(uri.toString())
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to save completed playback state", e)
+    }
+}
